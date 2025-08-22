@@ -1,0 +1,14 @@
+DerivedData/
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local.example
+.env.development
+.env.test
+.env.production
+.claude/*
+build/*
+.build/*

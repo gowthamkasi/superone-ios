@@ -1,0 +1,715 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		6531F4872E31386C000E4E5A /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 6531F4862E31386C000E4E5A /* Alamofire */; };
+		6531F48C2E31388D000E4E5A /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 6531F48B2E31388D000E4E5A /* KeychainSwift */; };
+		6531F48F2E313907000E4E5A /* DGCharts in Frameworks */ = {isa = PBXBuildFile; productRef = 6531F48E2E313907000E4E5A /* DGCharts */; };
+		6531F4942E313937000E4E5A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 6531F4932E313937000E4E5A /* Kingfisher */; };
+		6531F4972E313A17000E4E5A /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 6531F4962E313A17000E4E5A /* Lottie */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		65BCC6402E312ECA00F9D254 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 65BCC6282E312EC900F9D254 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 65BCC62F2E312EC900F9D254;
+			remoteInfo = superone;
+		};
+		65BCC64A2E312ECA00F9D254 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 65BCC6282E312EC900F9D254 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 65BCC62F2E312EC900F9D254;
+			remoteInfo = superone;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		65BCC6302E312EC900F9D254 /* superone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = superone.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		65BCC63F2E312ECA00F9D254 /* superoneTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = superoneTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		65BCC6492E312ECA00F9D254 /* superoneUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = superoneUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		65BCC6322E312EC900F9D254 /* superone */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = superone;
+			sourceTree = "<group>";
+		};
+		65BCC6422E312ECA00F9D254 /* superoneTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = superoneTests;
+			sourceTree = "<group>";
+		};
+		65BCC64C2E312ECA00F9D254 /* superoneUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = superoneUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		65BCC62D2E312EC900F9D254 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6531F4942E313937000E4E5A /* Kingfisher in Frameworks */,
+				6531F4972E313A17000E4E5A /* Lottie in Frameworks */,
+				6531F48F2E313907000E4E5A /* DGCharts in Frameworks */,
+				6531F48C2E31388D000E4E5A /* KeychainSwift in Frameworks */,
+				6531F4872E31386C000E4E5A /* Alamofire in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		65BCC63C2E312ECA00F9D254 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		65BCC6462E312ECA00F9D254 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		65BCC6272E312EC900F9D254 = {
+			isa = PBXGroup;
+			children = (
+				65BCC6322E312EC900F9D254 /* superone */,
+				65BCC6422E312ECA00F9D254 /* superoneTests */,
+				65BCC64C2E312ECA00F9D254 /* superoneUITests */,
+				65BCC6312E312EC900F9D254 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		65BCC6312E312EC900F9D254 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				65BCC6302E312EC900F9D254 /* superone.app */,
+				65BCC63F2E312ECA00F9D254 /* superoneTests.xctest */,
+				65BCC6492E312ECA00F9D254 /* superoneUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		65BCC62F2E312EC900F9D254 /* superone */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 65BCC6532E312ECA00F9D254 /* Build configuration list for PBXNativeTarget "superone" */;
+			buildPhases = (
+				65BCC62C2E312EC900F9D254 /* Sources */,
+				65BCC62D2E312EC900F9D254 /* Frameworks */,
+				65BCC62E2E312EC900F9D254 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				65BCC6322E312EC900F9D254 /* superone */,
+			);
+			name = superone;
+			packageProductDependencies = (
+				6531F4862E31386C000E4E5A /* Alamofire */,
+				6531F48B2E31388D000E4E5A /* KeychainSwift */,
+				6531F48E2E313907000E4E5A /* DGCharts */,
+				6531F4932E313937000E4E5A /* Kingfisher */,
+				6531F4962E313A17000E4E5A /* Lottie */,
+			);
+			productName = superone;
+			productReference = 65BCC6302E312EC900F9D254 /* superone.app */;
+			productType = "com.apple.product-type.application";
+		};
+		65BCC63E2E312ECA00F9D254 /* superoneTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 65BCC6562E312ECA00F9D254 /* Build configuration list for PBXNativeTarget "superoneTests" */;
+			buildPhases = (
+				65BCC63B2E312ECA00F9D254 /* Sources */,
+				65BCC63C2E312ECA00F9D254 /* Frameworks */,
+				65BCC63D2E312ECA00F9D254 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				65BCC6412E312ECA00F9D254 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				65BCC6422E312ECA00F9D254 /* superoneTests */,
+			);
+			name = superoneTests;
+			packageProductDependencies = (
+			);
+			productName = superoneTests;
+			productReference = 65BCC63F2E312ECA00F9D254 /* superoneTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		65BCC6482E312ECA00F9D254 /* superoneUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 65BCC6592E312ECA00F9D254 /* Build configuration list for PBXNativeTarget "superoneUITests" */;
+			buildPhases = (
+				65BCC6452E312ECA00F9D254 /* Sources */,
+				65BCC6462E312ECA00F9D254 /* Frameworks */,
+				65BCC6472E312ECA00F9D254 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				65BCC64B2E312ECA00F9D254 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				65BCC64C2E312ECA00F9D254 /* superoneUITests */,
+			);
+			name = superoneUITests;
+			packageProductDependencies = (
+			);
+			productName = superoneUITests;
+			productReference = 65BCC6492E312ECA00F9D254 /* superoneUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		65BCC6282E312EC900F9D254 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					65BCC62F2E312EC900F9D254 = {
+						CreatedOnToolsVersion = 26.0;
+						LastSwiftMigration = 2600;
+					};
+					65BCC63E2E312ECA00F9D254 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 65BCC62F2E312EC900F9D254;
+					};
+					65BCC6482E312ECA00F9D254 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 65BCC62F2E312EC900F9D254;
+					};
+				};
+			};
+			buildConfigurationList = 65BCC62B2E312EC900F9D254 /* Build configuration list for PBXProject "superone" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 65BCC6272E312EC900F9D254;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6531F4852E31386C000E4E5A /* XCRemoteSwiftPackageReference "Alamofire" */,
+				6531F48A2E31388D000E4E5A /* XCRemoteSwiftPackageReference "keychain-swift" */,
+				6531F48D2E313907000E4E5A /* XCRemoteSwiftPackageReference "Charts" */,
+				6531F4922E313937000E4E5A /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				6531F4952E313A17000E4E5A /* XCRemoteSwiftPackageReference "lottie-ios" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 65BCC6312E312EC900F9D254 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				65BCC62F2E312EC900F9D254 /* superone */,
+				65BCC63E2E312ECA00F9D254 /* superoneTests */,
+				65BCC6482E312ECA00F9D254 /* superoneUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		65BCC62E2E312EC900F9D254 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		65BCC63D2E312ECA00F9D254 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		65BCC6472E312ECA00F9D254 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		65BCC62C2E312EC900F9D254 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		65BCC63B2E312ECA00F9D254 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		65BCC6452E312ECA00F9D254 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		65BCC6412E312ECA00F9D254 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 65BCC62F2E312EC900F9D254 /* superone */;
+			targetProxy = 65BCC6402E312ECA00F9D254 /* PBXContainerItemProxy */;
+		};
+		65BCC64B2E312ECA00F9D254 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 65BCC62F2E312EC900F9D254 /* superone */;
+			targetProxy = 65BCC64A2E312ECA00F9D254 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		65BCC6512E312ECA00F9D254 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 89H2SM9V28;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		65BCC6522E312ECA00F9D254 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 89H2SM9V28;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		65BCC6542E312ECA00F9D254 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = superone/superone.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 89H2SM9V28;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "SuperOne Health";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan and capture lab reports, medical documents, and health-related images for analysis.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID provides secure authentication to protect your sensitive health information and streamline app access.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "SuperOne Health accesses your health data to provide personalized health insights and track your wellness progress. Your data is encrypted and never shared without your explicit consent.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "SuperOne Health updates your health data to keep your health records synchronized and up-to-date with lab results and health analysis.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SuperOne Health accesses your Location data to get the location details for finding nearby labs and home sample collection";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Access your photo library to upload lab reports and medical documents for health analysis and secure storage.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiredDeviceCapabilities = healthkit;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.superone.health;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		65BCC6552E312ECA00F9D254 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = superone/superone.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 89H2SM9V28;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "SuperOne Health";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan and capture lab reports, medical documents, and health-related images for analysis.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID provides secure authentication to protect your sensitive health information and streamline app access.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "SuperOne Health accesses your health data to provide personalized health insights and track your wellness progress. Your data is encrypted and never shared without your explicit consent.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "SuperOne Health updates your health data to keep your health records synchronized and up-to-date with lab results and health analysis.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SuperOne Health accesses your Location data to get the location details for finding nearby labs and home sample collection";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Access your photo library to upload lab reports and medical documents for health analysis and secure storage.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiredDeviceCapabilities = healthkit;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.superone.health;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		65BCC6572E312ECA00F9D254 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 89H2SM9V28;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.superone.health;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/superone.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/superone";
+			};
+			name = Debug;
+		};
+		65BCC6582E312ECA00F9D254 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 89H2SM9V28;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.superone.health;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/superone.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/superone";
+			};
+			name = Release;
+		};
+		65BCC65A2E312ECA00F9D254 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 89H2SM9V28;
+				GENERATE_INFOPLIST_FILE = NO;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = labloop.superoneUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = superone;
+			};
+			name = Debug;
+		};
+		65BCC65B2E312ECA00F9D254 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 89H2SM9V28;
+				GENERATE_INFOPLIST_FILE = NO;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = labloop.superoneUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = superone;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		65BCC62B2E312EC900F9D254 /* Build configuration list for PBXProject "superone" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				65BCC6512E312ECA00F9D254 /* Debug */,
+				65BCC6522E312ECA00F9D254 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		65BCC6532E312ECA00F9D254 /* Build configuration list for PBXNativeTarget "superone" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				65BCC6542E312ECA00F9D254 /* Debug */,
+				65BCC6552E312ECA00F9D254 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		65BCC6562E312ECA00F9D254 /* Build configuration list for PBXNativeTarget "superoneTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				65BCC6572E312ECA00F9D254 /* Debug */,
+				65BCC6582E312ECA00F9D254 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		65BCC6592E312ECA00F9D254 /* Build configuration list for PBXNativeTarget "superoneUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				65BCC65A2E312ECA00F9D254 /* Debug */,
+				65BCC65B2E312ECA00F9D254 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6531F4852E31386C000E4E5A /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.10.2;
+			};
+		};
+		6531F48A2E31388D000E4E5A /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/evgenyneu/keychain-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 24.0.0;
+			};
+		};
+		6531F48D2E313907000E4E5A /* XCRemoteSwiftPackageReference "Charts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/danielgindi/Charts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.1.0;
+			};
+		};
+		6531F4922E313937000E4E5A /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.5.0;
+			};
+		};
+		6531F4952E313A17000E4E5A /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6531F4862E31386C000E4E5A /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6531F4852E31386C000E4E5A /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		6531F48B2E31388D000E4E5A /* KeychainSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6531F48A2E31388D000E4E5A /* XCRemoteSwiftPackageReference "keychain-swift" */;
+			productName = KeychainSwift;
+		};
+		6531F48E2E313907000E4E5A /* DGCharts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6531F48D2E313907000E4E5A /* XCRemoteSwiftPackageReference "Charts" */;
+			productName = DGCharts;
+		};
+		6531F4932E313937000E4E5A /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6531F4922E313937000E4E5A /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		6531F4962E313A17000E4E5A /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6531F4952E313A17000E4E5A /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 65BCC6282E312EC900F9D254 /* Project object */;
+}
