@@ -1,57 +1,20 @@
+//
+//  DashboardViewModel.swift
+//  SuperOne
+//
+//  Created by Claude Code on 2024-12-20.
+//  Booking-focused dashboard view model
+//
+
 import Foundation
-import UIKit
+import SwiftUI
 
-// Import LocationManager for location-aware dashboard
-// Note: LocationManager provides location services integration
-
-// Import lab report processing models for dashboard integration
-// Note: This creates a dependency on LabReports feature
-// Consider moving shared models to a common module in production
-
-// Import BackendModels for ServiceType
-// Note: ServiceType is defined in core/Models/BackendModels.swift
-
-// MARK: - Quick Action Types
-enum QuickActionType: String, CaseIterable {
-    case uploadReport = "upload_report"
-    case bookTest = "book_test"
-    case viewReports = "view_reports"
-    case healthInsights = "health_insights"
-    case findLabs = "find_labs"
-    case consultDoctor = "consult_doctor"
-    
-    var title: String {
-        switch self {
-        case .uploadReport: return "Upload Report"
-        case .bookTest: return "Book Test"
-        case .viewReports: return "View Reports"
-        case .healthInsights: return "Health Insights"
-        case .findLabs: return "Find Labs"
-        case .consultDoctor: return "Consult Doctor"
-        }
-    }
-    
-    var systemImage: String {
-        switch self {
-        case .uploadReport: return "doc.badge.plus"
-        case .bookTest: return "calendar.badge.plus"
-        case .viewReports: return "folder.badge.minus"
-        case .healthInsights: return "chart.line.uptrend.xyaxis"
-        case .findLabs: return "location.magnifyingglass"
-        case .consultDoctor: return "stethoscope"
-        }
-    }
-}
-
-/// ViewModel for dashboard managing health data, scores, and user interactions
+/// View model for the main dashboard focused on health package booking and appointments
 @MainActor
 @Observable
-class DashboardViewModel {
+final class DashboardViewModel {
     
-    // MARK: - Observable Properties
-    
-    // Location services for dashboard location display
-    var locationManager = LocationManager()
+    // MARK: - Public Properties
     
     // Booking-focused dashboard properties
     var featuredPackages: [HealthPackage] = []
@@ -62,208 +25,167 @@ class DashboardViewModel {
     var quickStats: [QuickStat]
     var isLoading: Bool = false
     var errorMessage: String?
-    var lastRefreshed: Date = Date()
+    
     var userName: String = "Sarah"
     var notificationCount: Int = 0
     var labReportProcessingStatus: [LabReportProcessingActivity] = []
     
     // MARK: - Private Properties
-    private var healthDataService: HealthDataServiceProtocol
     
-    // MARK: - Initialization
+    private let healthDataService: HealthDataServiceProtocol
+    
     init(healthDataService: HealthDataServiceProtocol? = nil) {
-        // Use real health data service when available, fall back to empty state
         self.healthDataService = healthDataService ?? ProductionHealthDataService()
         // self.healthScore = HealthScore(value: 0, trend: .stable) // Commented out for booking focus
         self.quickStats = []
         
         setupAppLifecycleObserver()
-        loadInitialData()
+        loadDashboardData()
     }
     
     // MARK: - Public Methods
     
-    /// Refresh all dashboard data
-    func refreshData() async {
-        isLoading = true
-        isLoadingPackages = true
-        errorMessage = nil
-        
-        do {
-            async let packagesTask = loadFeaturedPackages()
-            async let quickStatsTask = loadQuickStats()
-            async let notificationTask = loadNotificationCount()
-            
-            let (packages, stats, notifications) = try await (packagesTask, quickStatsTask, notificationTask)
-            
-            await MainActor.run {
-                self.featuredPackages = packages
-                self.quickStats = stats
-                self.notificationCount = notifications
-                self.lastRefreshed = Date()
-                self.isLoading = false
-                self.isLoadingPackages = false
-            }
-        } catch {
-            await MainActor.run {
-                self.errorMessage = "Failed to load dashboard data: \(error.localizedDescription)"
-                self.isLoading = false
-                self.isLoadingPackages = false
-            }
+    /// Load all dashboard data
+    func loadDashboardData() {
+        Task {
+            await loadAllData()
         }
     }
     
-    /// Handle notification bell tap
-    func handleNotificationTap() {
-        // Will be implemented when notifications feature is added
+    /// Load all dashboard data asynchronously
+    private func loadAllData() async {
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            async let packageResults = loadFeaturedPackages()
+            async let statsResults = loadQuickStats()
+            // async let healthScoreResults = loadHealthScore() // Commented out for booking focus
+            
+            featuredPackages = try await packageResults
+            quickStats = try await statsResults
+            // healthScore = try await healthScoreResults // Commented out for booking focus
+            
+            // Load notification count
+            notificationCount = try await healthDataService.fetchNotificationCount()
+            
+        } catch {
+            print("Error loading dashboard data: \(error)")
+            errorMessage = "Unable to load dashboard data. Please try again."
+            
+            // Set default values on error
+            featuredPackages = []
+            quickStats = QuickStat.empty()
+            // healthScore = HealthScore(value: 0, trend: .stable) // Commented out for booking focus
+        }
+        
+        isLoading = false
     }
     
-    /// Handle quick stat card tap
-    func handleQuickStatTap(_ stat: QuickStat) {
-        // Navigation logic will be implemented by Agent 3
+    /// Refresh featured packages
+    func refreshFeaturedPackages() {
+        Task {
+            isLoadingPackages = true
+            do {
+                featuredPackages = try await loadFeaturedPackages()
+            } catch {
+                print("Error refreshing packages: \(error)")
+                errorMessage = "Unable to refresh packages. Please try again."
+            }
+            isLoadingPackages = false
+        }
     }
     
-    /// Handle health score tap for detailed view (legacy - commented out for booking focus)
-    func handleHealthScoreTap() {
-        // Navigation to detailed health score view
+    /// Clear error message
+    func clearError() {
+        errorMessage = nil
     }
     
-    // MARK: - New Booking-Focused Methods
+    /// Refresh dashboard data manually
+    func refresh() {
+        loadDashboardData()
+    }
     
-    /// Handle package selection from featured packages
-    func handlePackageSelection(_ package: HealthPackage) {
-        // TODO: Navigate to package details or booking flow
-        print("Selected package: \(package.name)")
-        // This would typically trigger navigation to a package detail view
-        // or directly to the booking flow for the selected package
+    /// Handle quick action buttons
+    func handleQuickAction(_ action: DashboardAction) {
+        HapticFeedback.light()
+        
+        switch action {
+        case .bookTest:
+            // Navigate to test booking flow
+            print("Navigating to test booking flow")
+        case .findLabs:
+            // Navigate to lab finder
+            print("Navigating to lab finder")
+        case .viewReports:
+            // Navigate to reports view
+            print("Navigating to reports view")
+        }
     }
     
     /// Navigate to all packages view
     func navigateToAllPackages() {
-        // TODO: Navigate to comprehensive packages listing
-        print("Navigate to all packages")
-        // This would open a full catalog of available health packages
+        HapticFeedback.light()
+        print("Navigating to all packages view")
+        // TODO: Implement navigation to all packages view
     }
     
-    /// Handle service option tap
-    func handleServiceOptionTap(_ serviceType: ServiceType) {
-        // TODO: Navigate to service-specific booking or information
-        print("Selected service: \(serviceType.rawValue)")
-        // This would navigate to specific service booking flows
-    }
-    
-    /// Handle quick action button taps
-    func handleQuickAction(_ actionType: QuickActionType) {
-        // TODO: Handle various quick actions
-        print("Quick action: \(actionType.title)")
+    /// Update scroll position for performance optimizations
+    func updateScrollPosition(_ position: CGFloat) {
+        // Batch scroll position updates to avoid excessive redraws
+        // This helps with performance on complex dashboard views
         
-        switch actionType {
-        case .uploadReport:
-            // Navigate to report upload flow
-            break
-        case .bookTest:
-            // Navigate to test booking
-            break
-        case .viewReports:
-            // Navigate to reports history
-            break
-        case .healthInsights:
-            // Navigate to health insights
-            break
-        case .findLabs:
-            // Navigate to lab locator
-            break
-        case .consultDoctor:
-            // Navigate to doctor consultation
-            break
+        // Optional: Trigger specific animations or loading based on scroll position
+        if position > 200 && !isLoadingPackages {
+            // User scrolled down significantly - could prefetch more data
         }
     }
     
-    /// Update the health data service (for switching from mock to real data)
-    func updateHealthDataService(_ service: HealthDataServiceProtocol) {
-        healthDataService = service
-        // Refresh data with new service
+    /// Handle background app refresh
+    func handleBackgroundRefresh() {
+        // Only refresh if not currently loading
+        guard !isLoading else { return }
+        
         Task {
-            await refreshData()
+            // Update notification count
+            do {
+                notificationCount = try await healthDataService.fetchNotificationCount()
+            } catch {
+                print("Error updating notification count: \(error)")
+            }
         }
     }
     
-    /// Add or update lab report processing activity
+    /// Update lab report processing status (called from upload service)
     func updateLabReportProcessingStatus(_ activity: LabReportProcessingActivity) {
         if let index = labReportProcessingStatus.firstIndex(where: { $0.documentId == activity.documentId }) {
             labReportProcessingStatus[index] = activity
         } else {
             labReportProcessingStatus.insert(activity, at: 0)
         }
-        
-        // Keep only the most recent 5 activities
-        if labReportProcessingStatus.count > 5 {
-            labReportProcessingStatus = Array(labReportProcessingStatus.prefix(5))
-        }
-    }
-    
-    /// Remove completed or cancelled activities after some time
-    func cleanupOldActivities() {
-        let oneHourAgo = Date().addingTimeInterval(-3600)
-        labReportProcessingStatus.removeAll { activity in
-            (activity.status == .completed || activity.status == .cancelled) &&
-            (activity.endTime ?? activity.startTime) < oneHourAgo
-        }
-    }
-    
-    /// Handle scroll position updates for iOS 18+ enhanced scroll tracking
-    func updateScrollPosition(_ yOffset: CGFloat) {
-        // Batch scroll position updates to improve performance
-        // Only process significant scroll changes to avoid excessive computation
-        let threshold: CGFloat = 10.0
-        
-        // Store last scroll position for comparison (if needed in future)
-        // This method can be expanded to handle scroll-based UI updates,
-        // such as showing/hiding navigation elements or triggering content loading
-        
-        // For now, this provides the foundation for advanced scroll behaviors
-        // that can be implemented as the app evolves
-        
-        // Example potential uses:
-        // - Parallax effects on header elements
-        // - Auto-hiding navigation bar on scroll
-        // - Lazy loading of content sections
-        // - Scroll-based analytics tracking
     }
     
     // MARK: - Private Methods
     
-    private func loadInitialData() {
-        Task {
-            await refreshData()
-        }
-    }
-    
     private func setupAppLifecycleObserver() {
-        // PERFORMANCE FIX: Remove Combine debouncing - use NotificationCenter directly
+        // Monitor app lifecycle for background refresh
         NotificationCenter.default.addObserver(
-            forName: UIApplication.didBecomeActiveNotification,
+            forName: UIApplication.willEnterForegroundNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self = self else { return }
-                // Only refresh if data is older than 2 minutes
-                if Date().timeIntervalSince(self.lastRefreshed) > 120 {
-                    await self.refreshData()
-                }
+                self.handleBackgroundRefresh()
             }
         }
     }
-    
-    // MARK: - Data Loading Methods
     
     /// Load featured health packages for the dashboard
     private func loadFeaturedPackages() async throws -> [HealthPackage] {
         return try await healthDataService.fetchFeaturedPackages()
     }
     
-    // Legacy health score loading (commented out for booking focus)
     // private func loadHealthScore() async throws -> HealthScore {
     //     return try await healthDataService.fetchHealthScore()
     // }
@@ -271,14 +193,19 @@ class DashboardViewModel {
     private func loadQuickStats() async throws -> [QuickStat] {
         return try await healthDataService.fetchQuickStats()
     }
-    
-    private func loadNotificationCount() async throws -> Int {
-        return try await healthDataService.fetchNotificationCount()
-    }
 }
 
-// MARK: - Quick Stat Model
-struct QuickStat: Identifiable, Equatable {
+// MARK: - Dashboard Action Enum
+
+enum DashboardAction {
+    case bookTest
+    case findLabs
+    case viewReports
+}
+
+// MARK: - QuickStat Model
+
+struct QuickStat: Identifiable, Sendable {
     let id = UUID()
     let icon: String
     let title: String
@@ -288,7 +215,7 @@ struct QuickStat: Identifiable, Equatable {
     
     enum QuickStatType {
         case reports
-        case recommendations
+        case recommendations  
         case alerts
         case appointments
     }
@@ -306,107 +233,148 @@ protocol HealthDataServiceProtocol {
     func fetchNotificationCount() async throws -> Int
 }
 
-// MARK: - Production Health Data Service
+// MARK: - Production Implementation
 class ProductionHealthDataService: HealthDataServiceProtocol {
     
     func fetchFeaturedPackages() async throws -> [HealthPackage] {
         // Simulate network delay
         try await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconds
         
-        // Return mock featured packages for now - in production this would fetch from API
+        // Return sample featured packages using the factory method
         return [
-            HealthPackage(
-                id: "essential-health",
-                name: "Essential Health Panel",
-                description: "Basic health screening covering key biomarkers including cholesterol, glucose, and CBC",
-                price: 149.99,
-                testCount: 12,
-                category: .basic,
-                features: ["Complete Blood Count", "Lipid Panel", "Basic Metabolic Panel"],
-                estimatedDuration: "1-2 days",
-                sampleType: ["Blood"]
-            ),
-            HealthPackage(
-                id: "comprehensive-health",
-                name: "Comprehensive Health Assessment",
-                description: "Detailed analysis of cardiovascular, metabolic, and immune system health",
-                price: 299.99,
-                originalPrice: 349.99,
-                testCount: 24,
-                category: .premium,
-                isPopular: true,
-                features: ["Advanced Lipid Profile", "HbA1c", "Inflammatory Markers", "Vitamin D"],
-                estimatedDuration: "2-3 days",
-                sampleType: ["Blood", "Urine"]
-            ),
-            HealthPackage(
-                id: "complete-wellness",
-                name: "Complete Wellness Profile",
-                description: "Full spectrum health evaluation including hormones, nutrients, and genetic markers",
-                price: 499.99,
-                originalPrice: 599.99,
-                testCount: 40,
-                category: .complete,
-                features: ["Hormone Panel", "Nutritional Assessment", "Cardiac Risk", "Liver Function"],
-                estimatedDuration: "3-5 days",
-                sampleType: ["Blood", "Saliva", "Urine"]
-            ),
-            HealthPackage(
-                id: "heart-health-specialty",
-                name: "Heart Health Specialty",
-                description: "Focused cardiovascular assessment with advanced cardiac biomarkers",
-                price: 199.99,
-                testCount: 15,
-                category: .specialty,
-                features: ["Cardiac Troponin", "BNP", "CRP", "Homocysteine"],
-                estimatedDuration: "2-3 days",
-                sampleType: ["Blood"]
-            ),
-            HealthPackage(
-                id: "diabetes-monitoring",
-                name: "Diabetes Monitoring Plus",
-                description: "Comprehensive diabetes management and prevention screening",
-                price: 179.99,
-                testCount: 18,
-                category: .specialty,
-                isPopular: true,
-                features: ["HbA1c", "Glucose Tolerance", "Insulin Levels", "Microalbumin"],
-                estimatedDuration: "1-2 days",
-                sampleType: ["Blood", "Urine"]
-            ),
-            HealthPackage(
-                id: "womens-health",
-                name: "Women's Health Complete",
-                description: "Specialized health assessment for women including hormonal balance",
-                price: 249.99,
-                originalPrice: 289.99,
-                testCount: 22,
-                category: .specialty,
-                features: ["Hormone Panel", "Bone Health", "Iron Studies", "Thyroid Function"],
-                estimatedDuration: "2-3 days",
-                sampleType: ["Blood"]
-            )
+            HealthPackage.sampleComprehensive()
         ]
     }
     
-    // Legacy health score method (commented out for booking focus)
     // func fetchHealthScore() async throws -> HealthScore {
-    //     // Health score calculation from user's lab data - analyzes recent lab reports and biomarker trends
-    //     return HealthScore(value: 0, trend: .stable)
+    //     return HealthScore(value: 85, trend: .improving)
     // }
     
     func fetchQuickStats() async throws -> [QuickStat] {
         // Stats from user's health data - counts real reports, recommendations, alerts, and appointments
         return [
-            QuickStat(icon: "doc.text", title: "Lab Reports", value: "3", badge: nil, type: .reports),
-            QuickStat(icon: "lightbulb", title: "Insights", value: "7", badge: 2, type: .recommendations),
+            QuickStat(icon: "doc.text", title: "Reports", value: "4", badge: nil, type: .reports),
+            QuickStat(icon: "lightbulb", title: "Recommendations", value: "7", badge: 2, type: .recommendations),
             QuickStat(icon: "exclamationmark.triangle", title: "Alerts", value: "1", badge: 1, type: .alerts),
             QuickStat(icon: "calendar", title: "Appointments", value: "2", badge: nil, type: .appointments)
         ]
     }
     
     func fetchNotificationCount() async throws -> Int {
-        // Notification count from user's actual notifications
-        return 3
+        // Simulate fetching from a real API
+        return Int.random(in: 0...5)
+    }
+}
+
+// MARK: - Lab Report Processing Activity Model
+
+struct LabReportProcessingActivity: Identifiable, Sendable {
+    let id = UUID()
+    let documentId: String
+    let fileName: String
+    let status: ProcessingStatus
+    let timestamp: Date
+    let progress: Double // 0.0 to 1.0
+    
+    // Additional computed properties for UI display
+    var activityType: LabActivityType {
+        switch status {
+        case .uploading, .processing, .analyzing:
+            return .labProcessing
+        case .completed:
+            return .labCompleted
+        case .failed:
+            return .labFailed
+        }
+    }
+    
+    var activityTitle: String {
+        switch status {
+        case .uploading:
+            return "Uploading \(fileName)"
+        case .processing:
+            return "Processing \(fileName)"
+        case .analyzing:
+            return "Analyzing \(fileName)"
+        case .completed:
+            return "Analysis Complete"
+        case .failed:
+            return "Processing Failed"
+        }
+    }
+    
+    var activitySubtitle: String {
+        switch status {
+        case .uploading:
+            return "Uploading to secure server..."
+        case .processing:
+            return "Extracting test data..."
+        case .analyzing:
+            return "Generating AI insights..."
+        case .completed:
+            return "Results ready to view"
+        case .failed:
+            return "Please try uploading again"
+        }
+    }
+    
+    var activityIcon: String {
+        switch status {
+        case .uploading:
+            return "arrow.up.circle"
+        case .processing:
+            return "doc.text.magnifyingglass"
+        case .analyzing:
+            return "brain.head.profile"
+        case .completed:
+            return "checkmark.circle.fill"
+        case .failed:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+    
+    var timeAgo: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: timestamp, relativeTo: Date())
+    }
+    
+    var confidence: Double? {
+        // Return confidence score for completed analyses
+        guard status == .completed else { return nil }
+        return progress // Use progress as confidence for completed items
+    }
+    
+    enum ProcessingStatus: String, CaseIterable, Sendable {
+        case uploading = "uploading"
+        case processing = "processing" 
+        case analyzing = "analyzing"
+        case completed = "completed"
+        case failed = "failed"
+        
+        var displayName: String {
+            switch self {
+            case .uploading: return "Uploading"
+            case .processing: return "Processing"
+            case .analyzing: return "Analyzing"
+            case .completed: return "Completed"
+            case .failed: return "Failed"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .uploading, .processing, .analyzing: return .blue
+            case .completed: return .green
+            case .failed: return .red
+            }
+        }
+        
+        var isActive: Bool {
+            switch self {
+            case .uploading, .processing, .analyzing: return true
+            case .completed, .failed: return false
+            }
+        }
     }
 }

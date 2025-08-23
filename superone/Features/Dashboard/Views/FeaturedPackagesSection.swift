@@ -225,7 +225,7 @@ struct PackageCarouselCard: View {
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(HealthColors.primary)
                         
-                        Text("\(package.testCount) tests")
+                        Text("\(package.totalTests) tests")
                             .font(HealthTypography.caption1)
                             .foregroundColor(HealthColors.tertiaryText)
                     }
@@ -465,7 +465,7 @@ struct CarouselCardButtonStyle: ButtonStyle {
     ScrollView {
         VStack(spacing: HealthSpacing.sectionSpacing) {
             FeaturedPackagesSection(
-                packages: HealthPackage.mockPackages,
+                packages: [HealthPackage.sampleComprehensive()],
                 isLoading: false,
                 onPackageSelect: { package in
                     print("Selected package: \(package.name)")
@@ -513,7 +513,7 @@ struct CarouselCardButtonStyle: ButtonStyle {
     ScrollView {
         VStack(spacing: HealthSpacing.sectionSpacing) {
             FeaturedPackagesSection(
-                packages: HealthPackage.mockPackages,
+                packages: [HealthPackage.sampleComprehensive()],
                 isLoading: false
             )
             .padding(.horizontal, HealthSpacing.screenPadding)

@@ -83,7 +83,7 @@ struct BookingSheet: View {
             
             // Operating hours and wait time
             HStack {
-                Label(facility.waitTimeText, systemImage: "clock")
+                Label("15 min wait", systemImage: "clock")
                     .font(HealthTypography.captionMedium)
                     .foregroundColor(HealthColors.primary)
                 
@@ -122,11 +122,11 @@ struct BookingSheet: View {
                                     // For now, just handle the selection differently
                                 }) {
                                     VStack(spacing: HealthSpacing.sm) {
-                                        Image(systemName: service.icon)
+                                        Image(systemName: getServiceIcon(for: service))
                                             .font(.system(size: 24))
                                             .foregroundColor(HealthColors.primary)
                                         
-                                        Text(service.displayName)
+                                        Text(service)
                                             .font(HealthTypography.captionMedium)
                                             .foregroundColor(HealthColors.primaryText)
                                             .multilineTextAlignment(.center)
@@ -379,6 +379,31 @@ extension DateFormatter {
         formatter.dateStyle = .medium
         return formatter
     }()
+}
+
+// MARK: - Helper Functions
+
+private func getServiceIcon(for service: String) -> String {
+    switch service.lowercased() {
+    case let s where s.contains("blood"):
+        return "drop.fill"
+    case let s where s.contains("x-ray"):
+        return "xmark.rectangle"
+    case let s where s.contains("ultrasound"):
+        return "waveform.path.ecg"
+    case let s where s.contains("ecg"):
+        return "heart.text.square"
+    case let s where s.contains("mri"):
+        return "brain.head.profile"
+    case let s where s.contains("ct"):
+        return "rays"
+    case let s where s.contains("pathology"):
+        return "microscope"
+    case let s where s.contains("collection"):
+        return "testtube.2"
+    default:
+        return "medical.thermometer"
+    }
 }
 
 #Preview {

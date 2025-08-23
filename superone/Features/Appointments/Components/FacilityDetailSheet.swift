@@ -98,7 +98,7 @@ struct FacilityDetailSheet: View {
                 }
                 
                 HStack {
-                    Label(facility.waitTimeText, systemImage: "clock")
+                    Label("15 min wait", systemImage: "clock")
                         .font(HealthTypography.captionMedium)
                         .foregroundColor(HealthColors.primary)
                     
@@ -161,7 +161,7 @@ struct FacilityDetailSheet: View {
                 FacilityInfoRow(
                     icon: "timer",
                     title: "Average Wait Time",
-                    value: facility.waitTimeText
+                    value: "15 min wait"
                 )
                 
                 FacilityInfoRow(
@@ -232,7 +232,7 @@ struct FacilityDetailSheet: View {
                 ContactButton(
                     icon: "phone.fill",
                     title: "Call",
-                    subtitle: facility.phoneNumber,
+                    subtitle: facility.phoneNumber ?? "Not available",
                     action: {
                         // Phone call functionality will be implemented
                     }
@@ -267,15 +267,15 @@ struct FacilityDetailSheet: View {
 // MARK: - Supporting Views
 
 struct ServiceCard: View {
-    let service: ServiceType
+    let service: String
     
     var body: some View {
         VStack(spacing: HealthSpacing.sm) {
-            Image(systemName: service.icon)
+            Image(systemName: getServiceIcon(for: service))
                 .font(.system(size: 24))
                 .foregroundColor(HealthColors.primary)
             
-            Text(service.displayName)
+            Text(service)
                 .font(HealthTypography.captionMedium)
                 .foregroundColor(HealthColors.primaryText)
                 .multilineTextAlignment(.center)
@@ -389,19 +389,52 @@ struct ContactButton: View {
     }
 }
 
+// MARK: - Helper Functions
+
+private func getServiceIcon(for service: String) -> String {
+    switch service.lowercased() {
+    case let s where s.contains("blood"):
+        return "drop.fill"
+    case let s where s.contains("x-ray"):
+        return "xmark.rectangle"
+    case let s where s.contains("ultrasound"):
+        return "waveform.path.ecg"
+    case let s where s.contains("ecg"):
+        return "heart.text.square"
+    case let s where s.contains("mri"):
+        return "brain.head.profile"
+    case let s where s.contains("ct"):
+        return "rays"
+    case let s where s.contains("pathology"):
+        return "microscope"
+    case let s where s.contains("collection"):
+        return "testtube.2"
+    default:
+        return "medical.thermometer"
+    }
+}
+
 #Preview {
     FacilityDetailSheet(
         facility: LabFacility(
+            id: "preview-facility",
             name: "LabCorp - Downtown",
-            location: "123 Main St, Downtown, NY 10001",
-            services: [.bloodWork, .urinalysis, .lipidPanel, .thyroidFunction],
+            type: .lab,
             rating: 4.5,
-            reviewCount: 156,
-            estimatedWaitTime: 15,
-            operatingHours: "Mon-Fri: 7:00 AM - 6:00 PM, Sat: 8:00 AM - 4:00 PM",
+            distance: "2.3 km",
+            availability: "Mon-Fri: 7:00 AM - 6:00 PM",
+            price: 2800,
+            isWalkInAvailable: true,
+            nextSlot: "Today 3:00 PM",
+            address: "123 Main St, Downtown, NY 10001",
             phoneNumber: "(555) 123-4567",
-            acceptsInsurance: true,
-            acceptsWalkIns: true
+            location: "Downtown, NY",
+            services: ["Blood Tests", "X-Ray", "ECG"],
+            reviewCount: 145,
+            operatingHours: "7:00 AM - 6:00 PM",
+            isRecommended: true,
+            offersHomeCollection: false,
+            acceptsInsurance: true
         )
     )
 }

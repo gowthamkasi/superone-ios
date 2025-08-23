@@ -30,11 +30,11 @@ final class AppointmentsViewModel {
     var recentCompletedAppointments: [Appointment] = []
     
     /// Test management
-    var allTests: [HealthTest] = []
-    var currentTests: [HealthTest] = []
-    var completedTests: [HealthTest] = []
+    var allTests: [AppointmentTest] = []
+    var currentTests: [AppointmentTest] = []
+    var completedTests: [AppointmentTest] = []
     var isLoadingTests: Bool = false
-    var selectedTest: HealthTest?
+    var selectedTest: AppointmentTest?
     
     /// Tests page enhancement - radio button selection
     var selectedTestType: TestSelectionType = .individualTests
@@ -427,23 +427,23 @@ final class AppointmentsViewModel {
         // Apply lab service type filter (new radio button selection)
         switch selectedLabServiceType {
         case .walkIn:
-            filtered = filtered.filter { facility in
-                facility.acceptsWalkIns || facility.offersAppointments
+            filtered = filtered.compactMap { facility in
+                (facility.isWalkInAvailable || facility.type != .homeCollection) ? facility : nil
             }
         case .homeCollection:
-            filtered = filtered.filter { facility in
-                facility.offersHomeCollection
+            filtered = filtered.compactMap { facility in
+                facility.offersHomeCollection ? facility : nil
             }
         }
         
         // Apply service type filter (legacy - keeping for compatibility)
         if let serviceTypeOption = selectedServiceType {
-            filtered = filtered.filter { facility in
+            filtered = filtered.compactMap { facility in
                 switch serviceTypeOption {
                 case .labVisit:
-                    return facility.acceptsWalkIns || facility.offersAppointments
+                    return (facility.isWalkInAvailable || facility.type != .homeCollection) ? facility : nil
                 case .homeCollection:
-                    return facility.offersHomeCollection
+                    return facility.offersHomeCollection ? facility : nil
                 }
             }
         }
@@ -582,7 +582,7 @@ final class AppointmentsViewModel {
     }
     
     /// Select test for detail view
-    func selectTest(_ test: HealthTest) {
+    func selectTest(_ test: AppointmentTest) {
         selectedTest = test
         // Show test detail sheet
     }
@@ -591,8 +591,8 @@ final class AppointmentsViewModel {
     
     /// Categorize facilities by type
     private func categorizeFacilities() {
-        recommendedFacilities = filteredFacilities.filter { $0.isRecommended }.prefix(3).map { $0 }
-        regularFacilities = filteredFacilities.filter { !$0.isRecommended }
+        recommendedFacilities = Array(filteredFacilities.compactMap { $0.isRecommended ? $0 : nil }.prefix(3))
+        regularFacilities = filteredFacilities.compactMap { !$0.isRecommended ? $0 : nil }
         
         // Load recently viewed facilities (from UserDefaults or persistent storage)
         recentlyViewedFacilities = [] // Load from storage
@@ -794,53 +794,6 @@ struct Appointment: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
-struct LabFacility: Identifiable, Codable, Sendable {
-    let id: String
-    let name: String
-    let location: String
-    let services: [ServiceType]
-    let rating: Double
-    let reviewCount: Int
-    let estimatedWaitTime: Int
-    let operatingHours: String
-    let phoneNumber: String
-    let acceptsInsurance: Bool
-    let acceptsWalkIns: Bool
-    
-    init(
-        id: String = UUID().uuidString,
-        name: String,
-        location: String,
-        services: [ServiceType],
-        rating: Double,
-        reviewCount: Int,
-        estimatedWaitTime: Int,
-        operatingHours: String,
-        phoneNumber: String,
-        acceptsInsurance: Bool,
-        acceptsWalkIns: Bool
-    ) {
-        self.id = id
-        self.name = name
-        self.location = location
-        self.services = services
-        self.rating = rating
-        self.reviewCount = reviewCount
-        self.estimatedWaitTime = estimatedWaitTime
-        self.operatingHours = operatingHours
-        self.phoneNumber = phoneNumber
-        self.acceptsInsurance = acceptsInsurance
-        self.acceptsWalkIns = acceptsWalkIns
-    }
-    
-    var displayRating: String {
-        return String(format: "%.1f", rating)
-    }
-    
-    var waitTimeText: String {
-        return "\(estimatedWaitTime) min wait"
-    }
-}
 
 struct TimeSlot: Codable, Equatable, Sendable {
     let startTime: String
@@ -881,46 +834,6 @@ enum ServiceTypeOption: String, CaseIterable, Sendable {
     }
 }
 
-/// Test model for comprehensive test management
-struct HealthTest: Identifiable, Codable, Sendable {
-    let id: String
-    let name: String
-    let category: String
-    let status: TestStatus
-    let scheduledDate: Date?
-    let completedDate: Date?
-    let facilityName: String
-    let results: [TestResult]?
-    let aiInsights: String?
-    let cost: Int
-    let needsFollowUp: Bool
-    
-    init(
-        id: String = UUID().uuidString,
-        name: String,
-        category: String,
-        status: TestStatus,
-        scheduledDate: Date? = nil,
-        completedDate: Date? = nil,
-        facilityName: String,
-        results: [TestResult]? = nil,
-        aiInsights: String? = nil,
-        cost: Int,
-        needsFollowUp: Bool = false
-    ) {
-        self.id = id
-        self.name = name
-        self.category = category
-        self.status = status
-        self.scheduledDate = scheduledDate
-        self.completedDate = completedDate
-        self.facilityName = facilityName
-        self.results = results
-        self.aiInsights = aiInsights
-        self.cost = cost
-        self.needsFollowUp = needsFollowUp
-    }
-}
 
 enum TestStatus: String, Codable, CaseIterable, Sendable {
     case scheduled = "Scheduled"
@@ -1094,20 +1007,14 @@ extension Appointment {
 }
 
 extension LabFacility {
-    /// Whether this facility is recommended for the user
-    var isRecommended: Bool {
-        return rating > 4.5 && reviewCount > 100
-    }
-    
     /// Whether facility offers appointments
     var offersAppointments: Bool {
         return true // Most facilities offer appointments
     }
     
-    /// Whether facility offers home collection
-    var offersHomeCollection: Bool {
-        // This would be a property in the facility data
-        return acceptsWalkIns // For now, use this as a proxy
+    /// Whether facility accepts walk-ins (derived from existing property)
+    var acceptsWalkIns: Bool {
+        return isWalkInAvailable
     }
 }
 
@@ -1234,11 +1141,51 @@ struct IndividualTest: Identifiable, Codable, Sendable {
 
 // MARK: - Integration Notes
 
+// MARK: - Appointment-Specific Models (renamed to avoid conflicts)
+
+/// Lab facility model specifically for appointment booking (renamed from AppointmentLabFacility)
+struct AppointmentAppointmentLabFacility: Identifiable, Codable, Sendable {
+    let id: String
+    let name: String
+    let location: String
+    let services: [ServiceType]
+    let rating: Double
+    let reviewCount: Int
+    let estimatedWaitTime: Int
+    let operatingHours: String
+    let phoneNumber: String
+    let acceptsInsurance: Bool
+    let acceptsWalkIns: Bool
+    
+    var displayRating: String {
+        return String(format: "%.1f", rating)
+    }
+    
+    var waitTimeText: String {
+        return "\(estimatedWaitTime) min wait"
+    }
+}
+
+/// Health test model specifically for appointment management (renamed from AppointmentTest)
+struct AppointmentTest: Identifiable, Codable, Sendable {
+    let id: String
+    let name: String
+    let category: String
+    let status: TestStatus
+    let scheduledDate: Date?
+    let completedDate: Date?
+    let facilityName: String
+    let results: [TestResult]?
+    let aiInsights: String?
+    let cost: Int
+    let needsFollowUp: Bool
+}
+
 /*
  LabLoop API Integration Complete
  
  The AppointmentsViewModel now integrates with:
- - LabFacilityAPIService: For facility discovery and time slot management
+ - AppointmentLabFacilityAPIService: For facility discovery and time slot management
  - AppointmentAPIService: For appointment booking, cancellation, and management
  
  Key Features Implemented:

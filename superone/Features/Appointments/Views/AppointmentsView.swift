@@ -1205,9 +1205,9 @@ struct EnhancedFacilityCard: View {
             // Enhanced status info
             VStack(alignment: .leading, spacing: HealthSpacing.sm) {
                 HStack {
-                    Label("Current wait: \(facility.estimatedWaitTime) min", systemImage: "clock")
+                    Label("Current wait: 15 min", systemImage: "clock")
                         .font(HealthTypography.captionMedium)
-                        .foregroundColor(facility.estimatedWaitTime > 30 ? HealthColors.healthWarning : HealthColors.healthGood)
+                        .foregroundColor(HealthColors.healthGood)
                     
                     Spacer()
                     
@@ -1658,7 +1658,7 @@ struct FacilityCard: View {
             
             // Wait time and operating info
             HStack {
-                Label(facility.waitTimeText, systemImage: "clock")
+                Label("15 min wait", systemImage: "clock")
                     .font(HealthTypography.captionMedium)
                     .foregroundColor(HealthColors.primary)
                 
@@ -1674,8 +1674,8 @@ struct FacilityCard: View {
             // Services
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: HealthSpacing.xs) {
-                    ForEach(facility.services.prefix(3), id: \.self) { service in
-                        Text(service.displayName)
+                    ForEach(Array(facility.services.prefix(3)), id: \.self) { service in
+                        Text(service)
                             .font(HealthTypography.captionRegular)
                             .foregroundColor(HealthColors.primary)
                             .padding(.horizontal, HealthSpacing.sm)

@@ -9,6 +9,7 @@ struct TestBookingDateTimeView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedDate = Date()
     @State private var selectedTimeSlot: String? = nil
+    @State private var navigateToSummary = false
     
     private let timeSlots = [
         "08:00 AM - 10:00 AM", "10:00 AM - 12:00 PM", "02:00 PM - 04:00 PM",
@@ -19,34 +20,92 @@ struct TestBookingDateTimeView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .bottom) {
-                // Main content
-                mainContent
+                // Main content with header
+                VStack(spacing: 0) {
+                    headerSection
+                    mainContentWithoutHeader
+                }
                 
                 // Fixed bottom action bar
                 bottomActionBar(safeAreaBottom: geometry.safeAreaInsets.bottom)
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle("Book Test")
+        .navigationBarHidden(true)
         .background(HealthColors.secondaryBackground.ignoresSafeArea())
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Cancel") {
-                    dismiss()
+        .navigationDestination(isPresented: $navigateToSummary) {
+            BookingSummaryView(
+                testDetails: testDetails ?? TestDetails.sampleCBC(),
+                selectedDate: selectedDate,
+                selectedTimeSlot: selectedTimeSlot ?? ""
+            )
+        }
+    }
+    
+    // MARK: - Header Section
+    private var headerSection: some View {
+        ZStack(alignment: .topLeading) {
+            // Background gradient
+            LinearGradient(
+                colors: [
+                    HealthColors.primary.opacity(0.1),
+                    HealthColors.secondaryBackground
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 120)
+            
+            // Header content
+            VStack(spacing: 0) {
+                // Status bar spacer
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(height: 44)
+                
+                // Navigation and actions
+                HStack {
+                    // Back button
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(HealthColors.primaryText)
+                            .frame(width: 44, height: 44)
+                            .background(HealthColors.primaryBackground)
+                            .clipShape(Circle())
+                            .healthCardShadow()
+                    }
+                    
+                    // Title
+                    Text("Book Test")
+                        .healthTextStyle(.title3, color: HealthColors.primaryText)
+                        .lineLimit(1)
+                        .padding(.horizontal, HealthSpacing.md)
+                    
+                    Spacer()
+                    
+                    // Cancel button
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Cancel")
+                            .healthTextStyle(.body, color: HealthColors.secondaryText)
+                    }
                 }
-                .foregroundColor(HealthColors.secondaryText)
+                .padding(.horizontal, HealthSpacing.screenPadding)
             }
         }
     }
     
     // MARK: - Main Content
-    private var mainContent: some View {
+    private var mainContentWithoutHeader: some View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.xl) {
                 // Header section with test details
                 if let test = testDetails {
                     testHeaderCard(test: test)
-                        .padding(.top, HealthSpacing.lg)
+                        .padding(.top, HealthSpacing.sm)
                 }
                 
                 // Instructions
@@ -258,12 +317,12 @@ struct TestBookingDateTimeView: View {
                 } label: {
                     HStack(spacing: HealthSpacing.sm) {
                         Text("Next")
-                            .healthTextStyle(.buttonPrimary, color: .white)
+                            .healthTextStyle(.buttonPrimary, color: selectedTimeSlot != nil ? .white : HealthColors.secondaryText)
                         
                         Image(systemName: "arrow.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(selectedTimeSlot != nil ? .white : HealthColors.secondaryText)
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .background(
                         selectedTimeSlot != nil ? 
@@ -271,6 +330,10 @@ struct TestBookingDateTimeView: View {
                         HealthColors.tertiaryBackground
                     )
                     .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                            .stroke(selectedTimeSlot == nil ? HealthColors.border : Color.clear, lineWidth: 1)
+                    )
                 }
                 .disabled(selectedTimeSlot == nil)
                 .scaleEffect(selectedTimeSlot != nil ? 1.0 : 0.98)
@@ -292,12 +355,10 @@ struct TestBookingDateTimeView: View {
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
         
-        // TODO: Navigate to next step in booking flow
-        // This could be lab selection or booking preview based on test requirements
-        print("Proceeding with booking - Date: \(selectedDate), Time: \(selectedTimeSlot ?? "")")
-        
-        // For now, dismiss the view
-        dismiss()
+        // Navigate to booking summary
+        withAnimation(.easeInOut(duration: 0.3)) {
+            navigateToSummary = true
+        }
     }
 }
 

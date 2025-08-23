@@ -501,15 +501,22 @@ extension LabLoopFacility {
         return LabFacility(
             id: self.id,
             name: self.name,
-            location: "\(self.address.city), \(self.address.state)",
-            services: self.services.compactMap { ServiceType.from(string: $0) },
+            type: .lab, // Default type for LabLoop facilities
             rating: self.rating,
-            reviewCount: self.reviewCount,
-            estimatedWaitTime: self.averageWaitTime,
-            operatingHours: "\(self.workingHours.open) - \(self.workingHours.close)",
+            distance: "N/A", // Distance would be calculated based on location
+            availability: "\(self.workingHours.open) - \(self.workingHours.close)",
+            price: 2800, // Default package price - should be calculated based on services
+            isWalkInAvailable: true, // Default to true for LabLoop facilities
+            nextSlot: nil, // Would need to be fetched separately
+            address: "\(self.address.street), \(self.address.city), \(self.address.state)",
             phoneNumber: self.contactInfo.phone,
-            acceptsInsurance: self.acceptsInsurance,
-            acceptsWalkIns: true // Default to true for LabLoop facilities
+            location: "\(self.address.city), \(self.address.state)",
+            services: self.services,
+            reviewCount: self.reviewCount,
+            operatingHours: "\(self.workingHours.open) - \(self.workingHours.close)",
+            isRecommended: self.rating >= 4.5,
+            offersHomeCollection: self.features.contains("Home Collection"),
+            acceptsInsurance: true
         )
     }
 }

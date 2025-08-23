@@ -13,6 +13,7 @@ import SwiftUI
 /// have been replaced to better serve the lab booking workflow.
 struct DashboardView: View {
     @State private var viewModel = DashboardViewModel()
+    @State private var locationManager = LocationManager()
     @State private var isInitialized = false
     
     var body: some View {
@@ -22,9 +23,12 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: HealthSpacing.sectionSpacing) {
                     // Header Section
                     DashboardHeaderView(
-                        locationManager: viewModel.locationManager,
+                        locationManager: locationManager,
                         notificationCount: viewModel.notificationCount,
-                        onNotificationTap: viewModel.handleNotificationTap,
+                        onNotificationTap: {
+                            // Handle notification tap
+                            print("Notification tapped from dashboard")
+                        },
                         onLocationChange: {
                             // Handle location change - could show location picker sheet
                             print("Location change tapped from dashboard")
@@ -74,6 +78,19 @@ struct DashboardView: View {
                         }
                     )
                     
+                    // Featured Packages Section
+                    FeaturedPackagesSection(
+                        packages: viewModel.featuredPackages,
+                        isLoading: viewModel.isLoadingPackages,
+                        onPackageSelect: { package in
+                            HapticFeedback.medium()
+                            print("Selected package: \(package.name)")
+                            // TODO: Navigate to package details
+                        },
+                        onSeeAllPackages: {
+                            viewModel.navigateToAllPackages()
+                        }
+                    )
                     
                     // Bottom spacing for tab bar (handled by safe area)
                     Spacer()
@@ -81,7 +98,7 @@ struct DashboardView: View {
                 }
                 .padding(.top, HealthSpacing.md)
                 .refreshable {
-                    await viewModel.refreshData()
+                    viewModel.refresh()
                 }
             }
             .scrollTargetBehavior(.viewAligned)
@@ -99,14 +116,15 @@ struct DashboardView: View {
                     }
                 }
             )
-            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            .alert("Error", isPresented: Binding<Bool>(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
                 Button("OK") {
-                    viewModel.errorMessage = nil
+                    viewModel.clearError()
                 }
                 Button("Retry") {
-                    Task {
-                        await viewModel.refreshData()
-                    }
+                    viewModel.refresh()
                 }
             } message: {
                 if let error = viewModel.errorMessage {
@@ -123,7 +141,7 @@ struct DashboardView: View {
         .task {
             // Initial data load happens in viewModel init
             // This ensures we have fresh data when view appears
-            await viewModel.refreshData()
+            viewModel.refresh()
         }
     }
     
@@ -263,123 +281,6 @@ enum LabActivityType {
     }
 }
 
-/// Model for lab report processing activities shown in dashboard
-struct LabReportProcessingActivity: Identifiable, Codable {
-    let id: String
-    let documentId: String
-    let fileName: String
-    let status: ProcessingStatus
-    let startTime: Date
-    let endTime: Date?
-    let biomarkersExtracted: Int?
-    let confidence: Double?
-    
-    init(
-        id: String = UUID().uuidString,
-        documentId: String,
-        fileName: String,
-        status: ProcessingStatus,
-        startTime: Date,
-        endTime: Date? = nil,
-        biomarkersExtracted: Int? = nil,
-        confidence: Double? = nil
-    ) {
-        self.id = id
-        self.documentId = documentId
-        self.fileName = fileName
-        self.status = status
-        self.startTime = startTime
-        self.endTime = endTime
-        self.biomarkersExtracted = biomarkersExtracted
-        self.confidence = confidence
-    }
-    
-    var timeAgo: String {
-        let relevantTime = endTime ?? startTime
-        let interval = Date().timeIntervalSince(relevantTime)
-        
-        if interval < 60 {
-            return "Just now"
-        } else if interval < 3600 {
-            let minutes = Int(interval / 60)
-            return "\(minutes)m ago"
-        } else if interval < 86400 {
-            let hours = Int(interval / 3600)
-            return "\(hours)h ago"
-        } else {
-            let days = Int(interval / 86400)
-            return "\(days)d ago"
-        }
-    }
-    
-    var activityTitle: String {
-        switch status {
-        case .pending, .uploading, .preprocessing:
-            return "Lab Report Uploading"
-        case .processing, .analyzing, .extracting:
-            return "Processing Lab Report"
-        case .validating:
-            return "Validating Data"
-        case .completed:
-            return "Lab Report Analyzed"
-        case .failed:
-            return "Processing Failed"
-        case .cancelled:
-            return "Processing Cancelled"
-        case .paused:
-            return "Processing Paused"
-        case .retrying:
-            return "Retrying Processing"
-        }
-    }
-    
-    var activitySubtitle: String {
-        switch status {
-        case .completed:
-            if let count = biomarkersExtracted {
-                return "Found \(count) biomarkers"
-            } else {
-                return fileName
-            }
-        case .failed:
-            return "Tap to retry"
-        case .processing, .analyzing, .extracting:
-            return "Analyzing \(fileName)"
-        default:
-            return fileName
-        }
-    }
-    
-    var activityIcon: String {
-        switch status {
-        case .pending, .uploading:
-            return "arrow.up.circle"
-        case .preprocessing, .processing, .analyzing, .extracting, .validating:
-            return "doc.text.magnifyingglass"
-        case .completed:
-            return "checkmark.circle.fill"
-        case .failed:
-            return "exclamationmark.circle.fill"
-        case .cancelled:
-            return "xmark.circle.fill"
-        case .paused:
-            return "pause.circle.fill"
-        case .retrying:
-            return "arrow.clockwise.circle"
-        }
-    }
-    
-    var activityType: LabActivityType {
-        switch status {
-        case .pending, .uploading, .preprocessing, .processing, .analyzing, .extracting, .validating, .retrying, .paused:
-            return .labProcessing
-        case .completed:
-            return .labCompleted
-        case .failed, .cancelled:
-            return .labFailed
-        }
-    }
-}
 
 /// Specialized activity item for lab report processing
 struct LabReportActivityItem: View {

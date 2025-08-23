@@ -18,19 +18,19 @@ struct HealthPackageCard: View {
                 // Header section with category badge and popular indicator
                 HStack {
                     // Category badge
-                    CategoryBadge(category: package.category)
+                    CategoryBadge(category: "Basic")
                         .opacity(isVisible ? 1 : 0)
                         .scaleEffect(isVisible ? 1.0 : 0.8)
-                        .animation(.spring(duration: 0.5, bounce: 0.3).delay(0.2), value: isVisible)
+                        .animation(.easeInOut(duration: 0.5).delay(0.2), value: isVisible)
                     
                     Spacer()
                     
                     // Popular indicator
-                    if package.isPopular {
+                    if package.isFeatured {
                         PopularBadge()
                             .opacity(isVisible ? 1 : 0)
                             .scaleEffect(isVisible ? 1.0 : 0.8)
-                            .animation(.spring(duration: 0.6, bounce: 0.4).delay(0.3), value: isVisible)
+                            .animation(.easeInOut(duration: 0.6).delay(0.3), value: isVisible)
                     }
                 }
                 
@@ -59,16 +59,16 @@ struct HealthPackageCard: View {
                         .animation(.easeOut(duration: 0.4).delay(0.5), value: isVisible)
                     
                     // Test count indicator
-                    TestCountIndicator(count: package.testCount)
+                    TestCountIndicator(count: package.totalTests)
                         .opacity(isVisible ? 1 : 0)
                         .scaleEffect(isVisible ? 1.0 : 0.9)
                         .animation(.spring(duration: 0.5, bounce: 0.2).delay(0.6), value: isVisible)
                     
                     // Price display
                     PriceDisplay(
-                        price: package.price,
-                        originalPrice: package.originalPrice,
-                        currency: package.currency
+                        price: Double(package.packagePrice),
+                        originalPrice: Double(package.individualPrice),
+                        currency: "₹"
                     )
                     .opacity(isVisible ? 1 : 0)
                     .scaleEffect(isVisible ? 1.0 : 0.9)
@@ -121,9 +121,9 @@ struct HealthPackageCard: View {
             )
             .scaleEffect(isVisible ? 1.0 : 0.95)
             .opacity(isVisible ? 1.0 : 0.0)
-            .animation(.spring(duration: 0.5, bounce: 0.2).delay(0.1), value: isVisible)
+            .animation(.easeInOut(duration: 0.5).delay(0.1), value: isVisible)
         }
-        .buttonStyle(HealthPackageCardButtonStyle())
+        .buttonStyle(PlainButtonStyle())
         .onAppear {
             withAnimation {
                 isVisible = true
@@ -134,7 +134,7 @@ struct HealthPackageCard: View {
     // MARK: - Computed Properties
     
     private var cardBackgroundGradient: LinearGradient {
-        if package.isPopular {
+        if package.isFeatured {
             return LinearGradient(
                 colors: [
                     HealthColors.accent.opacity(0.1),
@@ -156,11 +156,11 @@ struct HealthPackageCard: View {
     }
     
     private var cardBorderColor: Color {
-        package.isPopular ? HealthColors.primary.opacity(0.3) : HealthColors.border.opacity(0.3)
+        package.isFeatured ? HealthColors.primary.opacity(0.3) : HealthColors.border.opacity(0.3)
     }
     
     private var cardBorderWidth: CGFloat {
-        package.isPopular ? 1.5 : 0.5
+        package.isFeatured ? 1.5 : 0.5
     }
     
     private var buttonBackgroundGradient: LinearGradient {
@@ -189,10 +189,10 @@ struct HealthPackageCard: View {
 
 // MARK: - Category Badge
 struct CategoryBadge: View {
-    let category: PackageCategory
+    let category: String
     
     var body: some View {
-        Text(category.rawValue.capitalized)
+        Text(category)
             .font(HealthTypography.captionMedium)
             .foregroundColor(categoryColor)
             .padding(.horizontal, HealthSpacing.sm)
@@ -208,15 +208,17 @@ struct CategoryBadge: View {
     }
     
     private var categoryColor: Color {
-        switch category {
-        case .basic:
-            return HealthColors.healthNeutral
-        case .premium:
+        switch category.lowercased() {
+        case "basic":
             return HealthColors.primary
-        case .complete:
-            return HealthColors.forest
-        case .specialty:
+        case "premium":
+            return HealthColors.emerald
+        case "complete":
+            return HealthColors.healthWarning
+        case "specialty":
             return HealthColors.secondary
+        default:
+            return HealthColors.primary
         }
     }
 }
@@ -340,198 +342,13 @@ struct PriceDisplay: View {
     }
 }
 
-// MARK: - Health Package Model
-struct HealthPackage: Identifiable, Equatable {
-    let id: String
-    let name: String
-    let description: String
-    let price: Double
-    let originalPrice: Double?
-    let currency: String
-    let testCount: Int
-    let category: PackageCategory
-    let isPopular: Bool
-    let features: [String]
-    let estimatedDuration: String
-    let sampleType: [String]
-    
-    init(
-        id: String = UUID().uuidString,
-        name: String,
-        description: String,
-        price: Double,
-        originalPrice: Double? = nil,
-        currency: String = "$",
-        testCount: Int,
-        category: PackageCategory,
-        isPopular: Bool = false,
-        features: [String] = [],
-        estimatedDuration: String = "1-2 days",
-        sampleType: [String] = ["Blood"]
-    ) {
-        self.id = id
-        self.name = name
-        self.description = description
-        self.price = price
-        self.originalPrice = originalPrice
-        self.currency = currency
-        self.testCount = testCount
-        self.category = category
-        self.isPopular = isPopular
-        self.features = features
-        self.estimatedDuration = estimatedDuration
-        self.sampleType = sampleType
-    }
-}
-
-// MARK: - Package Category
-enum PackageCategory: String, CaseIterable, Identifiable {
-    case basic = "basic"
-    case premium = "premium"
-    case complete = "complete"
-    case specialty = "specialty"
-    
-    var id: String { rawValue }
-    
-    var displayName: String {
-        switch self {
-        case .basic: return "Basic"
-        case .premium: return "Premium"
-        case .complete: return "Complete"
-        case .specialty: return "Specialty"
-        }
-    }
-    
-    var description: String {
-        switch self {
-        case .basic: return "Essential health markers"
-        case .premium: return "Comprehensive analysis"
-        case .complete: return "Full health assessment"
-        case .specialty: return "Targeted testing"
-        }
-    }
-}
-
-// MARK: - Health Package Card Button Style
-struct HealthPackageCardButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .opacity(configuration.isPressed ? 0.9 : 1.0)
-            .animation(.spring(duration: 0.3, bounce: 0.2), value: configuration.isPressed)
-            .background(
-                RoundedRectangle(cornerRadius: HealthCornerRadius.xl)
-                    .fill(Color.clear)
-                    .contentShape(Rectangle())
-            )
-            .accessibilityAddTraits(.isButton)
-    }
-}
-
-
-// MARK: - Sample Data for Development
-extension HealthPackage {
-    static let mockPackages: [HealthPackage] = [
-        HealthPackage(
-            name: "Essential Health Panel",
-            description: "Basic health screening covering key biomarkers including cholesterol, glucose, and CBC",
-            price: 149.99,
-            testCount: 12,
-            category: .basic,
-            features: ["Complete Blood Count", "Lipid Panel", "Basic Metabolic Panel"],
-            estimatedDuration: "1-2 days",
-            sampleType: ["Blood"]
-        ),
-        HealthPackage(
-            name: "Comprehensive Health Assessment",
-            description: "Detailed analysis of cardiovascular, metabolic, and immune system health",
-            price: 299.99,
-            originalPrice: 349.99,
-            testCount: 24,
-            category: .premium,
-            isPopular: true,
-            features: ["Advanced Lipid Profile", "HbA1c", "Inflammatory Markers", "Vitamin D"],
-            estimatedDuration: "2-3 days",
-            sampleType: ["Blood", "Urine"]
-        ),
-        HealthPackage(
-            name: "Complete Wellness Profile",
-            description: "Full spectrum health evaluation including hormones, nutrients, and genetic markers",
-            price: 499.99,
-            originalPrice: 599.99,
-            testCount: 40,
-            category: .complete,
-            features: ["Hormone Panel", "Nutritional Assessment", "Cardiac Risk", "Liver Function"],
-            estimatedDuration: "3-5 days",
-            sampleType: ["Blood", "Saliva", "Urine"]
-        ),
-        HealthPackage(
-            name: "Heart Health Specialty",
-            description: "Focused cardiovascular assessment with advanced cardiac biomarkers",
-            price: 199.99,
-            testCount: 15,
-            category: .specialty,
-            features: ["Advanced Lipid Profile", "Cardiac Enzymes", "Inflammation Markers"],
-            estimatedDuration: "1-2 days",
-            sampleType: ["Blood"]
-        )
-    ]
-}
-
 // MARK: - Preview
-#Preview("Single Package - Popular") {
+#Preview("Health Package Card") {
     HealthPackageCard(
-        package: HealthPackage.mockPackages[1]
+        package: HealthPackage.sampleComprehensive()
     ) {
         print("Package selected")
     }
     .padding()
-    .background(HealthColors.background)
-}
-
-#Preview("Single Package - Basic") {
-    HealthPackageCard(
-        package: HealthPackage.mockPackages[0]
-    ) {
-        print("Package selected")
-    }
-    .padding()
-    .background(HealthColors.background)
-}
-
-#Preview("Package Grid") {
-    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: HealthSpacing.lg) {
-        ForEach(HealthPackage.mockPackages) { package in
-            HealthPackageCard(package: package) {
-                print("Selected: \(package.name)")
-            }
-        }
-    }
-    .padding()
-    .background(HealthColors.background)
-}
-
-#Preview("Dark Mode") {
-    HealthPackageCard(
-        package: HealthPackage.mockPackages[2]
-    ) {
-        print("Package selected")
-    }
-    .padding()
-    .background(HealthColors.background)
-    .preferredColorScheme(.dark)
-}
-
-#Preview("Compact Size") {
-    ScrollView {
-        VStack(spacing: HealthSpacing.md) {
-            ForEach(HealthPackage.mockPackages) { package in
-                HealthPackageCard(package: package) {
-                    print("Selected: \(package.name)")
-                }
-            }
-        }
-        .padding(.horizontal, HealthSpacing.md)
-    }
     .background(HealthColors.background)
 }
