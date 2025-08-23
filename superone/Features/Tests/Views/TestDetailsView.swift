@@ -244,7 +244,7 @@ struct TestDetailsView: View {
     
     // MARK: - Test Details Grid
     private func testDetailsGrid(test: TestDetails) -> some View {
-        VStack(spacing: HealthSpacing.md) {
+        VStack(spacing: HealthSpacing.sm) {
             // First row
             HStack(spacing: HealthSpacing.md) {
                 TestDetailItem(
@@ -334,7 +334,7 @@ struct TestDetailsView: View {
                                 .font(.system(size: 16, weight: .semibold))
                             
                             Text("Book Test")
-                                .healthTextStyle(.buttonPrimary)
+                                .healthTextStyle(.buttonPrimary, color: .white)
                         }
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity, minHeight: 50)
@@ -412,7 +412,7 @@ private struct TestDetailItem: View {
                 
                 HStack(spacing: 4) {
                     Text(value)
-                        .healthTextStyle(.bodyMedium, color: HealthColors.primaryText)
+                        .healthTextStyle(.subheadline, color: HealthColors.primaryText)
                     
                     if let originalValue = originalValue {
                         Text(originalValue)
@@ -459,43 +459,88 @@ private struct ScrollOffsetPreferenceKey: PreferenceKey {
 private struct TestBookingSheet: View {
     let testDetails: TestDetails?
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedDate = Date()
+    @State private var selectedTimeSlot: String? = nil
+    
+    private let timeSlots = [
+        "08:00 AM - 10:00 AM", "10:00 AM - 12:00 PM", "02:00 PM - 04:00 PM",
+        "04:00 PM - 06:00 PM", "06:00 PM - 08:00 PM", "08:00 PM - 10:00 PM"
+    ]
     
     var body: some View {
         NavigationView {
-            VStack(spacing: HealthSpacing.xl) {
-                if let test = testDetails {
-                    VStack(spacing: HealthSpacing.md) {
-                        Text("Book \(test.name)")
-                            .healthTextStyle(.title2, color: HealthColors.primaryText)
-                        
-                        Text("Choose your preferred lab and time slot")
-                            .healthTextStyle(.body, color: HealthColors.secondaryText)
-                            .multilineTextAlignment(.center)
+            ScrollView {
+                VStack(spacing: HealthSpacing.xl) {
+                    if let test = testDetails {
+                        VStack(spacing: HealthSpacing.md) {
+                            
+                            
+                            Text("Choose your preferred date and time slot")
+                                .healthTextStyle(.body, color: HealthColors.secondaryText)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, HealthSpacing.xl)
                     }
-                    .padding(.top, HealthSpacing.xl)
-                }
-                
-                Spacer()
-                
-                // Placeholder for booking form
-                VStack(spacing: HealthSpacing.lg) {
-                    Button("Choose Lab & Time") {
-                        // Navigate to lab selection
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(HealthColors.primary)
-                    .foregroundColor(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
                     
-                    Button("Cancel") {
-                        dismiss()
+                    // Date Picker Section
+                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                        
+                        
+                        DatePicker("Select Date", selection: $selectedDate, in: Date()..., displayedComponents: .date)
+                            .datePickerStyle(.graphical)
+                            .accentColor(HealthColors.primary)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(HealthColors.tertiaryBackground)
-                    .foregroundColor(HealthColors.primaryText)
-                    .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
+                    .cardPadding()
+                    .background(HealthColors.primaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.card))
+                    .healthCardShadow()
+                    
+                    // Time Slot Section
+                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                        Text("Select Time Slot")
+                            .healthTextStyle(.headline, color: HealthColors.primaryText)
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: HealthSpacing.sm), count: 2), spacing: HealthSpacing.sm) {
+                            ForEach(timeSlots, id: \.self) { timeSlot in
+                                Button(timeSlot) {
+                                    selectedTimeSlot = timeSlot
+                                }
+                                .frame(height: 50)
+                                .frame(maxWidth: .infinity)
+                                .background(selectedTimeSlot == timeSlot ? HealthColors.primary : HealthColors.tertiaryBackground)
+                                .foregroundColor(selectedTimeSlot == timeSlot ? .white : HealthColors.primaryText)
+                                .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
+                                .healthTextStyle(.bodyMedium)
+                            }
+                        }
+                    }
+                    .cardPadding()
+                    .background(HealthColors.primaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.card))
+                    .healthCardShadow()
+                    
+                    // Action Buttons
+                    VStack(spacing: HealthSpacing.lg) {
+                        Button("Next") {
+                            // if home sample collection avialble naviagte to Preview booking page
+                            // else naviagte to lab selection page
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(selectedTimeSlot != nil ? HealthColors.primary : HealthColors.tertiaryBackground)
+                        .foregroundColor(selectedTimeSlot != nil ? .white : HealthColors.secondaryText)
+                        .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
+                        .disabled(selectedTimeSlot == nil)
+                        
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(HealthColors.tertiaryBackground)
+                        .foregroundColor(HealthColors.primaryText)
+                        .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
+                    }
+                    .padding(.bottom, HealthSpacing.xl)
                 }
-                .padding(.bottom, HealthSpacing.xl)
             }
             .padding(.horizontal, HealthSpacing.screenPadding)
             .background(HealthColors.primaryBackground)
