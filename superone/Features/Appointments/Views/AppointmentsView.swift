@@ -15,7 +15,7 @@ struct AppointmentsView: View {
     @State private var selectedTab: AppointmentTab = .schedules
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Tab selector
                 tabSelector
@@ -221,6 +221,9 @@ struct AppointmentsView: View {
                     package: package,
                     onBook: {
                         // Handle package booking
+                    },
+                    onViewDetails: {
+                        // Navigation handled by NavigationLink in card
                     }
                 )
             }
@@ -237,6 +240,9 @@ struct AppointmentsView: View {
                     test: test,
                     onBook: {
                         // Handle individual test booking
+                    },
+                    onViewDetails: {
+                        // Navigation handled by NavigationLink in card
                     }
                 )
             }
@@ -1529,35 +1535,6 @@ enum AppointmentTab: String, CaseIterable {
 
 // MARK: - Supporting Views
 
-struct LocationSelectorButton: View {
-    let currentLocation: String
-    let onLocationChange: () -> Void
-    
-    var body: some View {
-        Button(action: onLocationChange) {
-            HStack(spacing: HealthSpacing.xs) {
-                Image(systemName: "location.fill")
-                    .foregroundColor(HealthColors.primary)
-                    .font(.system(size: 12))
-                
-                Text(currentLocation)
-                    .font(HealthTypography.bodyMedium)
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                
-                Image(systemName: "chevron.down")
-                    .foregroundColor(HealthColors.primary)
-                    .font(.system(size: 10, weight: .semibold))
-            }
-            .padding(.horizontal, HealthSpacing.sm)
-            .padding(.vertical, HealthSpacing.xs)
-            .background(HealthColors.primary.opacity(0.1))
-            .cornerRadius(HealthCornerRadius.button)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
 
 struct AppointmentCard: View {
     let appointment: Appointment
@@ -2039,6 +2016,7 @@ struct RadioButton: View {
 struct TestPackageCard: View {
     let package: TestPackage
     let onBook: () -> Void
+    let onViewDetails: () -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: HealthSpacing.lg) {
@@ -2101,15 +2079,16 @@ struct TestPackageCard: View {
             
             // Book button
             HStack {
-                Button("View Details") {
-                    // Handle view details
+                NavigationLink(destination: TestDetailsView(testId: package.id)) {
+                    Text("View Details")
+                        .font(HealthTypography.bodyMedium)
+                        .foregroundColor(HealthColors.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, HealthSpacing.sm)
+                        .background(HealthColors.primary.opacity(0.1))
+                        .cornerRadius(HealthCornerRadius.button)
                 }
-                .font(HealthTypography.bodyMedium)
-                .foregroundColor(HealthColors.primary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, HealthSpacing.sm)
-                .background(HealthColors.primary.opacity(0.1))
-                .cornerRadius(HealthCornerRadius.button)
+                .buttonStyle(PlainButtonStyle())
                 
                 Button("Book Package") {
                     onBook()
@@ -2132,6 +2111,7 @@ struct TestPackageCard: View {
 struct IndividualTestCard: View {
     let test: IndividualTest
     let onBook: () -> Void
+    let onViewDetails: () -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: HealthSpacing.lg) {
@@ -2211,15 +2191,16 @@ struct IndividualTestCard: View {
             
             // Book button
             HStack {
-                Button("Test Details") {
-                    // Handle test details
+                NavigationLink(destination: TestDetailsView(testId: test.id)) {
+                    Text("Test Details")
+                        .font(HealthTypography.bodyMedium)
+                        .foregroundColor(HealthColors.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, HealthSpacing.sm)
+                        .background(HealthColors.primary.opacity(0.1))
+                        .cornerRadius(HealthCornerRadius.button)
                 }
-                .font(HealthTypography.bodyMedium)
-                .foregroundColor(HealthColors.primary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, HealthSpacing.sm)
-                .background(HealthColors.primary.opacity(0.1))
-                .cornerRadius(HealthCornerRadius.button)
+                .buttonStyle(PlainButtonStyle())
                 
                 Button("Book Test") {
                     onBook()

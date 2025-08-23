@@ -22,10 +22,13 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: HealthSpacing.sectionSpacing) {
                     // Header Section
                     DashboardHeaderView(
-                        greetingMessage: viewModel.greetingMessage,
-                        userName: viewModel.userName,
+                        locationManager: viewModel.locationManager,
                         notificationCount: viewModel.notificationCount,
-                        onNotificationTap: viewModel.handleNotificationTap
+                        onNotificationTap: viewModel.handleNotificationTap,
+                        onLocationChange: {
+                            // Handle location change - could show location picker sheet
+                            print("Location change tapped from dashboard")
+                        }
                     )
                     .padding(.horizontal, HealthSpacing.screenPadding)
                     
@@ -142,35 +145,26 @@ struct DashboardView: View {
 
 // MARK: - Dashboard Header View with Simple One-Time Animation
 struct DashboardHeaderView: View {
-    let greetingMessage: String
-    let userName: String
+    @Bindable var locationManager: LocationManager
     let notificationCount: Int
     let onNotificationTap: () -> Void
+    let onLocationChange: () -> Void
     
     @State private var hasAppeared = false
-    @State private var showGreeting = false
-    @State private var showWelcome = false
+    @State private var showLocation = false
     @State private var showNotification = false
     
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: HealthSpacing.xs) {
-                Text(greetingMessage)
-                    .font(HealthTypography.headline)
-                    .foregroundColor(HealthColors.secondaryText)
-                    .opacity(showGreeting ? 1 : 0)
-                    .offset(x: showGreeting ? 0 : -20)
-                    .rotationEffect(.degrees(showGreeting ? 0 : -2))
-                    .animation(.easeOut(duration: 0.4).delay(0.1), value: showGreeting)
-                
-                Text("Welcome Back, \(userName)")
-                    .font(HealthTypography.title2)
-                    .foregroundColor(HealthColors.primaryText)
-                    .opacity(showWelcome ? 1 : 0)
-                    .offset(x: showWelcome ? 0 : -20)
-                    .scaleEffect(showWelcome ? 1.0 : 0.9)
-                    .animation(.spring(duration: 0.4, bounce: 0.1).delay(0.2), value: showWelcome)
-            }
+            // Location selector button
+            LocationSelectorButton(
+                currentLocation: locationManager.currentLocationText ?? "Getting location...",
+                onLocationChange: onLocationChange
+            )
+            .opacity(showLocation ? 1 : 0)
+            .offset(x: showLocation ? 0 : -20)
+            .scaleEffect(showLocation ? 1.0 : 0.9)
+            .animation(.spring(duration: 0.4, bounce: 0.1).delay(0.1), value: showLocation)
             
             Spacer()
             
@@ -197,8 +191,7 @@ struct DashboardHeaderView: View {
     
     private func startSimpleHeaderAnimation() {
         // Animate elements sequentially, only once
-        showGreeting = true
-        showWelcome = true
+        showLocation = true
         showNotification = true
     }
 }

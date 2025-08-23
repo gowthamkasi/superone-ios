@@ -24,9 +24,6 @@ struct ServiceOptionsGrid: View {
             // Horizontal Service Options
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: HealthSpacing.lg) {
-                    // Leading padding
-                    Color.clear.frame(width: HealthSpacing.screenPadding - HealthSpacing.lg)
-                    
                     ForEach(Array(serviceOptions.enumerated()), id: \.element.id) { index, option in
                         ServiceOptionButton(
                             serviceOption: option,
@@ -36,12 +33,12 @@ struct ServiceOptionsGrid: View {
                             handleServiceOptionTap(option.type)
                         }
                     }
-                    
-                    // Trailing padding
-                    Color.clear.frame(width: HealthSpacing.screenPadding - HealthSpacing.lg)
                 }
+                .padding(.horizontal, HealthSpacing.screenPadding)
+                .frame(maxHeight: 100)
             }
-            .scrollClipDisabled()
+            .scrollTargetBehavior(.viewAligned)
+            .frame(maxHeight: 100)
         }
         .onAppear {
             withAnimation {
@@ -162,9 +159,10 @@ struct ServiceOptionButton: View {
                     .opacity(isVisible ? 1 : 0)
                     .animation(.easeInOut(duration: 0.4).delay(animationDelay + 0.2), value: isVisible)
             }
-            .frame(width: 80)
+            .frame(width: 80, height: 80)
         }
         .buttonStyle(PlainButtonStyle())
+        .contentShape(Rectangle())
     }
 }
 

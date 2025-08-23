@@ -1,6 +1,9 @@
 import Foundation
 import UIKit
 
+// Import LocationManager for location-aware dashboard
+// Note: LocationManager provides location services integration
+
 // Import lab report processing models for dashboard integration
 // Note: This creates a dependency on LabReports feature
 // Consider moving shared models to a common module in production
@@ -47,6 +50,9 @@ class DashboardViewModel {
     
     // MARK: - Observable Properties
     
+    // Location services for dashboard location display
+    var locationManager = LocationManager()
+    
     // Booking-focused dashboard properties
     var featuredPackages: [HealthPackage] = []
     var isLoadingPackages: Bool = false
@@ -58,7 +64,6 @@ class DashboardViewModel {
     var errorMessage: String?
     var lastRefreshed: Date = Date()
     var userName: String = "Sarah"
-    var greetingMessage: String = ""
     var notificationCount: Int = 0
     var labReportProcessingStatus: [LabReportProcessingActivity] = []
     
@@ -72,7 +77,6 @@ class DashboardViewModel {
         // self.healthScore = HealthScore(value: 0, trend: .stable) // Commented out for booking focus
         self.quickStats = []
         
-        setupGreetingMessage()
         setupAppLifecycleObserver()
         loadInitialData()
     }
@@ -235,11 +239,6 @@ class DashboardViewModel {
         }
     }
     
-    private func setupGreetingMessage() {
-        let hour = Calendar.current.component(.hour, from: Date())
-        greetingMessage = getGreeting(for: hour)
-    }
-    
     private func setupAppLifecycleObserver() {
         // PERFORMANCE FIX: Remove Combine debouncing - use NotificationCenter directly
         NotificationCenter.default.addObserver(
@@ -254,19 +253,6 @@ class DashboardViewModel {
                     await self.refreshData()
                 }
             }
-        }
-    }
-    
-    private func getGreeting(for hour: Int) -> String {
-        switch hour {
-        case 5..<12:
-            return "Good Morning"
-        case 12..<17:
-            return "Good Afternoon"
-        case 17..<22:
-            return "Good Evening"
-        default:
-            return "Good Night"
         }
     }
     
