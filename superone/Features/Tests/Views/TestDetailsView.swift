@@ -6,7 +6,7 @@ struct TestDetailsView: View {
     // MARK: - Properties
     let testId: String
     @State private var viewModel = TestDetailsViewModel()
-    @State private var showingBookingSheet = false
+    @State private var navigateToBooking = false
     @State private var showingShareSheet = false
     @State private var shareSheet: TestShareSheet?
     @Environment(\.dismiss) private var dismiss
@@ -29,8 +29,8 @@ struct TestDetailsView: View {
         .task {
             await loadTestDetails()
         }
-        .sheet(isPresented: $showingBookingSheet) {
-            TestBookingSheet(testDetails: viewModel.testDetails)
+        .navigationDestination(isPresented: $navigateToBooking) {
+            TestBookingDateTimeView(testDetails: viewModel.testDetails)
         }
         .sheet(item: $shareSheet) { sheet in
             sheet
@@ -361,7 +361,7 @@ struct TestDetailsView: View {
     }
     
     private func bookTest() {
-        showingBookingSheet = true
+        navigateToBooking = true
     }
     
     private func loadTestDetails() async {
@@ -454,116 +454,6 @@ private struct ScrollOffsetPreferenceKey: PreferenceKey {
     }
 }
 
-// MARK: - Test Booking Sheet
-
-private struct TestBookingSheet: View {
-    let testDetails: TestDetails?
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedDate = Date()
-    @State private var selectedTimeSlot: String? = nil
-    
-    private let timeSlots = [
-        "08:00 AM - 10:00 AM", "10:00 AM - 12:00 PM", "02:00 PM - 04:00 PM",
-        "04:00 PM - 06:00 PM", "06:00 PM - 08:00 PM", "08:00 PM - 10:00 PM"
-    ]
-    
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: HealthSpacing.xl) {
-                    // if let test = testDetails {
-                    //     VStack(spacing: HealthSpacing.md) {
-                            
-                            
-                    //         Text("Choose your preferred date and time slot")
-                    //             .healthTextStyle(.body, color: HealthColors.secondaryText)
-                    //             .multilineTextAlignment(.center)
-                    //     }
-                    //     .padding(.top, HealthSpacing.xl)
-                    // }
-                    
-                    // Date Picker Section
-                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
-                        Text("Choose your preferred date and time slot")
-                                .healthTextStyle(.body, color: HealthColors.secondaryText)
-                                .multilineTextAlignment(.center)
-                        
-                        DatePicker("Select Date", selection: $selectedDate, in: Date()..., displayedComponents: .date)
-                            .datePickerStyle(.graphical)
-                            .tint(HealthColors.primary)
-                    }
-                    .cardPadding()
-                    .background(HealthColors.primaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.card))
-                    .healthCardShadow()
-                    
-                    // Time Slot Section
-                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
-                        Text("Select Time Slot")
-                            .healthTextStyle(.headline, color: HealthColors.primaryText)
-                        
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: HealthSpacing.sm), count: 2), spacing: HealthSpacing.sm) {
-                            ForEach(timeSlots, id: \.self) { timeSlot in
-                                Button(action: {
-                                    selectedTimeSlot = timeSlot
-                                }) {
-                                    Text(timeSlot)
-                                        .healthTextStyle(.footnote, color: selectedTimeSlot == timeSlot ? .white : HealthColors.primaryText)
-                                        .multilineTextAlignment(.center)
-                                        .lineLimit(2)
-                                }
-                                .frame(height: 40)
-                                .frame(maxWidth: .infinity)
-                                .background(selectedTimeSlot == timeSlot ? HealthColors.primary : HealthColors.tertiaryBackground)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: HealthCornerRadius.button)
-                                        .stroke(selectedTimeSlot == timeSlot ? HealthColors.primary : HealthColors.secondaryText.opacity(0.3), lineWidth: 1)
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
-                            }
-                        }
-                    }
-                    .cardPadding()
-                    .background(HealthColors.primaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.card))
-                    .healthCardShadow()
-                    
-                    // Action Buttons
-                    VStack(spacing: HealthSpacing.lg) {
-                        Button("Next") {
-                            // if home sample collection avialble naviagte to Preview booking page
-                            // else naviagte to lab selection page
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(selectedTimeSlot != nil ? HealthColors.primary : HealthColors.tertiaryBackground)
-                        .foregroundColor(selectedTimeSlot != nil ? .white : HealthColors.secondaryText)
-                        .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
-                        .disabled(selectedTimeSlot == nil)
-                        
-                        Button("Cancel") {
-                            dismiss()
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(HealthColors.tertiaryBackground)
-                        .foregroundColor(HealthColors.primaryText)
-                        .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
-                    }
-                    .padding(.bottom, HealthSpacing.xl)
-                }
-            }
-            .padding(.horizontal, HealthSpacing.screenPadding)
-            .background(HealthColors.primaryBackground)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
 
 // MARK: - Previews
 
