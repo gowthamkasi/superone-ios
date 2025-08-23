@@ -368,57 +368,6 @@ extension TestDetails {
                 )
             ),
             TestSection(
-                type: .insights,
-                title: "Health Insights & Benefits",
-                content: TestSectionContent(
-                    overview: "What this test can reveal:",
-                    categories: [
-                        ContentCategory(
-                            icon: "🩸",
-                            title: "Blood Health Status",
-                            items: [
-                                "Anemia detection (iron deficiency)",
-                                "Blood volume and circulation health",
-                                "Oxygen-carrying capacity"
-                            ]
-                        ),
-                        ContentCategory(
-                            icon: "🦠",
-                            title: "Immune System Function",
-                            items: [
-                                "White blood cell count & types",
-                                "Infection-fighting capability",
-                                "Immune system disorders"
-                            ]
-                        ),
-                        ContentCategory(
-                            icon: "🧬",
-                            title: "Blood Disorders",
-                            items: [
-                                "Leukemia or lymphoma indicators",
-                                "Bleeding or clotting disorders",
-                                "Bone marrow function"
-                            ]
-                        ),
-                        ContentCategory(
-                            icon: "📈",
-                            title: "Trend Monitoring",
-                            items: [
-                                "Track changes over time",
-                                "Monitor treatment effectiveness",
-                                "Early detection of developing issues"
-                            ]
-                        )
-                    ],
-                    tips: [
-                        "Dietary recommendations",
-                        "Lifestyle modifications",
-                        "Follow-up test suggestions",
-                        "When to consult a doctor"
-                    ]
-                )
-            ),
-            TestSection(
                 type: .preparation,
                 title: "Preparation Instructions",
                 content: TestSectionContent(
@@ -470,19 +419,6 @@ extension TestDetails {
                         "Get plenty of sleep night before",
                         "Wear comfortable, loose-sleeved clothing",
                         "Relax and stay calm during collection"
-                    ]
-                )
-            ),
-            TestSection(
-                type: .results,
-                title: "Understanding Your Results",
-                content: TestSectionContent(
-                    overview: "Learn how to interpret your test results and what they mean for your health.",
-                    bulletPoints: [
-                        "Reference ranges vary by age, gender, and lab",
-                        "Results are best interpreted by healthcare professionals",
-                        "Abnormal results don't always indicate disease",
-                        "Follow-up testing may be recommended"
                     ]
                 )
             )

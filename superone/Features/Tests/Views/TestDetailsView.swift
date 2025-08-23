@@ -286,8 +286,7 @@ struct TestDetailsView: View {
                 title: "Report",
                 value: test.reportTime,
                 color: .purple,
-                fullWidth: true
-            )
+                            )
         }
     }
     
