@@ -471,24 +471,26 @@ private struct TestBookingSheet: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: HealthSpacing.xl) {
-                    if let test = testDetails {
-                        VStack(spacing: HealthSpacing.md) {
+                    // if let test = testDetails {
+                    //     VStack(spacing: HealthSpacing.md) {
                             
                             
-                            Text("Choose your preferred date and time slot")
-                                .healthTextStyle(.body, color: HealthColors.secondaryText)
-                                .multilineTextAlignment(.center)
-                        }
-                        .padding(.top, HealthSpacing.xl)
-                    }
+                    //         Text("Choose your preferred date and time slot")
+                    //             .healthTextStyle(.body, color: HealthColors.secondaryText)
+                    //             .multilineTextAlignment(.center)
+                    //     }
+                    //     .padding(.top, HealthSpacing.xl)
+                    // }
                     
                     // Date Picker Section
                     VStack(alignment: .leading, spacing: HealthSpacing.md) {
-                        
+                        Text("Choose your preferred date and time slot")
+                                .healthTextStyle(.body, color: HealthColors.secondaryText)
+                                .multilineTextAlignment(.center)
                         
                         DatePicker("Select Date", selection: $selectedDate, in: Date()..., displayedComponents: .date)
                             .datePickerStyle(.graphical)
-                            .accentColor(HealthColors.primary)
+                            .tint(HealthColors.primary)
                     }
                     .cardPadding()
                     .background(HealthColors.primaryBackground)
@@ -502,15 +504,22 @@ private struct TestBookingSheet: View {
                         
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: HealthSpacing.sm), count: 2), spacing: HealthSpacing.sm) {
                             ForEach(timeSlots, id: \.self) { timeSlot in
-                                Button(timeSlot) {
+                                Button(action: {
                                     selectedTimeSlot = timeSlot
+                                }) {
+                                    Text(timeSlot)
+                                        .healthTextStyle(.footnote, color: selectedTimeSlot == timeSlot ? .white : HealthColors.primaryText)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
                                 }
-                                .frame(height: 50)
+                                .frame(height: 40)
                                 .frame(maxWidth: .infinity)
                                 .background(selectedTimeSlot == timeSlot ? HealthColors.primary : HealthColors.tertiaryBackground)
-                                .foregroundColor(selectedTimeSlot == timeSlot ? .white : HealthColors.primaryText)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                                        .stroke(selectedTimeSlot == timeSlot ? HealthColors.primary : HealthColors.secondaryText.opacity(0.3), lineWidth: 1)
+                                )
                                 .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.button))
-                                .healthTextStyle(.bodyMedium)
                             }
                         }
                     }
