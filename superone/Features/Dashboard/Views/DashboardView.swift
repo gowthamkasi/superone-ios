@@ -7,7 +7,6 @@ import SwiftUI
 /// - LabBookingHeroCard: Primary CTA for test booking
 /// - ServiceOptionsGrid: Four main service types (Online Booking, Home Collection, Test Packages, Quick Tests)
 /// - QuickActionsBar: Common actions with prominent "Book Now" button
-/// - FeaturedPackagesSection: Health test packages with pricing and details
 ///
 /// Legacy components (HealthScoreCard, QuickOverviewSection, RecentActivitySection) 
 /// have been replaced to better serve the lab booking workflow.
@@ -77,20 +76,9 @@ struct DashboardView: View {
                             viewModel.handleQuickAction(.viewReports)
                         }
                     )
+                    .padding(.horizontal, HealthSpacing.screenPadding)
                     
-                    // Featured Packages Section
-                    FeaturedPackagesSection(
-                        packages: viewModel.featuredPackages,
-                        isLoading: viewModel.isLoadingPackages,
-                        onPackageSelect: { package in
-                            HapticFeedback.medium()
-                            print("Selected package: \(package.name)")
-                            // TODO: Navigate to package details
-                        },
-                        onSeeAllPackages: {
-                            viewModel.navigateToAllPackages()
-                        }
-                    )
+                     
                     
                     // Bottom spacing for tab bar (handled by safe area)
                     Spacer()
@@ -216,7 +204,7 @@ struct DashboardHeaderView: View {
 
 // MARK: - Legacy Components (Kept for reference - can be removed in future)
 // QuickOverviewSection and RecentActivitySection have been replaced by
-// ServiceOptionsGrid, QuickActionsBar, and FeaturedPackagesSection
+// ServiceOptionsGrid and QuickActionsBar
 
 // MARK: - Legacy Health Categories (Kept for potential future use)
 // HealthCategoriesSlider has been replaced by ServiceOptionsGrid for booking focus
