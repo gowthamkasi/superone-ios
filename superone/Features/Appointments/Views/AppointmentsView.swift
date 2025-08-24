@@ -2079,7 +2079,7 @@ struct TestPackageCard: View {
             
             // Book button
             HStack {
-                NavigationLink(destination: TestDetailsView(testId: package.id)) {
+                NavigationLink(destination: HealthPackageDetailsView(packageId: package.id)) {
                     Text("View Details")
                         .font(HealthTypography.bodyMedium)
                         .foregroundColor(HealthColors.primary)
