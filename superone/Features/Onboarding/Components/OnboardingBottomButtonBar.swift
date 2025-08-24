@@ -110,19 +110,19 @@ struct ButtonConfiguration {
 
 struct ButtonAction {
     let title: String
-    let style: ButtonStyle
+    let style: OnboardingButtonStyle
     let isLoading: Bool
     let isDisabled: Bool
     let handler: () -> Void
     
-    enum ButtonStyle {
+    enum OnboardingButtonStyle {
         case primary
         case secondary
     }
     
     init(
         title: String,
-        style: ButtonStyle = .primary,
+        style: OnboardingButtonStyle = .primary,
         isLoading: Bool = false,
         isDisabled: Bool = false,
         handler: @escaping () -> Void
@@ -161,10 +161,10 @@ extension ButtonConfiguration {
     /// Dual button configuration (back + continue pattern)
     static func dual(
         leftTitle: String,
-        leftStyle: ButtonAction.ButtonStyle = .secondary,
+        leftStyle: ButtonAction.OnboardingButtonStyle = .secondary,
         leftHandler: @escaping () -> Void,
         rightTitle: String,
-        rightStyle: ButtonAction.ButtonStyle = .primary,
+        rightStyle: ButtonAction.OnboardingButtonStyle = .primary,
         rightIsLoading: Bool = false,
         rightIsDisabled: Bool = false,
         rightHandler: @escaping () -> Void

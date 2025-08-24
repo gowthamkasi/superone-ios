@@ -4,7 +4,7 @@ import SwiftUI
 struct HealthPrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: SwiftUI.ButtonStyle.Configuration) -> some View {
         configuration.label
             .font(HealthTypography.buttonPrimary)
             .foregroundColor(.white)
@@ -25,7 +25,7 @@ struct HealthPrimaryButtonStyle: ButtonStyle {
 struct HealthSecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: SwiftUI.ButtonStyle.Configuration) -> some View {
         configuration.label
             .font(HealthTypography.buttonSecondary)
             .foregroundColor(isEnabled ? HealthColors.primary : HealthColors.healthNeutral)
@@ -55,7 +55,7 @@ struct HealthIconButtonStyle: ButtonStyle {
         self.backgroundColor = backgroundColor
     }
     
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: SwiftUI.ButtonStyle.Configuration) -> some View {
         configuration.label
             .font(.system(size: 18, weight: .medium))
             .foregroundColor(HealthColors.primary)
@@ -71,7 +71,7 @@ struct HealthIconButtonStyle: ButtonStyle {
 
 // MARK: - Floating Action Button Style (for central upload button)
 struct HealthFloatingActionButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: SwiftUI.ButtonStyle.Configuration) -> some View {
         configuration.label
             .font(.system(size: 24, weight: .semibold))
             .foregroundColor(.white)
@@ -99,7 +99,7 @@ struct HealthSmallButtonStyle: ButtonStyle {
         self.variant = variant
     }
     
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: SwiftUI.ButtonStyle.Configuration) -> some View {
         configuration.label
             .font(HealthTypography.buttonSmall)
             .foregroundColor(foregroundColor)
@@ -158,7 +158,7 @@ struct HealthSmallButtonStyle: ButtonStyle {
 struct HealthDestructiveButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: SwiftUI.ButtonStyle.Configuration) -> some View {
         configuration.label
             .font(HealthTypography.buttonPrimary)
             .foregroundColor(.white)
