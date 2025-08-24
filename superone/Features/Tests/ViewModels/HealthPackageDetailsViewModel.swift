@@ -341,7 +341,7 @@ enum PackageSectionType: Sendable {
         case .preparation:
             return "checklist"
         case .recommendedFor:
-            return "person.badge.checkmark"
+            return "person.2.circle"
         case .faq:
             return "questionmark.circle"
         }
