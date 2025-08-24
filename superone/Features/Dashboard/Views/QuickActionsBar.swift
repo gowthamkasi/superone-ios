@@ -86,7 +86,6 @@ struct QuickActionsBar: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, HealthSpacing.screenPadding)
             
             // 2x2 Grid Layout
             LazyVGrid(
@@ -97,7 +96,6 @@ struct QuickActionsBar: View {
                     QuickActionCard(action: action)
                 }
             }
-            .padding(.horizontal, HealthSpacing.screenPadding)
         }
     }
 }
@@ -139,11 +137,11 @@ private struct QuickActionCard: View {
                 Spacer()
                 
                 // Content section
-                VStack(alignment: .leading, spacing: HealthSpacing.xs) {
+                VStack(alignment: .center, spacing: HealthSpacing.xs) {
                     Text(action.title)
                         .font(HealthTypography.bodyMedium)
                         .foregroundColor(HealthColors.primaryText)
-                        .multilineTextAlignment(.leading)
+                        .multilineTextAlignment(.center)
                         .lineLimit(1)
                         .minimumScaleFactor(0.9)
                         .opacity(isVisible ? 1 : 0)
@@ -153,7 +151,7 @@ private struct QuickActionCard: View {
                     Text(actionDescription)
                         .font(HealthTypography.caption1)
                         .foregroundColor(HealthColors.secondaryText)
-                        .multilineTextAlignment(.leading)
+                        .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .minimumScaleFactor(0.8)
                         .opacity(isVisible ? 1 : 0)

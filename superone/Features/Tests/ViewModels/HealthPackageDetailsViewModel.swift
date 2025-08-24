@@ -202,30 +202,7 @@ final class HealthPackageDetailsViewModel {
             ))
         }
         
-        // FAQ section
-        if !package.faqItems.isEmpty {
-            sections.append(PackageSection(
-                id: UUID(),
-                title: "Frequently Asked Questions",
-                type: .faq,
-                content: PackageSectionContent(
-                    overview: nil,
-                    bulletPoints: [],
-                    categories: package.faqItems.map { faq in
-                        PackageSectionCategory(
-                            id: UUID(),
-                            icon: "questionmark.circle.fill",
-                            title: faq.question,
-                            items: [faq.answer],
-                            color: HealthColors.primary
-                        )
-                    },
-                    tips: [],
-                    warnings: []
-                ),
-                isExpanded: false
-            ))
-        }
+       
         
         return sections
     }
