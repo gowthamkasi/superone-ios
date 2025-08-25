@@ -57,6 +57,10 @@ struct AppointmentsView: View {
                 // This ensures the UI updates when location changes
                 print("🔄 Location updated in UI: \(newValue ?? "nil")")
             }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("NavigateToTestsTab"))) { _ in
+                // Switch to Tests tab when navigated from Reports
+                selectedTab = .tests
+            }
             .sheet(isPresented: $viewModel.showBookingSheet) {
                 BookingSheet(viewModel: viewModel)
             }

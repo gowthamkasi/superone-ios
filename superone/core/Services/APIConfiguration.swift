@@ -22,13 +22,13 @@ struct APIConfiguration {
         var baseURL: String {
             switch self {
             case .development:
-                return "https://44672c695c91.ngrok-free.app"
+                return "https://3a1f05544bba.ngrok-free.app"
             case .staging:
                 return "https://staging-api.superonehealth.com"  
             case .production:
                 return "https://api.superonehealth.com"
             case .localTest:
-                return "https://44672c695c91.ngrok-free.app"  // This will timeout and trigger mock response
+                return "https://3a1f05544bba.ngrok-free.app"  // This will timeout and trigger mock response
             }
         }
     }

@@ -319,6 +319,19 @@ enum HealthStatus: String, Codable, CaseIterable, Sendable {
         case .critical: return "Critical"
         }
     }
+    
+    var color: Color {
+        switch self {
+        case .excellent: return HealthColors.healthExcellent
+        case .good: return HealthColors.healthGood
+        case .normal: return HealthColors.healthNormal
+        case .fair: return HealthColors.healthWarning
+        case .monitor: return HealthColors.healthWarning
+        case .needsAttention: return HealthColors.healthWarning
+        case .poor: return HealthColors.healthCritical
+        case .critical: return HealthColors.healthCritical
+        }
+    }
 }
 
 /// Processing status enumeration
@@ -626,6 +639,44 @@ struct ExtractedBiomarker: Codable, Identifiable, Sendable, Equatable {
     }
 }
 
+/// Biomarker result for display in reports UI
+struct BiomarkerResult: Codable, Identifiable, Sendable, Equatable {
+    let id: String
+    let name: String
+    let value: String
+    let unit: String?
+    let status: BiomarkerStatus
+    let displayValue: String
+    
+    init(id: String = UUID().uuidString, name: String, value: String, unit: String? = nil, status: BiomarkerStatus = .unknown) {
+        self.id = id
+        self.name = name
+        self.value = value
+        self.unit = unit
+        self.status = status
+        
+        if let unit = unit {
+            self.displayValue = "\(value) \(unit)"
+        } else {
+            self.displayValue = value
+        }
+    }
+    
+    /// Initialize from ExtractedBiomarker
+    init(from extractedBiomarker: ExtractedBiomarker) {
+        self.id = extractedBiomarker.id
+        self.name = extractedBiomarker.name
+        self.value = extractedBiomarker.value
+        self.unit = extractedBiomarker.unit
+        self.status = extractedBiomarker.status
+        
+        if let unit = extractedBiomarker.unit {
+            self.displayValue = "\(extractedBiomarker.value) \(unit)"
+        } else {
+            self.displayValue = extractedBiomarker.value
+        }
+    }
+}
 
 /// Extraction method enumeration
 enum ExtractionMethod: String, Codable, CaseIterable, Sendable {

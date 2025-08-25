@@ -97,6 +97,32 @@ extension LabReportDocument {
         return nil
     }
     
+    /// AI-generated insights for the document (computed property)
+    var aiInsights: [String]? {
+        // This would be populated from analysis results
+        // For now, return mock data based on document type and health category
+        guard processingStatus == .completed else { return nil }
+        
+        return [
+            "Your cholesterol levels show improvement from last test",
+            "Vitamin D levels are below optimal range",
+            "Blood sugar levels are within normal range"
+        ]
+    }
+    
+    /// Key biomarkers extracted from the document (computed property)
+    var keyBiomarkers: [BiomarkerResult]? {
+        // This would be populated from extracted biomarkers
+        // For now, return mock data for UI development
+        guard processingStatus == .completed else { return nil }
+        
+        return [
+            BiomarkerResult(name: "Total Cholesterol", value: "185", unit: "mg/dL", status: .normal),
+            BiomarkerResult(name: "HDL Cholesterol", value: "45", unit: "mg/dL", status: .normal),
+            BiomarkerResult(name: "Glucose", value: "95", unit: "mg/dL", status: .normal)
+        ]
+    }
+    
     /// Validate document for upload
     func validateForUpload() throws {
         // Check if file has data
