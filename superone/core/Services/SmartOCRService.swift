@@ -591,7 +591,7 @@ struct DocumentOCRFactors {
     var qualityScore: Double = 0.0
 }
 
-enum OCRError: Error, LocalizedError {
+enum OCRError: Error, LocalizedError, Sendable {
     case processingFailed(String)
     case backendProcessingFailed(String)
     case invalidImageData

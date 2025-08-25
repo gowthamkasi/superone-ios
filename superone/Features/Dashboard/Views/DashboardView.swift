@@ -25,8 +25,7 @@ struct DashboardView: View {
                         locationManager: locationManager,
                         notificationCount: viewModel.notificationCount,
                         onNotificationTap: {
-                            // Handle notification tap
-                            print("Notification tapped from dashboard")
+                            viewModel.presentNotificationSheet()
                         },
                         onLocationChange: {
                             // Handle location change - could show location picker sheet
@@ -130,6 +129,13 @@ struct DashboardView: View {
             // Initial data load happens in viewModel init
             // This ensures we have fresh data when view appears
             viewModel.refresh()
+        }
+        .sheet(isPresented: $viewModel.showingNotificationSheet) {
+            NotificationSheet(healthDataService: ProductionHealthDataService())
+                .onDisappear {
+                    // Refresh notification count when sheet is dismissed
+                    viewModel.refreshNotificationCount()
+                }
         }
     }
     

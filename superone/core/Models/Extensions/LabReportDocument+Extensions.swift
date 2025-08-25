@@ -243,7 +243,7 @@ extension ProcessingStatus {
 
 // MARK: - Document Validation Errors
 
-enum DocumentValidationError: Error, LocalizedError {
+enum DocumentValidationError: Error, LocalizedError, Sendable {
     case noData
     case fileTooLarge(Int64, Int64)
     case unsupportedFileType(String)

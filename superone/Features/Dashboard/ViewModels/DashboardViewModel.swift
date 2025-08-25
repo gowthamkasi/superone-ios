@@ -30,6 +30,9 @@ final class DashboardViewModel {
     var notificationCount: Int = 0
     var labReportProcessingStatus: [LabReportProcessingActivity] = []
     
+    // Notification sheet presentation state
+    var showingNotificationSheet: Bool = false
+    
     // MARK: - Private Properties
     
     private let healthDataService: HealthDataServiceProtocol
@@ -165,6 +168,28 @@ final class DashboardViewModel {
         }
     }
     
+    /// Present notification sheet
+    func presentNotificationSheet() {
+        HapticFeedback.light()
+        showingNotificationSheet = true
+    }
+    
+    /// Dismiss notification sheet
+    func dismissNotificationSheet() {
+        showingNotificationSheet = false
+    }
+    
+    /// Handle notification count update (called when notifications are read)
+    func refreshNotificationCount() {
+        Task {
+            do {
+                notificationCount = try await healthDataService.fetchNotificationCount()
+            } catch {
+                print("Error refreshing notification count: \(error)")
+            }
+        }
+    }
+    
     // MARK: - Private Methods
     
     private func setupAppLifecycleObserver() {
@@ -231,6 +256,13 @@ protocol HealthDataServiceProtocol {
     // func fetchHealthScore() async throws -> HealthScore // Commented out for booking focus
     func fetchQuickStats() async throws -> [QuickStat]
     func fetchNotificationCount() async throws -> Int
+    
+    // Notification management methods
+    func fetchNotifications() async throws -> [HealthNotification]
+    func markNotificationAsRead(_ notificationId: UUID) async throws -> HealthNotification
+    func markAllNotificationsAsRead() async throws -> [HealthNotification]
+    func deleteNotification(_ notificationId: UUID) async throws
+    func clearAllNotifications() async throws
 }
 
 // MARK: - Production Implementation
@@ -261,8 +293,64 @@ class ProductionHealthDataService: HealthDataServiceProtocol {
     }
     
     func fetchNotificationCount() async throws -> Int {
-        // Simulate fetching from a real API
-        return Int.random(in: 0...5)
+        let notifications = try await fetchNotifications()
+        return NotificationFactory.unreadCount(from: notifications)
+    }
+    
+    // MARK: - Notification Management
+    
+    private var cachedNotifications: [HealthNotification] = []
+    
+    func fetchNotifications() async throws -> [HealthNotification] {
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        
+        // Use cached notifications if available, otherwise generate sample data
+        if cachedNotifications.isEmpty {
+            cachedNotifications = NotificationFactory.sampleNotifications()
+        }
+        
+        return cachedNotifications
+    }
+    
+    func markNotificationAsRead(_ notificationId: UUID) async throws -> HealthNotification {
+        // Simulate API call
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        guard let index = cachedNotifications.firstIndex(where: { $0.id == notificationId }) else {
+            throw NotificationError.notificationNotFound
+        }
+        
+        let updatedNotification = cachedNotifications[index].markAsRead()
+        cachedNotifications[index] = updatedNotification
+        
+        return updatedNotification
+    }
+    
+    func markAllNotificationsAsRead() async throws -> [HealthNotification] {
+        // Simulate API call
+        try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+        
+        cachedNotifications = cachedNotifications.map { $0.markAsRead() }
+        return cachedNotifications
+    }
+    
+    func deleteNotification(_ notificationId: UUID) async throws {
+        // Simulate API call
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        guard let index = cachedNotifications.firstIndex(where: { $0.id == notificationId }) else {
+            throw NotificationError.notificationNotFound
+        }
+        
+        cachedNotifications.remove(at: index)
+    }
+    
+    func clearAllNotifications() async throws {
+        // Simulate API call
+        try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+        
+        cachedNotifications.removeAll()
     }
 }
 
@@ -375,6 +463,53 @@ struct LabReportProcessingActivity: Identifiable, Sendable {
             case .uploading, .processing, .analyzing: return true
             case .completed, .failed: return false
             }
+        }
+    }
+}
+
+// MARK: - Notification Error
+
+/// Errors that can occur during notification operations
+/// Sendable-compliant error type for Swift 6.0+ concurrency safety
+enum NotificationError: Error, LocalizedError, Sendable {
+    case notificationNotFound
+    case networkError
+    case invalidOperation
+    
+    /// Thread-safe error description implementation
+    /// Using nonisolated to prevent main actor isolation issues
+    nonisolated var errorDescription: String? {
+        switch self {
+        case .notificationNotFound:
+            return "Notification not found"
+        case .networkError:
+            return "Network error occurred"
+        case .invalidOperation:
+            return "Invalid operation"
+        }
+    }
+    
+    /// Additional LocalizedError properties for better error handling
+    nonisolated var failureReason: String? {
+        switch self {
+        case .notificationNotFound:
+            return "The requested notification could not be located in the system."
+        case .networkError:
+            return "A network connectivity issue prevented the operation from completing."
+        case .invalidOperation:
+            return "The requested operation is not valid in the current context."
+        }
+    }
+    
+    /// Recovery suggestions for users
+    nonisolated var recoverySuggestion: String? {
+        switch self {
+        case .notificationNotFound:
+            return "Please refresh the notification list and try again."
+        case .networkError:
+            return "Check your internet connection and retry the operation."
+        case .invalidOperation:
+            return "Please verify the operation parameters and try again."
         }
     }
 }

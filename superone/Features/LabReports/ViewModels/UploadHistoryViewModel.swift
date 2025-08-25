@@ -552,7 +552,7 @@ struct HistoryExportData: Codable {
     let history: [HistoryItem]
 }
 
-enum HistoryError: Error, LocalizedError {
+enum HistoryError: Error, LocalizedError, Sendable {
     case loadFailed(String)
     case deleteFailed(String)
     case clearFailed(String)

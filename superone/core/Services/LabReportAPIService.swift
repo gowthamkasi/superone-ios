@@ -596,7 +596,7 @@ enum HTTPMethod: String {
 
 // MARK: - Upload Errors
 
-enum LabReportUploadError: Error, LocalizedError {
+enum LabReportUploadError: Error, LocalizedError, Sendable {
     case fileSizeExceeded(Int64, Int64)
     case unsupportedFileType(String)
     case invalidFileData

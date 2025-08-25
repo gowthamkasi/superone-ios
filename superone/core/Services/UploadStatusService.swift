@@ -393,7 +393,7 @@ struct MonitoringConfiguration {
 
 // MARK: - Upload Status Errors
 
-enum UploadStatusError: Error, LocalizedError {
+enum UploadStatusError: Error, LocalizedError, Sendable {
     case invalidURL
     case authenticationRequired
     case fetchFailed(String)
