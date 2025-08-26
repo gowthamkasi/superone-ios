@@ -9,6 +9,7 @@
 import UIKit
 import Combine
 import os.log
+@preconcurrency import Alamofire
 
 // Define UserResponse type for getCurrentUser
 
@@ -77,15 +78,6 @@ struct APIForgotPasswordRequest: @preconcurrency Codable, Sendable {
     }
 }
 
-struct APITokenRefreshRequest: @preconcurrency Codable, Sendable {
-    let refreshToken: String
-    let deviceId: String?
-    
-    nonisolated enum CodingKeys: String, CodingKey {
-        case refreshToken = "refresh_token"
-        case deviceId = "device_id"
-    }
-}
 
 // MARK: - Authentication Error Types
 
@@ -255,15 +247,19 @@ class AuthenticationAPIService: ObservableObject {
             throw AuthenticationAPIError.noRefreshToken
         }
         
-        // Get device ID for the request (matches x-device-id header)
+        // Get device ID for the header
         let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
         
-        let request = APITokenRefreshRequest(refreshToken: refreshToken, deviceId: deviceId)
+        // Create custom headers with refresh token and device ID
+        let headers: HTTPHeaders = [
+            "x-refresh-token": refreshToken,
+            "x-device-id": deviceId
+        ]
         
-        let response: TokenResponse = try await networkService.post(
+        let response: TokenResponse = try await networkService.get(
             APIConfiguration.Endpoints.Auth.refresh,
-            body: request,
-            responseType: TokenResponse.self
+            responseType: TokenResponse.self,
+            headers: headers
         )
         
         // Store new tokens if refresh successful

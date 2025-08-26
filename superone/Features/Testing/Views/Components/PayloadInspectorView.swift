@@ -74,7 +74,7 @@ struct PayloadInspectorView: View {
     
     private var contentSection: some View {
         ScrollView {
-            Text(String(describing: data))
+            Text(formattedDataString)
                 .font(HealthTypography.captionRegular.monospaced())
                 .foregroundColor(HealthColors.primaryText)
                 .padding(HealthSpacing.sm)
@@ -84,10 +84,23 @@ struct PayloadInspectorView: View {
         .cornerRadius(HealthCornerRadius.sm)
     }
     
+    // MARK: - Computed Properties
+    
+    private var formattedDataString: String {
+        // Try to convert to JSON format first
+        if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted, .sortedKeys]),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            return jsonString
+        }
+        
+        // Fallback to Swift's native description if JSON serialization fails
+        return String(describing: data)
+    }
+    
     // MARK: - Actions
     
     private func copyToClipboard() {
-        UIPasteboard.general.string = String(describing: data)
+        UIPasteboard.general.string = formattedDataString
         showCopySuccessAlert = true
     }
 }

@@ -225,11 +225,7 @@ enum TokenError: @preconcurrency LocalizedError {
 
 // MARK: - Non-isolated Helper Function
 
-// Separate function to create the request to avoid conformance issues
-nonisolated func createRefreshTokenRequest(_ refreshToken: String) -> RefreshTokenRequest {
-    // Device ID is now sent as header, not in request body
-    return RefreshTokenRequest(refreshToken: refreshToken, deviceId: nil)
-}
+// RefreshTokenRequest model is no longer needed since we use headers only
 
 nonisolated func performTokenRefresh(_ refreshToken: String) async throws -> TokenResponse {
     // Avoid the generic post method entirely - use a simpler approach
@@ -258,7 +254,7 @@ extension superone.NetworkService {
         return try await performTokenRefresh(refreshToken)
     }
     
-    /// Direct refresh request method that avoids generic conformance issues
+    /// Direct refresh request method using GET with headers
     func performRefreshRequest(endpoint: String, refreshToken: String) async throws -> TokenResponse {
         
         // Create URL string and convert to URL
@@ -268,75 +264,61 @@ extension superone.NetworkService {
             throw NetworkError.invalidURL
         }
         
-        // Create request body - only refreshToken needed, deviceId is in header
-        let requestData: [String: String] = [
-            "refreshToken": refreshToken
-        ]
-        
-        if refreshToken.hasPrefix("{") {
-        }
-        
-        
         return try await withCheckedThrowingContinuation { continuation in
-            do {
-                let jsonData = try JSONSerialization.data(withJSONObject: requestData)
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"  // Changed from POST to GET
+            // No request body needed for GET request
+            
+            // Add standard headers manually
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.setValue("SuperOne-iOS/1.0.0", forHTTPHeaderField: "User-Agent")
+            request.setValue("true", forHTTPHeaderField: "ngrok-skip-browser-warning")
+            
+            // Add refresh token header
+            request.setValue(refreshToken, forHTTPHeaderField: "x-refresh-token")
+            
+            // Add device ID header
+            let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+            request.setValue(deviceId, forHTTPHeaderField: "x-device-id")
+            
+            // Use URLSession directly instead of Alamofire session
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    continuation.resume(throwing: NetworkError.unknownError(error))
+                    return
+                }
                 
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.httpBody = jsonData
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    continuation.resume(throwing: NetworkError.invalidResponse)
+                    return
+                }
                 
-                // Add standard headers manually
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                request.setValue("application/json", forHTTPHeaderField: "Accept")
-                request.setValue("SuperOne-iOS/1.0.0", forHTTPHeaderField: "User-Agent")
-                request.setValue("true", forHTTPHeaderField: "ngrok-skip-browser-warning")
+                guard httpResponse.statusCode == 200 else {
+                    if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                        continuation.resume(throwing: NetworkError.authenticationRequired)
+                    } else {
+                        continuation.resume(throwing: NetworkError.serverError(httpResponse.statusCode))
+                    }
+                    return
+                }
                 
-                // Add device ID header
-                let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
-                request.setValue(deviceId, forHTTPHeaderField: "x-device-id")
+                guard let data = data else {
+                    continuation.resume(throwing: NetworkError.invalidResponse)
+                    return
+                }
                 
-                // Use URLSession directly instead of Alamofire session
-                URLSession.shared.dataTask(with: request) { data, response, error in
-                    if let error = error {
-                        continuation.resume(throwing: NetworkError.unknownError(error))
-                        return
-                    }
-                    
-                    guard let httpResponse = response as? HTTPURLResponse else {
-                        continuation.resume(throwing: NetworkError.invalidResponse)
-                        return
-                    }
-                    
-                    guard httpResponse.statusCode == 200 else {
-                        if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
-                            continuation.resume(throwing: NetworkError.authenticationRequired)
-                        } else {
-                            continuation.resume(throwing: NetworkError.serverError(httpResponse.statusCode))
-                        }
-                        return
-                    }
-                    
-                    guard let data = data else {
-                        continuation.resume(throwing: NetworkError.invalidResponse)
-                        return
-                    }
-                    
-                    do {
-                        let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: data)
-                        continuation.resume(returning: tokenResponse)
-                    } catch {
-                        continuation.resume(throwing: NetworkError.decodingError(error))
-                    }
-                }.resume()
-                
-            } catch {
-                continuation.resume(throwing: NetworkError.encodingError)
-            }
+                do {
+                    let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: data)
+                    continuation.resume(returning: tokenResponse)
+                } catch {
+                    continuation.resume(throwing: NetworkError.decodingError(error))
+                }
+            }.resume()
         }
     }
 }
 
 // MARK: - Request/Response Models
 
-// Note: RefreshTokenRequest is defined in BackendModels.swift
+// Note: RefreshTokenRequest model removed - using headers only for GET requests
 // Note: TokenResponse and AuthTokens are defined in APIResponseModels.swift

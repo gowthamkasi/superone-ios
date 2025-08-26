@@ -81,16 +81,6 @@ struct RegistrationRequest: Codable, Sendable {
 
 /// Authentication response model - Removed: Using version from BackendModels.swift to avoid duplication
 
-/// Token refresh request model
-struct TokenRefreshRequest: Codable, Sendable {
-    let refreshToken: String
-    let deviceId: String?
-    
-    nonisolated enum CodingKeys: String, CodingKey {
-        case refreshToken = "refresh_token"
-        case deviceId = "device_id"
-    }
-}
 
 /// Password reset request model
 struct PasswordResetRequest: Codable, Sendable {

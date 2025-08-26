@@ -1013,15 +1013,6 @@ struct RegisterRequest: Codable, Sendable {
 
 // Note: AuthResponse is now defined in APIResponseModels.swift to avoid duplication
 
-struct RefreshTokenRequest: Codable, Sendable {
-    let refreshToken: String
-    let deviceId: String?
-    
-    nonisolated enum CodingKeys: String, CodingKey {
-        case refreshToken = "refreshToken"
-        case deviceId = "device_id"
-    }
-}
 
 // MARK: - User Models
 
