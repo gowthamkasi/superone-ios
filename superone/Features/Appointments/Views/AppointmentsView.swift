@@ -74,6 +74,12 @@ struct AppointmentsView: View {
                     FacilityDetailSheet(facility: facility)
                 }
             }
+            .sheet(isPresented: $viewModel.showTestsFilterSheet) {
+                TestsFilterSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $viewModel.showLabsFilterSheet) {
+                LabsFilterSheet(viewModel: viewModel)
+            }
             .alert("Cancel Appointment", isPresented: $viewModel.showCancelAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Confirm", role: .destructive) {
@@ -192,7 +198,12 @@ struct AppointmentsView: View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.lg) {
                 // Search bar
-                TestsSearchBar()
+                TestsSearchBar(
+                    searchText: $viewModel.testsSearchText,
+                    onFilterTap: {
+                        viewModel.showTestsFilterSheet = true
+                    }
+                )
                 
                 // Radio button selection for test type
                 RadioButtonSelector(
@@ -259,7 +270,12 @@ struct AppointmentsView: View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.lg) {
                 // Search bar
-                LabsSearchBar(viewModel: viewModel)
+                LabsSearchBar(
+                    viewModel: viewModel,
+                    onFilterTap: {
+                        viewModel.showLabsFilterSheet = true
+                    }
+                )
                 
                 // Radio button selection for service type
                 LabServiceTypeSelector(
@@ -851,14 +867,29 @@ struct TestCard: View {
 }
 
 struct TestsSearchBar: View {
+    @Binding var searchText: String
+    let onFilterTap: () -> Void
+    
     var body: some View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(HealthColors.secondaryText)
             
-            TextField("Search tests or results...", text: .constant(""))
+            TextField("Search tests or results...", text: $searchText)
                 .textFieldStyle(PlainTextFieldStyle())
                 .font(HealthTypography.body)
+            
+            if !searchText.isEmpty {
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(HealthColors.secondaryText)
+                }
+            }
+            
+            Button(action: onFilterTap) {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .foregroundColor(HealthColors.primary)
+            }
         }
         .padding(.horizontal, HealthSpacing.lg)
         .padding(.vertical, HealthSpacing.md)
@@ -869,6 +900,7 @@ struct TestsSearchBar: View {
 
 struct LabsSearchBar: View {
     @Bindable var viewModel: AppointmentsViewModel
+    let onFilterTap: () -> Void
     
     var body: some View {
         HStack {
@@ -884,6 +916,11 @@ struct LabsSearchBar: View {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(HealthColors.secondaryText)
                 }
+            }
+            
+            Button(action: onFilterTap) {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .foregroundColor(HealthColors.primary)
             }
         }
         .padding(.horizontal, HealthSpacing.lg)
@@ -2221,6 +2258,211 @@ struct IndividualTestCard: View {
         .background(HealthColors.secondaryBackground)
         .cornerRadius(HealthCornerRadius.card)
         .healthCardShadow()
+    }
+}
+
+// MARK: - Filter Sheets
+
+struct TestsFilterSheet: View {
+    @Bindable var viewModel: AppointmentsViewModel
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: HealthSpacing.xl) {
+                    
+                    // Test Categories
+                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                        Text("Test Categories")
+                            .font(HealthTypography.headline)
+                            .foregroundColor(HealthColors.primaryText)
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: HealthSpacing.md) {
+                            AppointmentFilterChip(title: "Blood Tests", isSelected: false) { }
+                            AppointmentFilterChip(title: "Heart Health", isSelected: false) { }
+                            AppointmentFilterChip(title: "Diabetes", isSelected: false) { }
+                            AppointmentFilterChip(title: "Thyroid", isSelected: false) { }
+                            AppointmentFilterChip(title: "Liver Function", isSelected: false) { }
+                            AppointmentFilterChip(title: "Kidney Function", isSelected: false) { }
+                            AppointmentFilterChip(title: "Vitamins", isSelected: false) { }
+                            AppointmentFilterChip(title: "Hormones", isSelected: false) { }
+                        }
+                    }
+                    
+                    // Price Range
+                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                        Text("Price Range")
+                            .font(HealthTypography.headline)
+                            .foregroundColor(HealthColors.primaryText)
+                        
+                        VStack(spacing: HealthSpacing.sm) {
+                            AppointmentFilterChip(title: "Under ₹500", isSelected: false) { }
+                            AppointmentFilterChip(title: "₹500 - ₹1000", isSelected: false) { }
+                            AppointmentFilterChip(title: "₹1000 - ₹2000", isSelected: false) { }
+                            AppointmentFilterChip(title: "Above ₹2000", isSelected: false) { }
+                        }
+                    }
+                    
+                    // Test Requirements
+                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                        Text("Test Requirements")
+                            .font(HealthTypography.headline)
+                            .foregroundColor(HealthColors.primaryText)
+                        
+                        VStack(spacing: HealthSpacing.sm) {
+                            AppointmentFilterChip(title: "No Fasting Required", isSelected: false) { }
+                            AppointmentFilterChip(title: "Fasting Required", isSelected: false) { }
+                            AppointmentFilterChip(title: "Same Day Results", isSelected: false) { }
+                            AppointmentFilterChip(title: "Home Collection Available", isSelected: false) { }
+                        }
+                    }
+                }
+                .padding(.horizontal, HealthSpacing.screenPadding)
+                .padding(.vertical, HealthSpacing.lg)
+            }
+            .navigationTitle("Filter Tests")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Reset") {
+                        // Reset filters
+                    }
+                    .foregroundColor(HealthColors.primary)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Apply") {
+                        dismiss()
+                    }
+                    .foregroundColor(HealthColors.primary)
+                }
+            }
+        }
+    }
+}
+
+struct LabsFilterSheet: View {
+    @Bindable var viewModel: AppointmentsViewModel
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: HealthSpacing.xl) {
+                    
+                    // Distance
+                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                        Text("Distance")
+                            .font(HealthTypography.headline)
+                            .foregroundColor(HealthColors.primaryText)
+                        
+                        VStack(spacing: HealthSpacing.sm) {
+                            AppointmentFilterChip(title: "Within 2 km", isSelected: false) { }
+                            AppointmentFilterChip(title: "Within 5 km", isSelected: false) { }
+                            AppointmentFilterChip(title: "Within 10 km", isSelected: false) { }
+                            AppointmentFilterChip(title: "Within 25 km", isSelected: false) { }
+                        }
+                    }
+                    
+                    // Lab Features
+                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                        Text("Lab Features")
+                            .font(HealthTypography.headline)
+                            .foregroundColor(HealthColors.primaryText)
+                        
+                        VStack(spacing: HealthSpacing.sm) {
+                            AppointmentFilterChip(title: "Walk-ins Accepted", isSelected: false) { }
+                            AppointmentFilterChip(title: "Home Collection", isSelected: false) { }
+                            AppointmentFilterChip(title: "Same Day Reports", isSelected: false) { }
+                            AppointmentFilterChip(title: "Digital Reports", isSelected: false) { }
+                            AppointmentFilterChip(title: "Free Parking", isSelected: false) { }
+                            AppointmentFilterChip(title: "24 Hours Open", isSelected: false) { }
+                        }
+                    }
+                    
+                    // Rating
+                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                        Text("Minimum Rating")
+                            .font(HealthTypography.headline)
+                            .foregroundColor(HealthColors.primaryText)
+                        
+                        VStack(spacing: HealthSpacing.sm) {
+                            AppointmentFilterChip(title: "4.5+ Stars", isSelected: false) { }
+                            AppointmentFilterChip(title: "4.0+ Stars", isSelected: false) { }
+                            AppointmentFilterChip(title: "3.5+ Stars", isSelected: false) { }
+                            AppointmentFilterChip(title: "Any Rating", isSelected: true) { }
+                        }
+                    }
+                    
+                    // Wait Time
+                    VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                        Text("Expected Wait Time")
+                            .font(HealthTypography.headline)
+                            .foregroundColor(HealthColors.primaryText)
+                        
+                        VStack(spacing: HealthSpacing.sm) {
+                            AppointmentFilterChip(title: "Under 15 min", isSelected: false) { }
+                            AppointmentFilterChip(title: "15-30 min", isSelected: false) { }
+                            AppointmentFilterChip(title: "30-60 min", isSelected: false) { }
+                            AppointmentFilterChip(title: "Any wait time", isSelected: true) { }
+                        }
+                    }
+                }
+                .padding(.horizontal, HealthSpacing.screenPadding)
+                .padding(.vertical, HealthSpacing.lg)
+            }
+            .navigationTitle("Filter Labs")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Reset") {
+                        // Reset filters
+                    }
+                    .foregroundColor(HealthColors.primary)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Apply") {
+                        dismiss()
+                    }
+                    .foregroundColor(HealthColors.primary)
+                }
+            }
+        }
+    }
+}
+
+struct AppointmentFilterChip: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                    .font(HealthTypography.bodyMedium)
+                    .foregroundColor(isSelected ? .white : HealthColors.primaryText)
+                
+                Spacer()
+                
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundColor(.white)
+                        .font(.system(size: 12, weight: .medium))
+                }
+            }
+            .padding(.horizontal, HealthSpacing.lg)
+            .padding(.vertical, HealthSpacing.md)
+            .background(isSelected ? HealthColors.primary : HealthColors.secondaryBackground)
+            .cornerRadius(HealthCornerRadius.button)
+            .overlay(
+                RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                    .stroke(isSelected ? HealthColors.primary : HealthColors.secondaryText.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

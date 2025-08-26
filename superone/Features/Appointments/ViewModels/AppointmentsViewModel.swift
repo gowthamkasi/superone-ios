@@ -72,6 +72,13 @@ final class AppointmentsViewModel {
             applyFilters()
         }
     }
+    
+    /// Tests search and filter
+    var testsSearchText: String = ""
+    var showTestsFilterSheet: Bool = false
+    
+    /// Labs search and filter (keeping existing searchText for backward compatibility)
+    var showLabsFilterSheet: Bool = false
     var selectedLocation: String? = nil {
         didSet {
             applyFilters()
@@ -155,7 +162,7 @@ final class AppointmentsViewModel {
     func getCurrentLocation() {
         Task {
             // Use the modern location manager with automatic error handling
-            let locationText = await locationManager.getCurrentLocation(forceRefresh: false)
+            let _ = await locationManager.getCurrentLocation(forceRefresh: false)
             
             await MainActor.run {
                 // Update facility search with new location if successful
