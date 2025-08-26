@@ -12,6 +12,7 @@ struct ProfileView: View {
     
     @State private var viewModel = ProfileViewModel()
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(AuthenticationManager.self) private var authManager
     
     var body: some View {
@@ -26,6 +27,9 @@ struct ProfileView: View {
                     
                     // Settings sections
                     settingsSection
+                    
+                    // Appearance section
+                    appearanceSection
                     
                     // Data & Privacy section
                     dataPrivacySection
@@ -267,6 +271,51 @@ struct ProfileView: View {
                 Divider()
                 
                 // Biometric Authentication settings removed for now - will be added back later
+            }
+        }
+    }
+    
+    // MARK: - Appearance Section
+    
+    private var appearanceSection: some View {
+        ProfileSection(title: "Appearance", icon: "paintbrush.fill") {
+            VStack(spacing: HealthSpacing.md) {
+                ProfileRow(
+                    icon: themeManager.currentTheme.icon,
+                    title: "Theme",
+                    subtitle: themeManager.currentTheme.description,
+                    trailing: {
+                        Menu {
+                            ForEach(AppTheme.allCases, id: \.self) { theme in
+                                Button {
+                                    themeManager.setTheme(theme)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: theme.icon)
+                                        Text(theme.displayName)
+                                        if theme == themeManager.currentTheme {
+                                            Spacer()
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: HealthSpacing.xs) {
+                                Text(themeManager.currentTheme.displayName)
+                                    .font(HealthTypography.captionMedium)
+                                    .foregroundColor(HealthColors.primary)
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(HealthColors.secondaryText)
+                            }
+                            .padding(.horizontal, HealthSpacing.sm)
+                            .padding(.vertical, HealthSpacing.xs)
+                            .background(HealthColors.primary.opacity(0.1))
+                            .cornerRadius(HealthCornerRadius.sm)
+                        }
+                    }
+                )
             }
         }
     }
@@ -568,9 +617,11 @@ struct SkeletonView: View {
 #Preview("Profile View") {
     ProfileView()
         .environmentObject(AppState())
+        .environmentObject(ThemeManager())
 }
 
 #Preview("Profile View - Loading") {
     ProfileView()
         .environmentObject(AppState())
+        .environmentObject(ThemeManager())
 }

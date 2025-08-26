@@ -6,6 +6,7 @@ import Combine
 struct SuperOneApp: App {
     @StateObject private var appState = AppState()
     @StateObject private var healthStore = HealthDataStore()
+    @StateObject private var themeManager = ThemeManager()
     @State private var authManager = AuthenticationManager()
     @State private var scenePhaseManager: ScenePhaseManager
     @State private var onboardingViewModel = OnboardingViewModel()
@@ -26,10 +27,12 @@ struct SuperOneApp: App {
                 ContentView()
                     .environmentObject(appState)
                     .environmentObject(healthStore)
+                    .environmentObject(themeManager)
                     .environment(scenePhaseManager)
                     .environment(authManager)
                     .environment(onboardingViewModel)
                     .environment(flowManager)
+                    .preferredColorScheme(themeManager.currentTheme.colorScheme)
                     .onAppear {
                         // Simple app initialization with native iOS 18 behavior
                         appState.loadUserPreferences()
