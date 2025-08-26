@@ -105,10 +105,6 @@ final class LocationManager: NSObject, Sendable {
         }
     }
     
-    deinit {
-        // Properties will be automatically cleaned up when the main actor instance is deallocated
-        // We can't directly access main actor isolated properties from deinit
-    }
     
     // MARK: - Public Methods
     
@@ -366,8 +362,11 @@ final class LocationManager: NSObject, Sendable {
     private func handleLocationSuccess(_ location: CLLocation) {
         invalidateTimer()
         
-        currentLocationContinuation?.resume(returning: location)
-        currentLocationContinuation = nil
+        // Ensure we only resume once and clean up properly
+        if let continuation = currentLocationContinuation {
+            currentLocationContinuation = nil
+            continuation.resume(returning: location)
+        }
     }
     
     private func handleLocationFailure(_ error: Error) {
@@ -377,8 +376,11 @@ final class LocationManager: NSObject, Sendable {
         currentError = locationError
         locationState = .failed(locationError)
         
-        currentLocationContinuation?.resume(throwing: locationError)
-        currentLocationContinuation = nil
+        // Ensure we only resume once and clean up properly
+        if let continuation = currentLocationContinuation {
+            currentLocationContinuation = nil
+            continuation.resume(throwing: locationError)
+        }
     }
     
     private func handleLocationTimeout() {
@@ -389,6 +391,18 @@ final class LocationManager: NSObject, Sendable {
     private func invalidateTimer() {
         locationTimer?.invalidate()
         locationTimer = nil
+    }
+    
+    /// Cleanup method to be called when the manager is no longer needed
+    func cleanup() async {
+        invalidateTimer()
+        locationManager.stopUpdatingLocation()
+        
+        // Cancel any pending continuation to prevent leaks
+        if let continuation = currentLocationContinuation {
+            currentLocationContinuation = nil
+            continuation.resume(throwing: LocationError.cancelled)
+        }
     }
 }
 
@@ -484,6 +498,7 @@ enum LocationError: Error, LocalizedError, Equatable, Sendable {
     case networkError
     case timeout
     case geocodingFailed
+    case cancelled
     case unknown
     
     /// Technical error description for debugging
@@ -501,6 +516,8 @@ enum LocationError: Error, LocalizedError, Equatable, Sendable {
             return "Location request timed out"
         case .geocodingFailed:
             return "Failed to convert coordinates to address"
+        case .cancelled:
+            return "Location request was cancelled"
         case .unknown:
             return "Unknown location error"
         }
@@ -521,6 +538,8 @@ enum LocationError: Error, LocalizedError, Equatable, Sendable {
             return "Location request timed out"
         case .geocodingFailed:
             return "Using coordinates"
+        case .cancelled:
+            return "Location cancelled"
         case .unknown:
             return "Location error"
         }
@@ -539,6 +558,8 @@ enum LocationError: Error, LocalizedError, Equatable, Sendable {
             return "Check your internet connection and try again"
         case .geocodingFailed:
             return "Location found but address unavailable"
+        case .cancelled:
+            return "Location request was stopped"
         case .unknown:
             return "Try restarting the app"
         }

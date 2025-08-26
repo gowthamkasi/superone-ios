@@ -55,7 +55,6 @@ final class ProfileViewModel {
     
     #if DEBUG
     /// Test interface state (development only)
-    var showTestInterface: Bool = false
     #endif
     
     /// Logout state

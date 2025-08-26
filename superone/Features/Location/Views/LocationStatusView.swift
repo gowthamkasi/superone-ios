@@ -213,6 +213,8 @@ struct LocationStatusView: View {
             return "wifi.slash"
         case .timeout:
             return "clock.badge.exclamationmark"
+        case .cancelled:
+            return "xmark.circle"
         case .locationUnavailable, .geocodingFailed, .unknown:
             return "location.slash.fill"
         }

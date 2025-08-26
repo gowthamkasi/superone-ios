@@ -68,19 +68,22 @@ struct APILoginRequest: @preconcurrency Codable, Sendable {
     }
 }
 
-struct APIRefreshTokenRequest: @preconcurrency Codable, Sendable {
-    let refreshToken: String
-    
-    nonisolated enum CodingKeys: String, CodingKey {
-        case refreshToken
-    }
-}
 
 struct APIForgotPasswordRequest: @preconcurrency Codable, Sendable {
     let email: String
     
     nonisolated enum CodingKeys: String, CodingKey {
         case email
+    }
+}
+
+struct APITokenRefreshRequest: @preconcurrency Codable, Sendable {
+    let refreshToken: String
+    let deviceId: String?
+    
+    nonisolated enum CodingKeys: String, CodingKey {
+        case refreshToken = "refresh_token"
+        case deviceId = "device_id"
     }
 }
 
@@ -252,7 +255,10 @@ class AuthenticationAPIService: ObservableObject {
             throw AuthenticationAPIError.noRefreshToken
         }
         
-        let request = APIRefreshTokenRequest(refreshToken: refreshToken)
+        // Get device ID for the request (matches x-device-id header)
+        let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+        
+        let request = APITokenRefreshRequest(refreshToken: refreshToken, deviceId: deviceId)
         
         let response: TokenResponse = try await networkService.post(
             APIConfiguration.Endpoints.Auth.refresh,

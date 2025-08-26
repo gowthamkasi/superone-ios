@@ -75,11 +75,6 @@ struct ProfileView: View {
             .sheet(isPresented: $viewModel.showSupport) {
                 SupportSheet()
             }
-            #if DEBUG
-            .sheet(isPresented: $viewModel.showTestInterface) {
-                LabLoopTestInterface()
-            }
-            #endif
             .alert("Sign Out", isPresented: $viewModel.showLogoutAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Sign Out", role: .destructive) {
@@ -427,14 +422,33 @@ struct ProfileView: View {
     private var testApisSection: some View {
         ProfileSection(title: "Test APIs", icon: "wrench.and.screwdriver") {
             VStack(spacing: HealthSpacing.md) {
-                ProfileRow(
-                    icon: "terminal",
-                    title: "LabLoop API Test Interface",
-                    subtitle: "Manual testing for LabLoop endpoints",
-                    action: {
-                        viewModel.showTestInterface = true
+                NavigationLink(destination: ManualAPITestingView()) {
+                    HStack(spacing: HealthSpacing.md) {
+                        Image(systemName: "terminal")
+                            .foregroundColor(HealthColors.primary)
+                            .frame(width: 24, height: 24)
+                        
+                        VStack(alignment: .leading, spacing: HealthSpacing.xs) {
+                            Text("Manual API Testing Console")
+                                .font(HealthTypography.bodyMedium)
+                                .foregroundColor(HealthColors.primaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            Text("Comprehensive testing for all Super One endpoints")
+                                .font(HealthTypography.captionRegular)
+                                .foregroundColor(HealthColors.secondaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(HealthColors.secondaryText)
+                            .font(.system(size: 14))
                     }
-                )
+                    .padding(.vertical, HealthSpacing.xs)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
     }
