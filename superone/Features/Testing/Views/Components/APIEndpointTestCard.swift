@@ -363,7 +363,7 @@ struct TestResultDetailView: View {
         VStack(alignment: .leading, spacing: HealthSpacing.sm) {
             if let response = result.response {
                 ScrollView {
-                    PayloadInspectorView(data: response, title: "Response")
+                    PayloadInspectorView(data: response, title: "Response", isExpectedResponse: false)
                 }
                 .frame(maxHeight: 300)
             } else if let error = result.error {
@@ -394,7 +394,7 @@ struct TestResultDetailView: View {
             let expectedResponse = getExpectedResponse(for: result.endpoint)
             
             ScrollView {
-                PayloadInspectorView(data: expectedResponse, title: "Expected Response")
+                PayloadInspectorView(data: expectedResponse, title: "Expected Response", isExpectedResponse: true)
             }
             .frame(maxHeight: 300)
         }
@@ -456,7 +456,7 @@ struct TestResultDetailView: View {
                     .italic()
             } else {
                 ScrollView {
-                    PayloadInspectorView(data: result.parameters, title: "Parameters")
+                    PayloadInspectorView(data: result.parameters, title: "Parameters", isExpectedResponse: false)
                 }
                 .frame(maxHeight: 200)
             }
@@ -549,6 +549,7 @@ struct TestResultDetailView: View {
         case "refreshToken":
             return [
                 "success": true,
+                "message": "Token refreshed successfully",
                 "data": [
                     "accessToken": "new_jwt_token_string",
                     "refreshToken": "new_refresh_token_string",
@@ -565,14 +566,69 @@ struct TestResultDetailView: View {
             ]
         case "getCurrentUser":
             return [
-                "id": "string",
+                "_id": "user_id_123",
                 "email": "user@example.com",
-                "name": "User Name",
-                "profileImageURL": "optional string",
-                "phoneNumber": "optional string",
-                "dateOfBirth": "optional date",
-                "createdAt": "date",
-                "updatedAt": "date"
+                "name": "John Doe",
+                "profile_image_url": "https://example.com/avatar.jpg",
+                "phone_number": "+1234567890",
+                "date_of_birth": "1990-01-01T00:00:00.000Z",
+                "gender": "male",
+                "created_at": "2024-01-01T00:00:00.000Z",
+                "updated_at": "2024-01-15T10:30:00.000Z",
+                "email_verified": true,
+                "phone_verified": false,
+                "two_factor_enabled": false,
+                "profile": [
+                    "date_of_birth": "1990-01-01T00:00:00.000Z",
+                    "gender": "male",
+                    "height": 175.0,
+                    "weight": 70.5,
+                    "activity_level": "moderately_active",
+                    "health_goals": ["cardiovascular_health", "weight_loss"],
+                    "medical_conditions": ["hypertension"],
+                    "medications": ["lisinopril"],
+                    "allergies": ["peanuts"],
+                    "emergency_contact": [
+                        "name": "Jane Doe",
+                        "relationship": "spouse",
+                        "phone_number": "+1234567891",
+                        "email": "jane@example.com"
+                    ],
+                    "profile_image_url": "https://example.com/avatar.jpg",
+                    "labloop_patient_id": "ll_patient_123"
+                ],
+                "preferences": [
+                    "notifications": [
+                        "health_alerts": true,
+                        "appointment_reminders": true,
+                        "report_ready": true,
+                        "recommendations": true,
+                        "weekly_digest": false,
+                        "monthly_report": true,
+                        "push_enabled": true,
+                        "email_enabled": true,
+                        "sms_enabled": false,
+                        "quiet_hours": [
+                            "enabled": true,
+                            "start_time": "22:00",
+                            "end_time": "08:00"
+                        ]
+                    ],
+                    "privacy": [
+                        "share_data_with_providers": true,
+                        "share_data_for_research": false,
+                        "allow_analytics": true,
+                        "allow_marketing": false,
+                        "data_retention_period": 365
+                    ],
+                    "units": [
+                        "weight_unit": "kg",
+                        "height_unit": "cm",
+                        "temperature_unit": "celsius",
+                        "date_format": "yyyy-MM-dd"
+                    ],
+                    "theme": "system"
+                ]
             ]
         case "validateToken":
             return [

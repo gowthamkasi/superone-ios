@@ -394,13 +394,20 @@ class AuthenticationAPIService: ObservableObject {
         do {
             logger.info("Fetching current user from backend API")
             
-            let response: User = try await networkService.get(
+            let response: UserResponse = try await networkService.get(
                 APIConfiguration.Endpoints.Mobile.currentUser,
-                responseType: User.self
+                responseType: UserResponse.self
             )
             
-            logger.info("Successfully fetched current user: \(response.email)")
-            return response
+            // Validate response following same pattern as login/refresh
+            guard response.success, let userData = response.data else {
+                let errorMessage = response.message ?? "Failed to retrieve user data"
+                logger.error("User API returned error: \(errorMessage)")
+                throw AuthenticationAPIError.unknownError
+            }
+            
+            logger.info("Successfully fetched current user: \(userData.email)")
+            return userData
             
         } catch {
             logger.error("Failed to fetch current user: \(error.localizedDescription)")

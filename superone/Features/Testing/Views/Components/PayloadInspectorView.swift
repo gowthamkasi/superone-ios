@@ -13,6 +13,7 @@ import Foundation
 struct PayloadInspectorView: View {
     let data: Any
     let title: String
+    let isExpectedResponse: Bool
     
     @State private var showCopySuccessAlert = false
     
@@ -87,13 +88,16 @@ struct PayloadInspectorView: View {
     // MARK: - Computed Properties
     
     private var formattedDataString: String {
-        // Try to convert to JSON format first
-        if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted, .sortedKeys]),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            return jsonString
+        // Only try JSON formatting for expected responses
+        if isExpectedResponse {
+            // Try to convert to JSON format for expected responses
+            if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted, .sortedKeys]),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                return jsonString
+            }
         }
         
-        // Fallback to Swift's native description if JSON serialization fails
+        // For actual responses and fallback, use raw text
         return String(describing: data)
     }
     

@@ -103,7 +103,7 @@ struct AuthenticationTestingView: View {
             name: "getCurrentUser",
             displayName: "Get Current User",
             method: APIHTTPMethod.GET,
-            path: "/api/v1/mobile/current-user",
+            path: "/api/v1/mobile/users/me",
             category: APICategory.authentication,
             description: "Get current authenticated user information",
             requiredParameters: [],

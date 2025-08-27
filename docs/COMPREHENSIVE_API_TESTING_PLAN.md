@@ -22,7 +22,7 @@ Replace the current basic sheet-based API testing interface with a comprehensive
 - `logout` - POST /api/v1/auth/logout
 - `refreshToken` - POST /api/v1/auth/refresh
 - `forgotPassword` - POST /api/v1/auth/forgot-password
-- `getCurrentUser` - GET /api/v1/mobile/current-user
+- `getCurrentUser` - GET /api/v1/mobile/users/me
 - `isAuthenticated` - Token validation check
 
 ### **LabLoop Integration APIs (5 endpoints)**
