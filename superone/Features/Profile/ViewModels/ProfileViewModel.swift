@@ -70,7 +70,14 @@ final class ProfileViewModel {
     
     private let userService = UserService.shared
     private let settingsService = SettingsService.shared
+    private let profileAPIService = ProfileAPIService()
     private var cancellables = Set<AnyCancellable>()
+    
+    /// Profile update state
+    var isUpdatingProfile: Bool = false
+    var updateProfileErrorMessage: String?
+    var showUpdateProfileError: Bool = false
+    var showUpdateProfileSuccess: Bool = false
     
     // MARK: - Initialization
     
@@ -185,7 +192,6 @@ final class ProfileViewModel {
         isSigningOut = false
         signOutErrorMessage = nil
         showSignOutError = false
-        // Clearing all profile data
         
         // Cancel any ongoing load task
         currentLoadTask?.cancel()
@@ -215,7 +221,11 @@ final class ProfileViewModel {
         signOutErrorMessage = nil
         showSignOutError = false
         
-        // All profile data cleared
+        // Clear profile update states
+        isUpdatingProfile = false
+        updateProfileErrorMessage = nil
+        showUpdateProfileError = false
+        showUpdateProfileSuccess = false
     }
     
     /// Force retry profile loading (resets attempt count)
@@ -228,20 +238,193 @@ final class ProfileViewModel {
         loadUserProfile()
     }
     
-    /// Update user profile
-    func updateProfile(_ profile: User) {
+    /// Update user profile with comprehensive error handling and validation
+    func updateProfile(
+        firstName: String? = nil,
+        lastName: String? = nil,
+        email: String? = nil,
+        mobileNumber: String? = nil,
+        profilePicture: String? = nil,
+        dateOfBirth: Date? = nil,
+        gender: Gender? = nil,
+        height: Double? = nil,
+        weight: Double? = nil
+    ) {
+        // Prevent multiple simultaneous updates
+        guard !isUpdatingProfile else {
+            return
+        }
+        
         Task {
+            await MainActor.run {
+                isUpdatingProfile = true
+                updateProfileErrorMessage = nil
+                showUpdateProfileError = false
+                showUpdateProfileSuccess = false
+            }
+            
             do {
-                // Profile update via backend API will be implemented
-                userProfile = profile
+                // Create update request with only provided fields
+                let updateRequest = UpdateProfileRequest.withChanges(
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email,
+                    mobileNumber: mobileNumber,
+                    profilePicture: profilePicture,
+                    dob: dateOfBirth,
+                    gender: gender,
+                    height: height,
+                    weight: weight
+                )
                 
-                // Show success feedback
-                // Success toast/alert will be added
+                // Debug logging for the update request
+                print("🔍 Profile Update Request Created:")
+                print("   Request details: \(updateRequest.changesDescription)")
+                print("   Has changes: \(updateRequest.hasChanges)")
+                
+                // Validate that at least one field is being updated
+                guard updateRequest.hasChanges else {
+                    print("❌ No changes detected - blocking API call")
+                    await MainActor.run {
+                        isUpdatingProfile = false
+                        updateProfileErrorMessage = "No changes detected. Please modify at least one field."
+                        showUpdateProfileError = true
+                    }
+                    return
+                }
+                
+                print("✅ Changes detected - proceeding with API call")
+                
+                // Call profile update API
+                let response = try await profileAPIService.updateProfile(updateRequest)
+                
+                // Update local user profile from API response
+                await MainActor.run {
+                    if let updatedUserProfile = response.data?.user,
+                       let currentUser = userProfile {
+                        // Update the current user with new data from API
+                        userProfile = User(
+                            id: currentUser.id,
+                            email: updatedUserProfile.email,
+                            name: "\(updatedUserProfile.firstName) \(updatedUserProfile.lastName)".trimmingCharacters(in: .whitespaces),
+                            firstName: updatedUserProfile.firstName,
+                            lastName: updatedUserProfile.lastName,
+                            profileImageURL: currentUser.profileImageURL,
+                            phoneNumber: updatedUserProfile.mobileNumber, // Map mobile to phone for compatibility
+                            mobileNumber: updatedUserProfile.mobileNumber, // Store mobile number separately
+                            dateOfBirth: updatedUserProfile.dob,
+                            gender: Gender(rawValue: updatedUserProfile.gender ?? "not_specified"),
+                            height: updatedUserProfile.height,
+                            weight: updatedUserProfile.weight,
+                            activityLevel: currentUser.activityLevel,
+                            healthGoals: currentUser.healthGoals,
+                            medicalConditions: currentUser.medicalConditions,
+                            medications: currentUser.medications,
+                            allergies: currentUser.allergies,
+                            labloopPatientId: currentUser.labloopPatientId,
+                            createdAt: currentUser.createdAt,
+                            updatedAt: Date(),
+                            emailVerified: currentUser.emailVerified,
+                            phoneVerified: currentUser.phoneVerified,
+                            twoFactorEnabled: currentUser.twoFactorEnabled,
+                            profile: currentUser.profile,
+                            preferences: currentUser.preferences
+                        )
+                        
+                        // Show success feedback
+                        isUpdatingProfile = false
+                        showUpdateProfileSuccess = true
+                        
+                        // Provide haptic feedback
+                        HapticFeedback.success()
+                        
+                        // Auto-hide success message after 3 seconds
+                        Task {
+                            try await Task.sleep(nanoseconds: 3_000_000_000)
+                            await MainActor.run {
+                                showUpdateProfileSuccess = false
+                            }
+                        }
+                    }
+                }
+                
             } catch {
-                errorMessage = "Failed to update profile: \(error.localizedDescription)"
-                showError = true
+                await MainActor.run {
+                    isUpdatingProfile = false
+                    
+                    // Handle different error types with user-friendly messages
+                    if let profileError = error as? ProfileAPIError {
+                        updateProfileErrorMessage = profileError.userFriendlyMessage
+                    } else {
+                        updateProfileErrorMessage = "Failed to update profile: \(error.localizedDescription)"
+                    }
+                    
+                    showUpdateProfileError = true
+                    
+                    // Provide error haptic feedback
+                    HapticFeedback.error()
+                }
             }
         }
+    }
+    
+    /// Update profile with User object (legacy support)
+    func updateProfile(_ profile: User) {
+        // Extract changed fields by comparing with current profile
+        guard let currentProfile = userProfile else {
+            errorMessage = "Current profile not available for comparison"
+            showError = true
+            return
+        }
+        
+        // Helper function to safely compare optional strings
+        func hasStringChanged(_ new: String?, _ current: String?) -> Bool {
+            // Handle nil vs empty string cases
+            let newValue = new?.isEmpty == true ? nil : new
+            let currentValue = current?.isEmpty == true ? nil : current
+            return newValue != currentValue
+        }
+        
+        // Helper function to get current first name from profile
+        func getCurrentFirstName() -> String? {
+            return currentProfile.firstName?.isEmpty == true ? nil : currentProfile.firstName
+        }
+        
+        // Helper function to get current last name from profile  
+        func getCurrentLastName() -> String? {
+            return currentProfile.lastName?.isEmpty == true ? nil : currentProfile.lastName
+        }
+        
+        // Compare and detect actual changes with better logic
+        let firstNameChanged = hasStringChanged(profile.firstName, getCurrentFirstName())
+        let lastNameChanged = hasStringChanged(profile.lastName, getCurrentLastName())
+        let emailChanged = hasStringChanged(profile.email, currentProfile.email)
+        let mobileNumberChanged = hasStringChanged(profile.mobileNumber, currentProfile.mobileNumber)
+        let profilePictureChanged = hasStringChanged(profile.profileImageURL, currentProfile.profileImageURL)
+        let dateOfBirthChanged = profile.dateOfBirth != currentProfile.dateOfBirth
+        let genderChanged = profile.gender != currentProfile.gender
+        let heightChanged = profile.height != currentProfile.height
+        let weightChanged = profile.weight != currentProfile.weight
+        
+        // Debug logging for troubleshooting
+        print("🔍 Profile Update Change Detection:")
+        print("   firstName: '\(profile.firstName ?? "nil")' vs '\(getCurrentFirstName() ?? "nil")' -> Changed: \(firstNameChanged)")
+        print("   lastName: '\(profile.lastName ?? "nil")' vs '\(getCurrentLastName() ?? "nil")' -> Changed: \(lastNameChanged)")
+        print("   email: '\(profile.email)' vs '\(currentProfile.email)' -> Changed: \(emailChanged)")
+        print("   mobileNumber: '\(profile.mobileNumber ?? "nil")' vs '\(currentProfile.mobileNumber ?? "nil")' -> Changed: \(mobileNumberChanged)")
+        
+        // Update only fields that have actually changed
+        updateProfile(
+            firstName: firstNameChanged ? profile.firstName : nil,
+            lastName: lastNameChanged ? profile.lastName : nil,
+            email: emailChanged ? profile.email : nil,
+            mobileNumber: mobileNumberChanged ? profile.mobileNumber : nil,
+            profilePicture: profilePictureChanged ? profile.profileImageURL : nil,
+            dateOfBirth: dateOfBirthChanged ? profile.dateOfBirth : nil,
+            gender: genderChanged ? profile.gender : nil,
+            height: heightChanged ? profile.height : nil,
+            weight: weightChanged ? profile.weight : nil
+        )
     }
     
     // MARK: - Settings Management
@@ -507,6 +690,7 @@ struct StorageInfo {
 class UserService {
     static let shared = UserService()
     private let authAPIService = AuthenticationAPIService()
+    private let profileAPIService = ProfileAPIService()
     
     private init() {}
     
@@ -527,9 +711,49 @@ class UserService {
         }
     }
     
-    /// Update user profile
+    /// Update user profile using new ProfileAPIService
     func updateUser(_ profile: UserProfile) async throws {
-        // User profile update via backend API will be implemented
+        // Convert UserProfile to UpdateProfileRequest
+        let request = UpdateProfileRequest(
+            firstName: nil, // UserProfile doesn't contain first/last name separately
+            lastName: nil,
+            email: nil,
+            mobileNumber: nil,
+            profilePicture: profile.profileImageURL,
+            dob: profile.dateOfBirth,
+            gender: profile.gender?.rawValue,
+            height: profile.height,
+            weight: profile.weight
+        )
+        
+        _ = try await profileAPIService.updateProfile(request)
+    }
+    
+    /// Update user profile with specific fields
+    func updateUserProfile(
+        firstName: String? = nil,
+        lastName: String? = nil,
+        email: String? = nil,
+        mobileNumber: String? = nil,
+        profilePicture: String? = nil,
+        dateOfBirth: Date? = nil,
+        gender: Gender? = nil,
+        height: Double? = nil,
+        weight: Double? = nil
+    ) async throws -> UpdateProfileResponse {
+        let request = UpdateProfileRequest.withChanges(
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            mobileNumber: mobileNumber,
+            profilePicture: profilePicture,
+            dob: dateOfBirth,
+            gender: gender,
+            height: height,
+            weight: weight
+        )
+        
+        return try await profileAPIService.updateProfile(request)
     }
 }
 

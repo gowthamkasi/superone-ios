@@ -296,6 +296,10 @@ struct AppointmentsView: View {
             .padding(.top, HealthSpacing.lg)
             .padding(.bottom, HealthSpacing.xl)
         }
+        .onAppear {
+            // Lazy load lab facilities only when Labs tab is accessed
+            viewModel.loadLabFacilitiesIfNeeded()
+        }
     }
     
     // MARK: - Walk-in Labs Content

@@ -349,7 +349,10 @@ enum ValidationError: Error, @preconcurrency LocalizedError {
     case passwordMismatch
     case requiredFieldMissing(String)
     case invalidPhoneNumber
+    case invalidMobileNumber
     case invalidDateOfBirth
+    case invalidHeight
+    case invalidWeight
     case invalidFileFormat
     case fileTooLarge(maxSize: String)
     case fieldTooLong(field: String, maxLength: Int)
@@ -367,8 +370,14 @@ enum ValidationError: Error, @preconcurrency LocalizedError {
             return "\(field) is required."
         case .invalidPhoneNumber:
             return "Please enter a valid phone number."
+        case .invalidMobileNumber:
+            return "Please enter a valid mobile number (10-15 digits)."
         case .invalidDateOfBirth:
             return "Please enter a valid date of birth."
+        case .invalidHeight:
+            return "Please enter a valid height (50-300 cm)."
+        case .invalidWeight:
+            return "Please enter a valid weight (20-500 kg)."
         case .invalidFileFormat:
             return "File format not supported. Please use PDF, JPG, or PNG."
         case .fileTooLarge(let maxSize):
@@ -392,8 +401,14 @@ enum ValidationError: Error, @preconcurrency LocalizedError {
             return "This field is required and cannot be left empty"
         case .invalidPhoneNumber:
             return "Enter a phone number in the format (555) 123-4567"
+        case .invalidMobileNumber:
+            return "Enter a mobile number with 10-15 digits, with or without country code"
         case .invalidDateOfBirth:
             return "Select a valid date from the date picker"
+        case .invalidHeight:
+            return "Enter height in centimeters between 50 and 300 cm"
+        case .invalidWeight:
+            return "Enter weight in kilograms between 20 and 500 kg"
         case .invalidFileFormat:
             return "Convert your file to PDF, JPG, or PNG format before uploading"
         case .fileTooLarge:
@@ -417,8 +432,14 @@ enum ValidationError: Error, @preconcurrency LocalizedError {
             return "\(field) field was left empty but is required"
         case .invalidPhoneNumber:
             return "Phone number format is not recognized"
+        case .invalidMobileNumber:
+            return "Mobile number format does not meet validation criteria"
         case .invalidDateOfBirth:
             return "Date of birth is outside acceptable range"
+        case .invalidHeight:
+            return "Height value is outside acceptable range of 50-300 cm"
+        case .invalidWeight:
+            return "Weight value is outside acceptable range of 20-500 kg"
         case .invalidFileFormat:
             return "File type is not supported by the system"
         case .fileTooLarge(let maxSize):
@@ -442,8 +463,14 @@ enum ValidationError: Error, @preconcurrency LocalizedError {
             return "required-fields-help"
         case .invalidPhoneNumber:
             return "phone-format-help"
+        case .invalidMobileNumber:
+            return "mobile-format-help"
         case .invalidDateOfBirth:
             return "date-selection-help"
+        case .invalidHeight:
+            return "height-input-help"
+        case .invalidWeight:
+            return "weight-input-help"
         case .invalidFileFormat, .fileTooLarge:
             return "file-upload-help"
         case .fieldTooLong, .fieldTooShort:

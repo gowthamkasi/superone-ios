@@ -1014,6 +1014,104 @@ struct RegisterRequest: Codable, Sendable {
 // Note: AuthResponse is now defined in APIResponseModels.swift to avoid duplication
 
 
+// MARK: - Profile Update Models
+
+/// Profile update request matching the exact API contract
+nonisolated struct UpdateProfileRequest: Codable, Sendable {
+    let firstName: String?
+    let lastName: String?
+    let email: String?
+    let mobileNumber: String?
+    let profilePicture: String?
+    let dob: Date?
+    let gender: String?
+    let height: Double?
+    let weight: Double?
+    
+    nonisolated enum CodingKeys: String, CodingKey {
+        case firstName
+        case lastName
+        case email
+        case mobileNumber
+        case profilePicture
+        case dob
+        case gender
+        case height
+        case weight
+    }
+    
+    init(
+        firstName: String? = nil,
+        lastName: String? = nil,
+        email: String? = nil,
+        mobileNumber: String? = nil,
+        profilePicture: String? = nil,
+        dob: Date? = nil,
+        gender: String? = nil,
+        height: Double? = nil,
+        weight: Double? = nil
+    ) {
+        self.firstName = firstName
+        self.lastName = lastName
+        self.email = email
+        self.mobileNumber = mobileNumber
+        self.profilePicture = profilePicture
+        self.dob = dob
+        self.gender = gender
+        self.height = height
+        self.weight = weight
+    }
+}
+
+/// Profile update response matching the exact API contract
+nonisolated struct UpdateProfileResponse: Codable, Sendable {
+    let success: Bool
+    let data: ProfileUpdateData?
+    let message: String
+    let timestamp: String
+    
+    nonisolated enum CodingKeys: String, CodingKey {
+        case success
+        case data
+        case message
+        case timestamp
+    }
+}
+
+/// Profile update data structure
+nonisolated struct ProfileUpdateData: Codable, Sendable {
+    let user: UpdatedUserProfile
+    
+    nonisolated enum CodingKeys: String, CodingKey {
+        case user
+    }
+}
+
+/// Updated user profile from API response
+nonisolated struct UpdatedUserProfile: Codable, Sendable {
+    let id: String
+    let email: String
+    let firstName: String
+    let lastName: String
+    let mobileNumber: String?
+    let dob: Date?
+    let gender: String?
+    let height: Double?
+    let weight: Double?
+    
+    nonisolated enum CodingKeys: String, CodingKey {
+        case id
+        case email
+        case firstName
+        case lastName
+        case mobileNumber
+        case dob
+        case gender
+        case height
+        case weight
+    }
+}
+
 // MARK: - User Models
 
 nonisolated struct User: Codable, Identifiable, Sendable, Equatable {
@@ -1024,6 +1122,7 @@ nonisolated struct User: Codable, Identifiable, Sendable, Equatable {
     let lastName: String?
     let profileImageURL: String?
     let phoneNumber: String?
+    let mobileNumber: String? // Added mobile number field that was missing
     let dateOfBirth: Date?
     let gender: Gender?
     let height: Double?
@@ -1049,6 +1148,7 @@ nonisolated struct User: Codable, Identifiable, Sendable, Equatable {
         case lastName = "last_name"
         case profileImageURL = "profile_image_url"
         case phoneNumber = "phone_number"
+        case mobileNumber = "mobile_number" // Added mobile number field
         case dateOfBirth = "date_of_birth"
         case gender
         case height, weight
@@ -1065,7 +1165,7 @@ nonisolated struct User: Codable, Identifiable, Sendable, Equatable {
         case profile, preferences
     }
     
-    init(id: String, email: String, name: String, firstName: String? = nil, lastName: String? = nil, profileImageURL: String? = nil, phoneNumber: String? = nil, dateOfBirth: Date? = nil, gender: Gender? = nil, height: Double? = nil, weight: Double? = nil, activityLevel: ActivityLevel? = nil, healthGoals: [HealthGoal]? = nil, medicalConditions: [String]? = nil, medications: [String]? = nil, allergies: [String]? = nil, labloopPatientId: String? = nil, createdAt: Date = Date(), updatedAt: Date = Date(), emailVerified: Bool = false, phoneVerified: Bool = false, twoFactorEnabled: Bool = false, profile: UserProfile? = nil, preferences: UserPreferences? = nil) {
+    init(id: String, email: String, name: String, firstName: String? = nil, lastName: String? = nil, profileImageURL: String? = nil, phoneNumber: String? = nil, mobileNumber: String? = nil, dateOfBirth: Date? = nil, gender: Gender? = nil, height: Double? = nil, weight: Double? = nil, activityLevel: ActivityLevel? = nil, healthGoals: [HealthGoal]? = nil, medicalConditions: [String]? = nil, medications: [String]? = nil, allergies: [String]? = nil, labloopPatientId: String? = nil, createdAt: Date = Date(), updatedAt: Date = Date(), emailVerified: Bool = false, phoneVerified: Bool = false, twoFactorEnabled: Bool = false, profile: UserProfile? = nil, preferences: UserPreferences? = nil) {
         self.id = id
         self.email = email
         self.name = name
@@ -1073,6 +1173,7 @@ nonisolated struct User: Codable, Identifiable, Sendable, Equatable {
         self.lastName = lastName
         self.profileImageURL = profileImageURL
         self.phoneNumber = phoneNumber
+        self.mobileNumber = mobileNumber // Added mobile number field
         self.dateOfBirth = dateOfBirth
         self.gender = gender
         self.height = height

@@ -16,11 +16,17 @@ struct EditProfileSheet: View {
     @State private var firstName: String = ""
     @State private var lastName: String = ""
     @State private var email: String = ""
+    @State private var mobileNumber: String = "" // Added mobile number field
     @State private var dateOfBirth: Date?
     @State private var selectedGender: Gender?
     @State private var heightCm: String = ""
     @State private var weightKg: String = ""
     @State private var showingDatePicker = false
+    
+    // Profile update state
+    @State private var isUpdating = false
+    @State private var updateError: String?
+    @State private var showUpdateError = false
     
     var body: some View {
         NavigationView {
@@ -50,6 +56,15 @@ struct EditProfileSheet: View {
                             .frame(width: 200)
                             .keyboardType(.emailAddress)
                             .textInputAutocapitalization(.never)
+                    }
+                    
+                    HStack {
+                        Text("Mobile Number")
+                        Spacer()
+                        TextField("Enter mobile number", text: $mobileNumber)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .frame(width: 200)
+                            .keyboardType(.phonePad)
                     }
                 }
                 
@@ -115,7 +130,13 @@ struct EditProfileSheet: View {
                     Button("Save") {
                         saveProfile()
                     }
-                    .disabled(!isValidForm)
+                    .disabled(!isValidForm || isUpdating)
+                    .overlay(
+                        isUpdating ? ProgressView()
+                            .scaleEffect(0.7)
+                            .progressViewStyle(CircularProgressViewStyle(tint: HealthColors.primary))
+                            : nil
+                    )
                 }
             }
             .sheet(isPresented: $showingDatePicker) {
@@ -130,17 +151,31 @@ struct EditProfileSheet: View {
         .onAppear {
             loadProfile()
         }
+        .alert("Update Error", isPresented: $showUpdateError) {
+            Button("OK") {
+                showUpdateError = false
+            }
+        } message: {
+            Text(updateError ?? "An error occurred while updating your profile")
+        }
     }
     
     private func loadProfile() {
         guard let profile = profile else { return }
         
-        // Extract name parts from the full name
-        let nameParts = profile.name.components(separatedBy: " ")
-        firstName = nameParts.first ?? ""
-        lastName = nameParts.dropFirst().joined(separator: " ")
+        // Load firstName and lastName directly from structured fields
+        firstName = profile.firstName ?? ""
+        lastName = profile.lastName ?? ""
+        
+        // Debug logging to help identify data source issues
+        print("🔍 EditProfileSheet.loadProfile():")
+        print("   profile.firstName: '\(profile.firstName ?? "nil")'")
+        print("   profile.lastName: '\(profile.lastName ?? "nil")'")
+        print("   Loaded firstName: '\(firstName)'")
+        print("   Loaded lastName: '\(lastName)'")
         
         email = profile.email
+        mobileNumber = profile.mobileNumber ?? "" // Load mobile number
         dateOfBirth = profile.dateOfBirth
         selectedGender = profile.gender
         
@@ -148,11 +183,19 @@ struct EditProfileSheet: View {
         if let healthProfile = profile.profile {
             heightCm = healthProfile.height.map { String(Int($0)) } ?? ""
             weightKg = healthProfile.weight.map { String(format: "%.1f", $0) } ?? ""
+        } else {
+            // Fallback: load from User level height/weight if available
+            heightCm = profile.height.map { String(Int($0)) } ?? ""
+            weightKg = profile.weight.map { String(format: "%.1f", $0) } ?? ""
         }
     }
     
     private func saveProfile() {
         guard let profile = profile else { return }
+        
+        isUpdating = true
+        updateError = nil
+        showUpdateError = false
         
         // Create updated health profile
         let updatedHealthProfile = UserProfile(
@@ -167,15 +210,20 @@ struct EditProfileSheet: View {
             labloopPatientId: profile.profile?.labloopPatientId
         )
         
-        // Create updated user
+        // Create updated user with mobile number support
         let updatedUser = User(
             id: profile.id,
             email: email,
             name: "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces),
+            firstName: firstName,
+            lastName: lastName,
             profileImageURL: profile.profileImageURL,
-            phoneNumber: profile.phoneNumber,
+            phoneNumber: mobileNumber.isEmpty ? profile.phoneNumber : mobileNumber, // Use mobile number as phone
+            mobileNumber: mobileNumber.isEmpty ? nil : mobileNumber, // Store mobile number separately
             dateOfBirth: dateOfBirth,
             gender: selectedGender,
+            height: Double(heightCm),
+            weight: Double(weightKg),
             createdAt: profile.createdAt,
             updatedAt: Date(),
             emailVerified: profile.emailVerified,
@@ -185,12 +233,70 @@ struct EditProfileSheet: View {
             preferences: profile.preferences
         )
         
-        onSave(updatedUser)
-        dismiss()
+        // Validate form before saving
+        do {
+            try validateForm()
+            
+            onSave(updatedUser)
+            isUpdating = false
+            dismiss()
+            
+        } catch {
+            isUpdating = false
+            updateError = error.localizedDescription
+            showUpdateError = true
+        }
+    }
+    
+    /// Validate form inputs
+    private func validateForm() throws {
+        // Validate email format if not empty
+        if !email.isEmpty && !isValidEmail(email) {
+            throw ValidationError.invalidEmail
+        }
+        
+        // Validate mobile number format if not empty
+        if !mobileNumber.isEmpty && !isValidMobileNumber(mobileNumber) {
+            throw ValidationError.invalidMobileNumber
+        }
+        
+        // Validate height if provided
+        if !heightCm.isEmpty, let height = Double(heightCm) {
+            if height < 50 || height > 300 {
+                throw ValidationError.invalidHeight
+            }
+        }
+        
+        // Validate weight if provided
+        if !weightKg.isEmpty, let weight = Double(weightKg) {
+            if weight < 20 || weight > 500 {
+                throw ValidationError.invalidWeight
+            }
+        }
+    }
+    
+    /// Validate email format
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
+    }
+    
+    /// Validate mobile number format
+    private func isValidMobileNumber(_ mobileNumber: String) -> Bool {
+        let digitsOnly = mobileNumber.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+        return digitsOnly.count >= 10 && digitsOnly.count <= 15
     }
     
     private var isValidForm: Bool {
-        !firstName.isEmpty && !lastName.isEmpty && !email.isEmpty
+        // Basic validation - at least first name, last name, and email are required
+        let hasRequiredFields = !firstName.isEmpty && !lastName.isEmpty && !email.isEmpty
+        
+        // Optional field validation - if provided, must be valid
+        let emailValid = email.isEmpty || isValidEmail(email)
+        let mobileValid = mobileNumber.isEmpty || isValidMobileNumber(mobileNumber)
+        
+        return hasRequiredFields && emailValid && mobileValid
     }
 }
 
@@ -221,16 +327,24 @@ struct DatePickerSheet: View {
     }
 }
 
+// MARK: - Validation Errors
+// ValidationError enum is defined in NetworkError.swift
+
 #Preview {
     EditProfileSheet(
         profile: User(
             id: "preview-user-id",
             email: "preview@example.com",
             name: "Sample User",
+            firstName: "Sample",
+            lastName: "User",
             profileImageURL: nil,
-            phoneNumber: nil,
+            phoneNumber: "+1234567890",
+            mobileNumber: "+1234567890", // Added mobile number for preview
             dateOfBirth: Calendar.current.date(byAdding: .year, value: -25, to: Date()),
             gender: .male,
+            height: 175.0,
+            weight: 70.0,
             createdAt: Date(),
             updatedAt: Date(),
             emailVerified: true,

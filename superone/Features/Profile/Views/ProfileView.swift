@@ -61,8 +61,9 @@ struct ProfileView: View {
             .sheet(isPresented: $viewModel.showEditProfile) {
                 EditProfileSheet(
                     profile: viewModel.userProfile,
-                    onSave: { profile in
-                        viewModel.updateProfile(profile)
+                    onSave: { updatedProfile in
+                        // Use the enhanced updateProfile method
+                        viewModel.updateProfile(updatedProfile)
                     }
                 )
             }
@@ -115,10 +116,33 @@ struct ProfileView: View {
             } message: {
                 Text(viewModel.signOutErrorMessage ?? "An error occurred while signing out.")
             }
+            .alert("Profile Update Error", isPresented: $viewModel.showUpdateProfileError) {
+                Button("OK") {
+                    viewModel.showUpdateProfileError = false
+                }
+                Button("Edit Profile") {
+                    viewModel.showUpdateProfileError = false
+                    viewModel.showEditProfile = true
+                }
+            } message: {
+                Text(viewModel.updateProfileErrorMessage ?? "An error occurred while updating your profile.")
+            }
+            .alert("Profile Updated", isPresented: $viewModel.showUpdateProfileSuccess) {
+                Button("OK") {
+                    viewModel.showUpdateProfileSuccess = false
+                }
+            } message: {
+                Text("Your profile has been updated successfully.")
+            }
             // Loading overlay for sign out process
             .loadingOverlay(
                 isLoading: viewModel.isSigningOut,
                 message: "Signing out..."
+            )
+            // Loading overlay for profile updates
+            .loadingOverlay(
+                isLoading: viewModel.isUpdatingProfile,
+                message: "Updating profile..."
             )
             // Biometric lifecycle methods removed for now
         }
@@ -154,6 +178,18 @@ struct ProfileView: View {
                             .font(HealthTypography.body)
                             .foregroundColor(HealthColors.secondaryText)
                         
+                        // Display mobile number if available
+                        if let mobileNumber = profile.mobileNumber, !mobileNumber.isEmpty {
+                            HStack {
+                                Image(systemName: "phone.fill")
+                                    .foregroundColor(HealthColors.primary)
+                                    .font(.caption)
+                                Text(mobileNumber)
+                                    .font(HealthTypography.captionMedium)
+                                    .foregroundColor(HealthColors.secondaryText)
+                            }
+                        }
+                        
                         if let dateOfBirth = profile.dateOfBirth {
                             let age = Calendar.current.dateComponents([.year], from: dateOfBirth, to: Date()).year ?? 0
                             Text("\(age) years old")
@@ -170,9 +206,17 @@ struct ProfileView: View {
                                 .frame(width: 80, height: 14)
                         }
                     } else {
-                        Text("Unable to load profile")
-                            .font(HealthTypography.body)
-                            .foregroundColor(HealthColors.secondaryText)
+                        VStack(alignment: .leading, spacing: HealthSpacing.xs) {
+                            Text("Unable to load profile")
+                                .font(HealthTypography.body)
+                                .foregroundColor(HealthColors.secondaryText)
+                            
+                            Button("Retry") {
+                                viewModel.retryLoadUserProfile()
+                            }
+                            .font(HealthTypography.captionMedium)
+                            .foregroundColor(HealthColors.primary)
+                        }
                     }
                     
                     Spacer()
@@ -182,19 +226,30 @@ struct ProfileView: View {
             }
             
             // Edit profile button
-            Button(action: { viewModel.showEditProfile = true }) {
+            Button(action: { 
+                viewModel.showEditProfile = true 
+            }) {
                 HStack {
                     Image(systemName: "pencil")
                     Text("Edit Profile")
+                    
+                    // Show loading indicator if updating
+                    if viewModel.isUpdatingProfile {
+                        Spacer()
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .progressViewStyle(CircularProgressViewStyle(tint: HealthColors.primary))
+                    }
                 }
                 .font(HealthTypography.bodyMedium)
-                .foregroundColor(HealthColors.primary)
+                .foregroundColor(viewModel.isUpdatingProfile ? HealthColors.secondaryText : HealthColors.primary)
                 .padding(.horizontal, HealthSpacing.lg)
                 .padding(.vertical, HealthSpacing.md)
-                .background(HealthColors.primary.opacity(0.1))
+                .background(HealthColors.primary.opacity(viewModel.isUpdatingProfile ? 0.05 : 0.1))
                 .cornerRadius(HealthCornerRadius.button)
             }
             .buttonStyle(PlainButtonStyle())
+            .disabled(viewModel.isUpdatingProfile)
         }
         .padding(HealthSpacing.lg)
         .background(HealthColors.secondaryBackground)

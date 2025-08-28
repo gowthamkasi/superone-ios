@@ -406,7 +406,15 @@ class AuthenticationAPIService: ObservableObject {
                 throw AuthenticationAPIError.unknownError
             }
             
+            // Debug logging to see what fields are populated
             logger.info("Successfully fetched current user: \(userData.email)")
+            print("🔍 getCurrentUser API Response:")
+            print("   email: '\(userData.email)'")
+            print("   name: '\(userData.name)'")
+            print("   firstName: '\(userData.firstName ?? "nil")'")
+            print("   lastName: '\(userData.lastName ?? "nil")'")
+            print("   mobileNumber: '\(userData.mobileNumber ?? "nil")'")
+            
             return userData
             
         } catch {

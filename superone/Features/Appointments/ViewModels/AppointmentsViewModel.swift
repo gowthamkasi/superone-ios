@@ -137,7 +137,7 @@ final class AppointmentsViewModel {
         setupUserId()
         setupLocationServices()
         loadAppointments()
-        loadLabFacilities()
+        // Remove automatic loadLabFacilities() - will be loaded lazily when needed
         loadTests()
         loadTestPackages()
         loadIndividualTests()
@@ -293,6 +293,14 @@ final class AppointmentsViewModel {
     }
     
     // MARK: - Lab Facility Management
+    
+    /// Load lab facilities from LabLoop API only when needed (lazy loading)
+    func loadLabFacilitiesIfNeeded() {
+        // Skip if already loaded or currently loading
+        guard labFacilities.isEmpty && !isLoadingFacilities else { return }
+        
+        loadLabFacilities()
+    }
     
     /// Load available lab facilities
     func loadLabFacilities() {
