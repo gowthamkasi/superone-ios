@@ -480,7 +480,7 @@ struct AuthenticationTestingView: View {
         
         Task {
             do {
-                let parameters = testParameters.reduce(into: [String: Any]()) { result, item in
+                let parameters = testParameters.reduce(into: [String: Sendable]()) { result, item in
                     result[item.key] = item.value.actualValue
                 }
                 
@@ -498,7 +498,7 @@ struct AuthenticationTestingView: View {
                     // Create error result
                     let errorResult = APITestResult(
                         endpoint: endpoint,
-                        parameters: testParameters.reduce(into: [String: Any]()) { result, item in
+                        parameters: testParameters.reduce(into: [String: Sendable]()) { result, item in
                             result[item.key] = item.value.actualValue
                         },
                         responseTime: 0,

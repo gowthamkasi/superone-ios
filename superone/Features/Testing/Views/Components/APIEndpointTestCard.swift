@@ -498,18 +498,82 @@ struct TestResultDetailView: View {
                 "message": "Login successful",
                 "data": [
                     "user": [
-                        "id": "string",
+                        "_id": "68a4b68d895feeda983294b7",
                         "email": "user@example.com",
-                        "name": "User Name",
-                        "profileImageURL": "optional string",
-                        "phoneNumber": "optional string",
-                        "dateOfBirth": "optional date",
-                        "createdAt": "date",
-                        "updatedAt": "date"
+                        "name": "John",
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "profile_image_url": "https://example.com/avatar.jpg",
+                        "phone_number": "+1234567890",
+                        "date_of_birth": "1990-01-15T00:00:00.000Z",
+                        "gender": "male",
+                        "height": 175.0,
+                        "weight": 70.0,
+                        "activity_level": "moderately_active",
+                        "health_goals": ["fitness", "weight_management"],
+                        "medical_conditions": [],
+                        "medications": [],
+                        "allergies": [],
+                        "labloop_patient_id": "68a4b68d895feeda983294b7",
+                        "created_at": "2024-01-01T00:00:00.000Z",
+                        "updated_at": "2025-01-15T10:30:00.000Z",
+                        "email_verified": true,
+                        "phone_verified": false,
+                        "two_factor_enabled": false,
+                        "profile": [
+                            "date_of_birth": "1990-01-15T00:00:00.000Z",
+                            "gender": "male",
+                            "height": 175.0,
+                            "weight": 70.0,
+                            "activity_level": "moderately_active",
+                            "health_goals": ["fitness", "weight_management"],
+                            "medical_conditions": [],
+                            "medications": [],
+                            "allergies": [],
+                            "emergency_contact": [
+                                "name": "Jane Doe",
+                                "phone": "+1234567891",
+                                "relationship": "spouse"
+                            ],
+                            "profile_image_url": "https://example.com/avatar.jpg",
+                            "labloop_patient_id": "68a4b68d895feeda983294b7"
+                        ],
+                        "preferences": [
+                            "notifications": [
+                                "appointment_reminders": true,
+                                "email_enabled": true,
+                                "health_alerts": true,
+                                "monthly_report": true,
+                                "push_enabled": true,
+                                "quiet_hours": [
+                                    "enabled": true,
+                                    "start_time": "22:00",
+                                    "end_time": "08:00"
+                                ],
+                                "recommendations": true,
+                                "report_ready": true,
+                                "sms_enabled": false,
+                                "weekly_digest": false
+                            ],
+                            "privacy": [
+                                "allow_analytics": true,
+                                "allow_marketing": false,
+                                "data_retention_period": 365,
+                                "share_data_for_research": false,
+                                "share_data_with_providers": true
+                            ],
+                            "theme": "system",
+                            "units": [
+                                "date_format": "yyyy-MM-dd",
+                                "height_unit": "cm",
+                                "temperature_unit": "celsius",
+                                "weight_unit": "kg"
+                            ]
+                        ]
                     ],
                     "tokens": [
-                        "accessToken": "jwt_token_string",
-                        "refreshToken": "refresh_token_string",
+                        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                         "tokenType": "Bearer",
                         "expiresIn": 900
                     ]
@@ -522,18 +586,34 @@ struct TestResultDetailView: View {
                 "message": "Registration successful",
                 "data": [
                     "user": [
-                        "id": "string",
-                        "email": "user@example.com",
-                        "name": "User Name",
-                        "profileImageURL": "null",
-                        "phoneNumber": "null",
-                        "dateOfBirth": "date",
-                        "createdAt": "date",
-                        "updatedAt": "date"
+                        "_id": "new_user_id_456",
+                        "email": "newuser@example.com",
+                        "name": "Jane",
+                        "first_name": "Jane",
+                        "last_name": "Smith",
+                        "profile_image_url": NSNull(),
+                        "phone_number": NSNull(),
+                        "date_of_birth": "1992-05-20T00:00:00.000Z",
+                        "gender": "female",
+                        "height": 165.0,
+                        "weight": 65.0,
+                        "activity_level": "lightly_active",
+                        "health_goals": [],
+                        "medical_conditions": [],
+                        "medications": [],
+                        "allergies": [],
+                        "labloop_patient_id": "new_user_id_456",
+                        "created_at": "2025-01-29T12:00:00.000Z",
+                        "updated_at": "2025-01-29T12:00:00.000Z",
+                        "email_verified": false,
+                        "phone_verified": false,
+                        "two_factor_enabled": false,
+                        "profile": NSNull(),
+                        "preferences": NSNull()
                     ],
                     "tokens": [
-                        "accessToken": "jwt_token_string",
-                        "refreshToken": "refresh_token_string",
+                        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                         "tokenType": "Bearer",
                         "expiresIn": 900
                     ]
@@ -566,68 +646,79 @@ struct TestResultDetailView: View {
             ]
         case "getCurrentUser":
             return [
-                "_id": "user_id_123",
-                "email": "user@example.com",
-                "name": "John Doe",
-                "profile_image_url": "https://example.com/avatar.jpg",
-                "phone_number": "+1234567890",
-                "date_of_birth": "1990-01-01T00:00:00.000Z",
-                "gender": "male",
-                "created_at": "2024-01-01T00:00:00.000Z",
-                "updated_at": "2024-01-15T10:30:00.000Z",
-                "email_verified": true,
-                "phone_verified": false,
-                "two_factor_enabled": false,
-                "profile": [
+                "success": true,
+                "message": "User retrieved successfully",
+                "data": [
+                    "_id": "user_id_123",
+                    "email": "user@example.com",
+                    "name": "John Doe",
+                    "profile_image_url": "https://example.com/avatar.jpg",
+                    "phone_number": "+1234567890",
                     "date_of_birth": "1990-01-01T00:00:00.000Z",
                     "gender": "male",
-                    "height": 175.0,
-                    "weight": 70.5,
-                    "activity_level": "moderately_active",
-                    "health_goals": ["cardiovascular_health", "weight_loss"],
-                    "medical_conditions": ["hypertension"],
-                    "medications": ["lisinopril"],
-                    "allergies": ["peanuts"],
-                    "emergency_contact": [
-                        "name": "Jane Doe",
-                        "relationship": "spouse",
-                        "phone_number": "+1234567891",
-                        "email": "jane@example.com"
+                    "created_at": "2024-01-01T00:00:00.000Z",
+                    "updated_at": "2024-01-15T10:30:00.000Z",
+                    "email_verified": true,
+                    "phone_verified": false,
+                    "two_factor_enabled": false,
+                    "profile": [
+                        "date_of_birth": "1990-01-01T00:00:00.000Z",
+                        "gender": "male",
+                        "height": 175.0,
+                        "weight": 70.5,
+                        "activity_level": "moderately_active",
+                        "health_goals": ["cardiovascular_health", "weight_loss"],
+                        "medical_conditions": ["hypertension"],
+                        "medications": ["lisinopril"],
+                        "allergies": ["peanuts"],
+                        "emergency_contact": [
+                            "name": "Jane Doe",
+                            "relationship": "spouse",
+                            "phone_number": "+1234567891",
+                            "email": "jane@example.com"
+                        ],
+                        "profile_image_url": "https://example.com/avatar.jpg",
+                        "labloop_patient_id": "ll_patient_123"
                     ],
-                    "profile_image_url": "https://example.com/avatar.jpg",
-                    "labloop_patient_id": "ll_patient_123"
+                    "preferences": [
+                        "notifications": [
+                            "health_alerts": true,
+                            "appointment_reminders": true,
+                            "report_ready": true,
+                            "recommendations": true,
+                            "weekly_digest": false,
+                            "monthly_report": true,
+                            "push_enabled": true,
+                            "email_enabled": true,
+                            "sms_enabled": false,
+                            "quiet_hours": [
+                                "enabled": true,
+                                "start_time": "22:00",
+                                "end_time": "08:00"
+                            ]
+                        ],
+                        "privacy": [
+                            "share_data_with_providers": true,
+                            "share_data_for_research": false,
+                            "allow_analytics": true,
+                            "allow_marketing": false,
+                            "data_retention_period": 365
+                        ],
+                        "units": [
+                            "weight_unit": "kg",
+                            "height_unit": "cm",
+                            "temperature_unit": "celsius",
+                            "date_format": "yyyy-MM-dd"
+                        ],
+                        "theme": "system"
+                    ]
                 ],
-                "preferences": [
-                    "notifications": [
-                        "health_alerts": true,
-                        "appointment_reminders": true,
-                        "report_ready": true,
-                        "recommendations": true,
-                        "weekly_digest": false,
-                        "monthly_report": true,
-                        "push_enabled": true,
-                        "email_enabled": true,
-                        "sms_enabled": false,
-                        "quiet_hours": [
-                            "enabled": true,
-                            "start_time": "22:00",
-                            "end_time": "08:00"
-                        ]
-                    ],
-                    "privacy": [
-                        "share_data_with_providers": true,
-                        "share_data_for_research": false,
-                        "allow_analytics": true,
-                        "allow_marketing": false,
-                        "data_retention_period": 365
-                    ],
-                    "units": [
-                        "weight_unit": "kg",
-                        "height_unit": "cm",
-                        "temperature_unit": "celsius",
-                        "date_format": "yyyy-MM-dd"
-                    ],
-                    "theme": "system"
+                "timestamp": "2024-01-15T10:30:00.000Z",
+                "meta": [
+                    "requestedAt": "2024-01-15T10:30:00.000Z",
+                    "processingTime": 0.125,
+                    "version": "1.0.0",
+                    "requestId": "req_12345"
                 ]
             ]
         case "validateToken":

@@ -203,7 +203,7 @@ class NetworkService: ObservableObject {
     func get<T: Codable & Sendable>(
         _ endpoint: String,
         responseType: T.Type,
-        parameters: [String: Any]? = nil,
+        parameters: [String: Sendable]? = nil,
         headers: HTTPHeaders? = nil,
         useCache: Bool = true
     ) async throws -> T {
@@ -300,12 +300,61 @@ class NetworkService: ObservableObject {
         }
     }
     
+    /// Get raw response data without JSON decoding (for API testing)
+    func getRawData(
+        _ endpoint: String,
+        method: Alamofire.HTTPMethod = .get,
+        parameters: [String: Sendable]? = nil,
+        headers: HTTPHeaders? = nil
+    ) async throws -> (data: Data, response: HTTPURLResponse) {
+        guard isConnected else {
+            throw NetworkError.noConnection
+        }
+        
+        let url = APIConfiguration.url(for: endpoint)
+        let requestHeaders = await buildHeaders(headers)
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            var request: DataRequest
+            
+            if method == .post, let params = parameters, !params.isEmpty {
+                // POST request with JSON body
+                request = session.request(
+                    url,
+                    method: method,
+                    parameters: params,
+                    encoding: JSONEncoding.default,
+                    headers: requestHeaders
+                )
+                .responseData { response in
+                    self.handleRawResponse(response, continuation: continuation)
+                }
+            } else {
+                // GET request or other methods
+                request = session.request(
+                    url,
+                    method: method,
+                    parameters: parameters,
+                    encoding: URLEncoding.default,
+                    headers: requestHeaders
+                )
+                .responseData { response in
+                    self.handleRawResponse(response, continuation: continuation)
+                }
+            }
+            
+            if let urlRequest = request.request {
+                logRequest(urlRequest)
+            }
+        }
+    }
+    
     // MARK: - Private Request Handling
     
     private func performRequest<T: Codable & Sendable, U: Codable & Sendable>(
         method: Alamofire.HTTPMethod,
         endpoint: String,
-        parameters: [String: Any]? = nil,
+        parameters: [String: Sendable]? = nil,
         body: U? = nil,
         responseType: T.Type,
         headers: HTTPHeaders? = nil,
@@ -335,7 +384,7 @@ class NetworkService: ObservableObject {
     private func performActualRequest<T: Codable & Sendable, U: Codable & Sendable>(
         method: Alamofire.HTTPMethod,
         url: String,
-        parameters: [String: Any]? = nil,
+        parameters: [String: Sendable]? = nil,
         body: U? = nil,
         responseType: T.Type,
         headers: HTTPHeaders,
@@ -486,13 +535,65 @@ class NetworkService: ObservableObject {
                     )
                 }
                 
+                // Log raw response data for debugging
+                let rawResponseString = String(data: data, encoding: .utf8) ?? "Could not convert data to string"
+                print("🔍 RAW RESPONSE DATA (Length: \(data.count) bytes):")
+                print("Response Type: \(responseType)")
+                print("Raw JSON: \(rawResponseString)")
+                
                 let decodedResponse = try decoder.decode(responseType, from: data)
+                print("✅ Successfully decoded response of type: \(responseType)")
                 continuation.resume(returning: decodedResponse)
             } catch {
+                let rawResponseString = String(data: data, encoding: .utf8) ?? "Could not convert data to string"
+                print("❌ JSON DECODING ERROR:")
+                print("Response Type: \(responseType)")
+                print("Raw JSON: \(rawResponseString)")
+                print("Error: \(error)")
+                
                 if let decodingError = error as? DecodingError {
+                    print("Detailed DecodingError: \(decodingError)")
+                    switch decodingError {
+                    case .keyNotFound(let key, let context):
+                        print("Missing key: \(key.stringValue) at path: \(context.codingPath)")
+                    case .typeMismatch(let type, let context):
+                        print("Type mismatch for type: \(type) at path: \(context.codingPath)")
+                    case .valueNotFound(let type, let context):
+                        print("Value not found for type: \(type) at path: \(context.codingPath)")
+                    case .dataCorrupted(let context):
+                        print("Data corrupted at path: \(context.codingPath)")
+                    @unknown default:
+                        print("Unknown decoding error")
+                    }
                 }
                 continuation.resume(throwing: NetworkError.decodingError(error))
             }
+            
+        case .failure(let error):
+            let networkError = mapAlamofireError(error, statusCode: response.response?.statusCode)
+            continuation.resume(throwing: networkError)
+        }
+    }
+    
+    /// Handle raw response without JSON decoding (for API testing)
+    nonisolated private func handleRawResponse(
+        _ response: AFDataResponse<Data>,
+        continuation: CheckedContinuation<(data: Data, response: HTTPURLResponse), Error>
+    ) {
+        // Log response
+        if let request = response.request {
+            logResponse(response.result.mapError { $0 as Error }, for: request)
+        }
+        
+        switch response.result {
+        case .success(let data):
+            guard let httpResponse = response.response else {
+                continuation.resume(throwing: NetworkError.invalidResponse)
+                return
+            }
+            
+            // Always return raw data, regardless of completeness or status code
+            continuation.resume(returning: (data: data, response: httpResponse))
             
         case .failure(let error):
             let networkError = mapAlamofireError(error, statusCode: response.response?.statusCode)
@@ -675,7 +776,7 @@ extension NetworkService {
         _ endpoint: String,
         userId: String,
         responseType: T.Type,
-        parameters: [String: Any]? = nil,
+        parameters: [String: Sendable]? = nil,
         useCache: Bool = true
     ) async throws -> T {
         let fullEndpoint = APIConfiguration.mobileURL(for: endpoint, userId: userId)

@@ -10,6 +10,7 @@ import Foundation
 import SwiftUI
 import Combine
 import os.log
+@preconcurrency import Alamofire
 
 /// Core service for API testing functionality
 @MainActor
@@ -56,7 +57,7 @@ class APITestingService: ObservableObject {
     /// Execute a test for a specific API endpoint
     func executeTest(
         endpoint: APIEndpoint,
-        parameters: [String: Any] = [:],
+        parameters: [String: Sendable] = [:],
         expectedResponse: Any? = nil
     ) async throws -> APITestResult {
         
@@ -73,16 +74,19 @@ class APITestingService: ObservableObject {
             let sanitizedParameters = sanitizeParameters(parameters)
             logger.debug("Sanitized parameters: \(sanitizedParameters)")
             
-            // Execute the actual API call based on endpoint type
-            let response = try await executeEndpointCall(endpoint: endpoint, parameters: sanitizedParameters)
+            // Execute the actual API call with raw response (no JSON decoding)
+            let response = try await executeEndpointCallRaw(endpoint: endpoint, parameters: sanitizedParameters)
             let endTime = Date()
             let responseTime = endTime.timeIntervalSince(startTime) * 1000 // Convert to milliseconds
             
-            // Validate response if expected response is provided
-            let validationResult = await validationService.validateResponse(
-                actual: response,
-                expected: expectedResponse,
-                endpoint: endpoint
+            // For raw responses, create a simple validation result
+            // We consider it successful if we got a response (even error responses)
+            let isSuccess = response["error"] == nil
+            let validationResult = APIValidationResult(
+                isValid: isSuccess,
+                mismatches: [],
+                errors: isSuccess ? [] : [response["error_description"] as? String ?? "Unknown error"],
+                warnings: []
             )
             
             // Create test result
@@ -113,12 +117,22 @@ class APITestingService: ObservableObject {
             let endTime = Date()
             let responseTime = endTime.timeIntervalSince(startTime) * 1000
             
-            // Create failed test result
+            // Create raw error response for display
+            let errorResponse: [String: Any] = [
+                "error": true,
+                "error_description": error.localizedDescription,
+                "error_type": String(describing: type(of: error)),
+                "endpoint": endpoint.path,
+                "method": endpoint.method.rawValue,
+                "response_time_ms": responseTime
+            ]
+            
+            // Create failed test result with error response data
             let testResult = APITestResult(
                 id: testId,
                 endpoint: endpoint,
                 parameters: parameters,
-                response: nil,
+                response: errorResponse,
                 responseTime: responseTime,
                 timestamp: startTime,
                 status: .failed,
@@ -141,7 +155,7 @@ class APITestingService: ObservableObject {
     
     // MARK: - Endpoint Execution
     
-    private func executeEndpointCall(endpoint: APIEndpoint, parameters: [String: Any]) async throws -> Any {
+    private func executeEndpointCall(endpoint: APIEndpoint, parameters: [String: Sendable]) async throws -> Any {
         switch endpoint.category {
         case .authentication:
             return try await executeAuthenticationEndpoint(endpoint, parameters: parameters)
@@ -156,7 +170,63 @@ class APITestingService: ObservableObject {
         }
     }
     
-    private func executeAuthenticationEndpoint(_ endpoint: APIEndpoint, parameters: [String: Any]) async throws -> Any {
+    /// Execute endpoint call with raw response (no JSON decoding)
+    private func executeEndpointCallRaw(endpoint: APIEndpoint, parameters: [String: Sendable]) async throws -> [String: Any] {
+        // Convert HTTPMethod enum to Alamofire method
+        let alamofireMethod: Alamofire.HTTPMethod
+        switch endpoint.method {
+        case .GET:
+            alamofireMethod = .get
+        case .POST:
+            alamofireMethod = .post
+        case .PUT:
+            alamofireMethod = .put
+        case .DELETE:
+            alamofireMethod = .delete
+        case .PATCH:
+            alamofireMethod = .patch
+        }
+        
+        do {
+            let (data, response) = try await networkService.getRawData(
+                endpoint.path,
+                method: alamofireMethod,
+                parameters: parameters.isEmpty ? nil : parameters
+            )
+            
+            // Convert raw response to displayable format
+            let responseBody: String
+            if let bodyString = String(data: data, encoding: .utf8) {
+                responseBody = bodyString.isEmpty ? "(empty body)" : bodyString
+            } else {
+                responseBody = "(binary data - \(data.count) bytes)"
+            }
+            
+            // Create structured raw response
+            return [
+                "status_code": response.statusCode,
+                "status_text": HTTPURLResponse.localizedString(forStatusCode: response.statusCode),
+                "headers": response.allHeaderFields as! [String: Any],
+                "body": responseBody,
+                "body_bytes": data.count,
+                "content_length": response.expectedContentLength,
+                "url": response.url?.absoluteString ?? endpoint.path,
+                "http_version": "HTTP/1.1" // HTTPURLResponse.version is not available
+            ]
+            
+        } catch {
+            // Even network errors should return raw information
+            return [
+                "error": true,
+                "error_description": error.localizedDescription,
+                "error_type": String(describing: type(of: error)),
+                "endpoint": endpoint.path,
+                "method": endpoint.method.rawValue
+            ]
+        }
+    }
+    
+    private func executeAuthenticationEndpoint(_ endpoint: APIEndpoint, parameters: [String: Sendable]) async throws -> Any {
         switch endpoint.name {
         case "register":
             guard let email = parameters["email"] as? String,
@@ -210,22 +280,22 @@ class APITestingService: ObservableObject {
         }
     }
     
-    private func executeLabLoopEndpoint(_ endpoint: APIEndpoint, parameters: [String: Any]) async throws -> Any {
+    private func executeLabLoopEndpoint(_ endpoint: APIEndpoint, parameters: [String: Sendable]) async throws -> Any {
         // Implementation for LabLoop endpoints will be added in Phase 3
         throw APITestingError.notImplemented(endpoint.name)
     }
     
-    private func executeHealthEndpoint(_ endpoint: APIEndpoint, parameters: [String: Any]) async throws -> Any {
+    private func executeHealthEndpoint(_ endpoint: APIEndpoint, parameters: [String: Sendable]) async throws -> Any {
         // Implementation for Health endpoints will be added in Phase 3
         throw APITestingError.notImplemented(endpoint.name)
     }
     
-    private func executeReportsEndpoint(_ endpoint: APIEndpoint, parameters: [String: Any]) async throws -> Any {
+    private func executeReportsEndpoint(_ endpoint: APIEndpoint, parameters: [String: Sendable]) async throws -> Any {
         // Implementation for Reports endpoints will be added in Phase 3
         throw APITestingError.notImplemented(endpoint.name)
     }
     
-    private func executeUploadEndpoint(_ endpoint: APIEndpoint, parameters: [String: Any]) async throws -> Any {
+    private func executeUploadEndpoint(_ endpoint: APIEndpoint, parameters: [String: Sendable]) async throws -> Any {
         // Implementation for Upload endpoints will be added in Phase 3
         throw APITestingError.notImplemented(endpoint.name)
     }
@@ -336,8 +406,8 @@ class APITestingService: ObservableObject {
     // MARK: - Parameter Sanitization
     
     /// Sanitizes parameters to ensure they are safe for JSON serialization and API calls
-    private func sanitizeParameters(_ parameters: [String: Any]) -> [String: Any] {
-        var sanitized: [String: Any] = [:]
+    private func sanitizeParameters(_ parameters: [String: Sendable]) -> [String: Sendable] {
+        var sanitized: [String: Sendable] = [:]
         
         for (key, value) in parameters {
             sanitized[key] = sanitizeValue(value)
@@ -346,7 +416,7 @@ class APITestingService: ObservableObject {
         return sanitized
     }
     
-    private func sanitizeValue(_ value: Any) -> Any {
+    private func sanitizeValue(_ value: Any) -> Sendable {
         switch value {
         case let string as String:
             return string
@@ -362,7 +432,7 @@ class APITestingService: ObservableObject {
         case let array as [Any]:
             return array.map { sanitizeValue($0) }
         case let dict as [String: Any]:
-            var sanitizedDict: [String: Any] = [:]
+            var sanitizedDict: [String: Sendable] = [:]
             for (k, v) in dict {
                 sanitizedDict[k] = sanitizeValue(v)
             }

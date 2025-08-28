@@ -1020,10 +1020,20 @@ nonisolated struct User: Codable, Identifiable, Sendable, Equatable {
     let id: String
     let email: String
     let name: String
+    let firstName: String?
+    let lastName: String?
     let profileImageURL: String?
     let phoneNumber: String?
     let dateOfBirth: Date?
     let gender: Gender?
+    let height: Double?
+    let weight: Double?
+    let activityLevel: ActivityLevel?
+    let healthGoals: [HealthGoal]?
+    let medicalConditions: [String]?
+    let medications: [String]?
+    let allergies: [String]?
+    let labloopPatientId: String?
     let createdAt: Date
     let updatedAt: Date
     let emailVerified: Bool
@@ -1035,10 +1045,18 @@ nonisolated struct User: Codable, Identifiable, Sendable, Equatable {
     nonisolated enum CodingKeys: String, CodingKey {
         case id = "_id"
         case email, name
+        case firstName = "first_name"
+        case lastName = "last_name"
         case profileImageURL = "profile_image_url"
         case phoneNumber = "phone_number"
         case dateOfBirth = "date_of_birth"
         case gender
+        case height, weight
+        case activityLevel = "activity_level"
+        case healthGoals = "health_goals"
+        case medicalConditions = "medical_conditions"
+        case medications, allergies
+        case labloopPatientId = "labloop_patient_id"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case emailVerified = "email_verified"
@@ -1047,14 +1065,24 @@ nonisolated struct User: Codable, Identifiable, Sendable, Equatable {
         case profile, preferences
     }
     
-    init(id: String, email: String, name: String, profileImageURL: String? = nil, phoneNumber: String? = nil, dateOfBirth: Date? = nil, gender: Gender? = nil, createdAt: Date = Date(), updatedAt: Date = Date(), emailVerified: Bool = false, phoneVerified: Bool = false, twoFactorEnabled: Bool = false, profile: UserProfile? = nil, preferences: UserPreferences? = nil) {
+    init(id: String, email: String, name: String, firstName: String? = nil, lastName: String? = nil, profileImageURL: String? = nil, phoneNumber: String? = nil, dateOfBirth: Date? = nil, gender: Gender? = nil, height: Double? = nil, weight: Double? = nil, activityLevel: ActivityLevel? = nil, healthGoals: [HealthGoal]? = nil, medicalConditions: [String]? = nil, medications: [String]? = nil, allergies: [String]? = nil, labloopPatientId: String? = nil, createdAt: Date = Date(), updatedAt: Date = Date(), emailVerified: Bool = false, phoneVerified: Bool = false, twoFactorEnabled: Bool = false, profile: UserProfile? = nil, preferences: UserPreferences? = nil) {
         self.id = id
         self.email = email
         self.name = name
+        self.firstName = firstName
+        self.lastName = lastName
         self.profileImageURL = profileImageURL
         self.phoneNumber = phoneNumber
         self.dateOfBirth = dateOfBirth
         self.gender = gender
+        self.height = height
+        self.weight = weight
+        self.activityLevel = activityLevel
+        self.healthGoals = healthGoals
+        self.medicalConditions = medicalConditions
+        self.medications = medications
+        self.allergies = allergies
+        self.labloopPatientId = labloopPatientId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.emailVerified = emailVerified

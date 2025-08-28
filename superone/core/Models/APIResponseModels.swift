@@ -174,37 +174,27 @@ struct AuthResponse: Codable, Equatable, Sendable {
 struct AuthData: Codable, Equatable, Sendable {
     let user: User
     let tokens: AuthTokens
-    let expiresAt: Date?
-    let refreshExpiresAt: Date?
     
     nonisolated enum CodingKeys: String, CodingKey {
         case user
         case tokens
-        case expiresAt
-        case refreshExpiresAt
     }
     
-    nonisolated init(user: User, tokens: AuthTokens, expiresAt: Date?, refreshExpiresAt: Date?) {
+    nonisolated init(user: User, tokens: AuthTokens) {
         self.user = user
         self.tokens = tokens
-        self.expiresAt = expiresAt
-        self.refreshExpiresAt = refreshExpiresAt
     }
     
     nonisolated init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         user = try container.decode(User.self, forKey: .user)
         tokens = try container.decode(AuthTokens.self, forKey: .tokens)
-        expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
-        refreshExpiresAt = try container.decodeIfPresent(Date.self, forKey: .refreshExpiresAt)
     }
     
     nonisolated func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(user, forKey: .user)
         try container.encode(tokens, forKey: .tokens)
-        try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
-        try container.encodeIfPresent(refreshExpiresAt, forKey: .refreshExpiresAt)
     }
 }
 

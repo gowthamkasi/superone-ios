@@ -318,7 +318,7 @@ enum TestParameterValue: Codable, Sendable {
         }
     }
     
-    var actualValue: Any? {
+    var actualValue: Sendable? {
         switch self {
         case .string(let value):
             return value
@@ -374,7 +374,7 @@ enum TestResponseValue: Codable, Sendable {
 struct APITestResult: Identifiable, Sendable {
     let id: String
     let endpoint: APIEndpoint
-    let parameters: [String: Any]
+    let parameters: [String: Sendable]
     let response: Any?
     let responseTime: TimeInterval
     let timestamp: Date
@@ -386,7 +386,7 @@ struct APITestResult: Identifiable, Sendable {
     init(
         id: String = UUID().uuidString,
         endpoint: APIEndpoint,
-        parameters: [String: Any] = [:],
+        parameters: [String: Sendable] = [:],
         response: Any? = nil,
         responseTime: TimeInterval,
         timestamp: Date = Date(),
