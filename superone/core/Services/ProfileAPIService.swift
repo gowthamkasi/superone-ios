@@ -376,6 +376,10 @@ extension UpdatedUserProfile {
     
     /// Convert API response user profile to main User model
     func toUser(withId id: String) -> User {
+        // Convert zero values to nil for height and weight to make them truly optional
+        let optionalHeight = (height == nil || height == 0) ? nil : height
+        let optionalWeight = (weight == nil || weight == 0) ? nil : weight
+        
         return User(
             id: id,
             email: self.email,
@@ -387,8 +391,8 @@ extension UpdatedUserProfile {
             mobileNumber: mobileNumber,
             dateOfBirth: dob,
             gender: Gender(rawValue: gender ?? "not_specified"),
-            height: height,
-            weight: weight,
+            height: optionalHeight, // Convert 0 to nil
+            weight: optionalWeight, // Convert 0 to nil
             createdAt: Date(),
             updatedAt: Date()
         )

@@ -199,8 +199,8 @@ struct EditProfileSheet: View {
         
         // Create updated health profile
         let updatedHealthProfile = UserProfile(
-            height: Double(heightCm),
-            weight: Double(weightKg),
+            height: heightCm.isEmpty ? nil : Double(heightCm), // Convert empty string to nil
+            weight: weightKg.isEmpty ? nil : Double(weightKg), // Convert empty string to nil
             activityLevel: profile.profile?.activityLevel,
             healthGoals: profile.profile?.healthGoals ?? [],
             medicalConditions: profile.profile?.medicalConditions ?? [],
@@ -222,8 +222,8 @@ struct EditProfileSheet: View {
             mobileNumber: mobileNumber.isEmpty ? nil : mobileNumber, // Store mobile number separately
             dateOfBirth: dateOfBirth,
             gender: selectedGender,
-            height: Double(heightCm),
-            weight: Double(weightKg),
+            height: heightCm.isEmpty ? nil : Double(heightCm), // Convert empty string to nil
+            weight: weightKg.isEmpty ? nil : Double(weightKg), // Convert empty string to nil
             createdAt: profile.createdAt,
             updatedAt: Date(),
             emailVerified: profile.emailVerified,
