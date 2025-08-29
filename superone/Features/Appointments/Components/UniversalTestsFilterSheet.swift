@@ -283,34 +283,71 @@ struct TestCategoryFilterChip: View {
     let isSelected: Bool
     let onTap: () -> Void
     
+    @State private var isPressed = false
+    
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: HealthSpacing.sm) {
+        Button(action: {
+            HapticFeedback.soft()
+            onTap()
+        }) {
+            HStack(spacing: HealthSpacing.xs) {
+                // Category icon
                 Image(systemName: category.icon)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(isSelected ? HealthColors.primary : HealthColors.secondaryText)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(isSelected ? .white : HealthColors.primary)
                 
+                // Category name
                 Text(category.displayName)
-                    .font(HealthTypography.bodyRegular)
-                    .foregroundColor(isSelected ? HealthColors.primary : HealthColors.primaryText)
+                    .font(HealthTypography.captionMedium)
+                    .foregroundColor(isSelected ? .white : HealthColors.primaryText)
+                    .lineLimit(1)
                 
-                Spacer()
+                Spacer(minLength: 0)
+                
+                // Selection indicator
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white)
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
             .padding(.horizontal, HealthSpacing.md)
             .padding(.vertical, HealthSpacing.sm)
+            .frame(minHeight: 44) // Accessibility touch target
             .background(
-                RoundedRectangle(cornerRadius: HealthCornerRadius.md)
-                    .fill(isSelected ? HealthColors.primary.opacity(0.1) : HealthColors.secondaryBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: HealthCornerRadius.md)
-                            .strokeBorder(
-                                isSelected ? HealthColors.primary.opacity(0.3) : HealthColors.border,
-                                lineWidth: 1
+                RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                    .fill(
+                        isSelected 
+                            ? LinearGradient(
+                                colors: [HealthColors.primary, HealthColors.emerald],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            : LinearGradient(
+                                colors: [HealthColors.secondaryBackground, HealthColors.secondaryBackground],
+                                startPoint: .leading,
+                                endPoint: .trailing
                             )
                     )
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                    .strokeBorder(
+                        isSelected 
+                            ? HealthColors.primary.opacity(0.3)
+                            : HealthColors.border,
+                        lineWidth: isSelected ? 2 : 1
+                    )
+            )
+            .scaleEffect(isPressed ? 0.96 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+            .animation(.easeInOut(duration: 0.1), value: isPressed)
         }
         .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { pressing in
+            isPressed = pressing
+        } perform: { }
     }
 }
 
@@ -319,34 +356,71 @@ struct PriceRangeFilterChip: View {
     let isSelected: Bool
     let onTap: () -> Void
     
+    @State private var isPressed = false
+    
     var body: some View {
-        Button(action: onTap) {
-            HStack {
+        Button(action: {
+            HapticFeedback.soft()
+            onTap()
+        }) {
+            HStack(spacing: HealthSpacing.xs) {
+                // Price icon
                 Image(systemName: "indianrupeesign")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(isSelected ? HealthColors.primary : HealthColors.secondaryText)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(isSelected ? .white : HealthColors.primary)
                 
+                // Price range
                 Text(priceRange.displayName)
-                    .font(HealthTypography.bodyRegular)
-                    .foregroundColor(isSelected ? HealthColors.primary : HealthColors.primaryText)
+                    .font(HealthTypography.captionMedium)
+                    .foregroundColor(isSelected ? .white : HealthColors.primaryText)
+                    .lineLimit(1)
                 
-                Spacer()
+                Spacer(minLength: 0)
+                
+                // Selection indicator
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white)
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
             .padding(.horizontal, HealthSpacing.md)
             .padding(.vertical, HealthSpacing.sm)
+            .frame(minHeight: 44) // Accessibility touch target
             .background(
-                RoundedRectangle(cornerRadius: HealthCornerRadius.md)
-                    .fill(isSelected ? HealthColors.primary.opacity(0.1) : HealthColors.secondaryBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: HealthCornerRadius.md)
-                            .strokeBorder(
-                                isSelected ? HealthColors.primary.opacity(0.3) : HealthColors.border,
-                                lineWidth: 1
+                RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                    .fill(
+                        isSelected 
+                            ? LinearGradient(
+                                colors: [HealthColors.primary, HealthColors.emerald],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            : LinearGradient(
+                                colors: [HealthColors.secondaryBackground, HealthColors.secondaryBackground],
+                                startPoint: .leading,
+                                endPoint: .trailing
                             )
                     )
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                    .strokeBorder(
+                        isSelected 
+                            ? HealthColors.primary.opacity(0.3)
+                            : HealthColors.border,
+                        lineWidth: isSelected ? 2 : 1
+                    )
+            )
+            .scaleEffect(isPressed ? 0.96 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+            .animation(.easeInOut(duration: 0.1), value: isPressed)
         }
         .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { pressing in
+            isPressed = pressing
+        } perform: { }
     }
 }
 
@@ -355,34 +429,71 @@ struct TestRequirementFilterChip: View {
     let isSelected: Bool
     let onTap: () -> Void
     
+    @State private var isPressed = false
+    
     var body: some View {
-        Button(action: onTap) {
-            HStack {
+        Button(action: {
+            HapticFeedback.soft()
+            onTap()
+        }) {
+            HStack(spacing: HealthSpacing.xs) {
+                // Requirement icon
                 Image(systemName: requirement.icon)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(isSelected ? HealthColors.primary : HealthColors.secondaryText)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(isSelected ? .white : HealthColors.primary)
                 
+                // Requirement name
                 Text(requirement.displayName)
-                    .font(HealthTypography.bodyRegular)
-                    .foregroundColor(isSelected ? HealthColors.primary : HealthColors.primaryText)
+                    .font(HealthTypography.captionMedium)
+                    .foregroundColor(isSelected ? .white : HealthColors.primaryText)
+                    .lineLimit(1)
                 
-                Spacer()
+                Spacer(minLength: 0)
+                
+                // Selection indicator
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white)
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
             .padding(.horizontal, HealthSpacing.md)
             .padding(.vertical, HealthSpacing.sm)
+            .frame(minHeight: 44) // Accessibility touch target
             .background(
-                RoundedRectangle(cornerRadius: HealthCornerRadius.md)
-                    .fill(isSelected ? HealthColors.primary.opacity(0.1) : HealthColors.secondaryBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: HealthCornerRadius.md)
-                            .strokeBorder(
-                                isSelected ? HealthColors.primary.opacity(0.3) : HealthColors.border,
-                                lineWidth: 1
+                RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                    .fill(
+                        isSelected 
+                            ? LinearGradient(
+                                colors: [HealthColors.primary, HealthColors.emerald],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            : LinearGradient(
+                                colors: [HealthColors.secondaryBackground, HealthColors.secondaryBackground],
+                                startPoint: .leading,
+                                endPoint: .trailing
                             )
                     )
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                    .strokeBorder(
+                        isSelected 
+                            ? HealthColors.primary.opacity(0.3)
+                            : HealthColors.border,
+                        lineWidth: isSelected ? 2 : 1
+                    )
+            )
+            .scaleEffect(isPressed ? 0.96 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+            .animation(.easeInOut(duration: 0.1), value: isPressed)
         }
         .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { pressing in
+            isPressed = pressing
+        } perform: { }
     }
 }
 
