@@ -70,25 +70,63 @@ class ProfileAPIService: ObservableObject {
         }
         
         do {
+            print("🔍 ProfileAPIService: Starting profile update request")
+            print("🔍 Request body: \(request)")
+            
             let response: UpdateProfileResponse = try await networkService.put(
                 APIConfiguration.Endpoints.Mobile.profile,
                 body: request,
                 responseType: UpdateProfileResponse.self
             )
             
+            print("✅ ProfileAPIService: Successfully decoded response")
+            print("🔍 Response: success=\(response.success), message='\(response.message)'")
+            
             // Validate response structure
             guard response.success else {
                 let errorMessage = response.message.isEmpty ? "Profile update failed" : response.message
+                print("❌ ProfileAPIService: Response success=false, error: \(errorMessage)")
                 throw ProfileAPIError.updateFailed(errorMessage)
             }
             
-            guard response.data?.user != nil else {
+            guard let userData = response.data?.user else {
+                print("❌ ProfileAPIService: No user data in response")
                 throw ProfileAPIError.invalidResponse("No user data received in response")
             }
+            
+            print("✅ ProfileAPIService: Valid user data received")
+            print("🔍 User data: id=\(userData.id), firstName=\(userData.firstName), lastName=\(userData.lastName)")
+            print("🔍 Optional fields: mobileNumber=\(userData.mobileNumber ?? "nil"), height=\(userData.height?.description ?? "nil"), weight=\(userData.weight?.description ?? "nil")")
             
             return response
             
         } catch {
+            print("❌ ProfileAPIService: Error occurred during profile update")
+            
+            // Check for JSON decoding errors specifically
+            if let decodingError = error as? DecodingError {
+                print("🚨 JSON DECODING ERROR:")
+                switch decodingError {
+                case .dataCorrupted(let context):
+                    print("   Data corrupted: \(context.debugDescription)")
+                    print("   Coding path: \(context.codingPath)")
+                case .keyNotFound(let key, let context):
+                    print("   Key not found: \(key.stringValue)")
+                    print("   Context: \(context.debugDescription)")
+                    print("   Coding path: \(context.codingPath)")
+                case .typeMismatch(let type, let context):
+                    print("   Type mismatch for type: \(type)")
+                    print("   Context: \(context.debugDescription)")
+                    print("   Coding path: \(context.codingPath)")
+                case .valueNotFound(let type, let context):
+                    print("   Value not found for type: \(type)")
+                    print("   Context: \(context.debugDescription)")
+                    print("   Coding path: \(context.codingPath)")
+                @unknown default:
+                    print("   Unknown decoding error: \(decodingError)")
+                }
+                throw ProfileAPIError.invalidResponse("Failed to parse server response: \(decodingError.localizedDescription)")
+            }
             // Handle specific network errors
             if let afError = error.asAFError {
                 switch afError {
@@ -376,9 +414,9 @@ extension UpdatedUserProfile {
     
     /// Convert API response user profile to main User model
     func toUser(withId id: String) -> User {
-        // Convert zero values to nil for height and weight to make them truly optional
-        let optionalHeight = (height == nil || height == 0) ? nil : height
-        let optionalWeight = (weight == nil || weight == 0) ? nil : weight
+        // Direct assignment since backend sends null when no value exists
+        let optionalHeight = height
+        let optionalWeight = weight
         
         return User(
             id: id,
@@ -391,8 +429,8 @@ extension UpdatedUserProfile {
             mobileNumber: mobileNumber,
             dateOfBirth: dob,
             gender: Gender(rawValue: gender ?? "not_specified"),
-            height: optionalHeight, // Convert 0 to nil
-            weight: optionalWeight, // Convert 0 to nil
+            height: optionalHeight,
+            weight: optionalWeight,
             createdAt: Date(),
             updatedAt: Date()
         )

@@ -2349,6 +2349,7 @@ struct TestsFilterSheet: View {
 struct LabsFilterSheet: View {
     @Bindable var viewModel: AppointmentsViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var hasChanges = false
     
     var body: some View {
         NavigationStack {
@@ -2362,10 +2363,15 @@ struct LabsFilterSheet: View {
                             .foregroundColor(HealthColors.primaryText)
                         
                         VStack(spacing: HealthSpacing.sm) {
-                            AppointmentFilterChip(title: "Within 2 km", isSelected: false) { }
-                            AppointmentFilterChip(title: "Within 5 km", isSelected: false) { }
-                            AppointmentFilterChip(title: "Within 10 km", isSelected: false) { }
-                            AppointmentFilterChip(title: "Within 25 km", isSelected: false) { }
+                            ForEach(DistanceFilter.allCases, id: \.self) { filter in
+                                AppointmentFilterChip(
+                                    title: filter.displayName,
+                                    isSelected: viewModel.selectedDistanceFilter == filter
+                                ) {
+                                    viewModel.selectedDistanceFilter = filter
+                                    hasChanges = true
+                                }
+                            }
                         }
                     }
                     
@@ -2376,12 +2382,15 @@ struct LabsFilterSheet: View {
                             .foregroundColor(HealthColors.primaryText)
                         
                         VStack(spacing: HealthSpacing.sm) {
-                            AppointmentFilterChip(title: "Walk-ins Accepted", isSelected: false) { }
-                            AppointmentFilterChip(title: "Home Collection", isSelected: false) { }
-                            AppointmentFilterChip(title: "Same Day Reports", isSelected: false) { }
-                            AppointmentFilterChip(title: "Digital Reports", isSelected: false) { }
-                            AppointmentFilterChip(title: "Free Parking", isSelected: false) { }
-                            AppointmentFilterChip(title: "24 Hours Open", isSelected: false) { }
+                            ForEach(LabFeature.allCases, id: \.self) { feature in
+                                AppointmentFilterChip(
+                                    title: feature.displayName,
+                                    isSelected: viewModel.isLabFeatureSelected(feature)
+                                ) {
+                                    viewModel.toggleLabFeature(feature)
+                                    hasChanges = true
+                                }
+                            }
                         }
                     }
                     
@@ -2392,10 +2401,15 @@ struct LabsFilterSheet: View {
                             .foregroundColor(HealthColors.primaryText)
                         
                         VStack(spacing: HealthSpacing.sm) {
-                            AppointmentFilterChip(title: "4.5+ Stars", isSelected: false) { }
-                            AppointmentFilterChip(title: "4.0+ Stars", isSelected: false) { }
-                            AppointmentFilterChip(title: "3.5+ Stars", isSelected: false) { }
-                            AppointmentFilterChip(title: "Any Rating", isSelected: true) { }
+                            ForEach(MinimumRating.allCases, id: \.self) { rating in
+                                AppointmentFilterChip(
+                                    title: rating.displayName,
+                                    isSelected: viewModel.selectedMinimumRating == rating
+                                ) {
+                                    viewModel.selectedMinimumRating = rating
+                                    hasChanges = true
+                                }
+                            }
                         }
                     }
                     
@@ -2406,10 +2420,45 @@ struct LabsFilterSheet: View {
                             .foregroundColor(HealthColors.primaryText)
                         
                         VStack(spacing: HealthSpacing.sm) {
-                            AppointmentFilterChip(title: "Under 15 min", isSelected: false) { }
-                            AppointmentFilterChip(title: "15-30 min", isSelected: false) { }
-                            AppointmentFilterChip(title: "30-60 min", isSelected: false) { }
-                            AppointmentFilterChip(title: "Any wait time", isSelected: true) { }
+                            ForEach(WaitTimeFilter.allCases, id: \.self) { waitTime in
+                                AppointmentFilterChip(
+                                    title: waitTime.displayName,
+                                    isSelected: viewModel.selectedWaitTime == waitTime
+                                ) {
+                                    viewModel.selectedWaitTime = waitTime
+                                    hasChanges = true
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Filter Summary
+                    if viewModel.hasActiveFilters {
+                        VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                            Text("Active Filters")
+                                .font(HealthTypography.headline)
+                                .foregroundColor(HealthColors.primaryText)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: HealthSpacing.sm) {
+                                    if viewModel.selectedDistanceFilter != .any {
+                                        FilterSummaryChip(title: viewModel.selectedDistanceFilter.displayName)
+                                    }
+                                    
+                                    ForEach(Array(viewModel.selectedLabFeatures), id: \.self) { feature in
+                                        FilterSummaryChip(title: feature.displayName)
+                                    }
+                                    
+                                    if viewModel.selectedMinimumRating != .any {
+                                        FilterSummaryChip(title: viewModel.selectedMinimumRating.displayName)
+                                    }
+                                    
+                                    if viewModel.selectedWaitTime != .any {
+                                        FilterSummaryChip(title: viewModel.selectedWaitTime.displayName)
+                                    }
+                                }
+                                .padding(.horizontal, 1)
+                            }
                         }
                     }
                 }
@@ -2421,19 +2470,44 @@ struct LabsFilterSheet: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Reset") {
-                        // Reset filters
+                        viewModel.resetLabFilters()
+                        hasChanges = true
                     }
-                    .foregroundColor(HealthColors.primary)
+                    .foregroundColor(viewModel.hasActiveFilters ? HealthColors.healthCritical : HealthColors.secondaryText)
+                    .disabled(!viewModel.hasActiveFilters)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Apply") {
+                        if hasChanges {
+                            viewModel.applyLabFilters()
+                        }
                         dismiss()
                     }
                     .foregroundColor(HealthColors.primary)
+                    .fontWeight(hasChanges ? .semibold : .regular)
                 }
             }
         }
+        .onChange(of: viewModel.selectedDistanceFilter) { _, _ in hasChanges = true }
+        .onChange(of: viewModel.selectedLabFeatures) { _, _ in hasChanges = true }
+        .onChange(of: viewModel.selectedMinimumRating) { _, _ in hasChanges = true }
+        .onChange(of: viewModel.selectedWaitTime) { _, _ in hasChanges = true }
+    }
+}
+
+/// Small chip to show active filter summaries
+struct FilterSummaryChip: View {
+    let title: String
+    
+    var body: some View {
+        Text(title)
+            .font(HealthTypography.captionRegular)
+            .foregroundColor(HealthColors.primary)
+            .padding(.horizontal, HealthSpacing.sm)
+            .padding(.vertical, 4)
+            .background(HealthColors.primary.opacity(0.1))
+            .cornerRadius(12)
     }
 }
 

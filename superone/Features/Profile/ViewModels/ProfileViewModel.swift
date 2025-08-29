@@ -300,11 +300,27 @@ final class ProfileViewModel {
                 
                 // Update local user profile from API response
                 await MainActor.run {
+                    print("🔍 ProfileViewModel: Processing API response")
+                    print("   response.success: \(response.success)")
+                    print("   response.data exists: \(response.data != nil)")
+                    print("   response.data?.user exists: \(response.data?.user != nil)")
+                    print("   userProfile exists: \(userProfile != nil)")
+                    
                     if let updatedUserProfile = response.data?.user,
                        let currentUser = userProfile {
-                        // Convert zero values to nil for height and weight to make them truly optional
-                        let optionalHeight = (updatedUserProfile.height == nil || updatedUserProfile.height == 0) ? nil : updatedUserProfile.height
-                        let optionalWeight = (updatedUserProfile.weight == nil || updatedUserProfile.weight == 0) ? nil : updatedUserProfile.weight
+                        print("✅ Both updatedUserProfile and currentUser are available")
+                        
+                        // Direct assignment since backend sends undefined/null when no value exists
+                        let optionalHeight = updatedUserProfile.height
+                        let optionalWeight = updatedUserProfile.weight
+                        
+                        print("🔍 Profile update data extracted:")
+                        print("   firstName: '\(updatedUserProfile.firstName)'")
+                        print("   lastName: '\(updatedUserProfile.lastName)'")
+                        print("   email: '\(updatedUserProfile.email)'")
+                        print("   mobileNumber: '\(updatedUserProfile.mobileNumber ?? "nil")'")
+                        print("   height: \(optionalHeight?.description ?? "nil")")
+                        print("   weight: \(optionalWeight?.description ?? "nil")")
                         
                         // Update the current user with new data from API
                         userProfile = User(
@@ -318,8 +334,8 @@ final class ProfileViewModel {
                             mobileNumber: updatedUserProfile.mobileNumber, // Store mobile number separately
                             dateOfBirth: updatedUserProfile.dob,
                             gender: Gender(rawValue: updatedUserProfile.gender ?? "not_specified"),
-                            height: optionalHeight, // Convert 0 to nil
-                            weight: optionalWeight, // Convert 0 to nil
+                            height: optionalHeight,
+                            weight: optionalWeight,
                             activityLevel: currentUser.activityLevel,
                             healthGoals: currentUser.healthGoals,
                             medicalConditions: currentUser.medicalConditions,
@@ -335,12 +351,17 @@ final class ProfileViewModel {
                             preferences: currentUser.preferences
                         )
                         
+                        print("✅ ProfileViewModel: User profile successfully updated")
+                        print("   New profile name: '\(userProfile?.name ?? "nil")'")
+                        
                         // Show success feedback
                         isUpdatingProfile = false
                         showUpdateProfileSuccess = true
                         
                         // Provide haptic feedback
                         HapticFeedback.success()
+                        
+                        print("✅ ProfileViewModel: Success feedback triggered")
                         
                         // Auto-hide success message after 3 seconds
                         Task {
@@ -349,6 +370,18 @@ final class ProfileViewModel {
                                 showUpdateProfileSuccess = false
                             }
                         }
+                    } else {
+                        print("❌ ProfileViewModel: Failed to extract user data from response")
+                        print("   response.data?.user == nil: \(response.data?.user == nil)")
+                        print("   userProfile == nil: \(userProfile == nil)")
+                        
+                        // This would be the source of the error
+                        isUpdatingProfile = false
+                        updateProfileErrorMessage = "Unable to process server response. Please try again."
+                        showUpdateProfileError = true
+                        
+                        // Provide error haptic feedback
+                        HapticFeedback.error()
                     }
                 }
                 
@@ -407,14 +440,9 @@ final class ProfileViewModel {
         let profilePictureChanged = hasStringChanged(profile.profileImageURL, currentProfile.profileImageURL)
         let dateOfBirthChanged = profile.dateOfBirth != currentProfile.dateOfBirth
         let genderChanged = profile.gender != currentProfile.gender
-        // For height and weight, treat nil and 0 as equivalent
-        let profileHeightNormalized = (profile.height == nil || profile.height == 0) ? nil : profile.height
-        let currentHeightNormalized = (currentProfile.height == nil || currentProfile.height == 0) ? nil : currentProfile.height
-        let profileWeightNormalized = (profile.weight == nil || profile.weight == 0) ? nil : profile.weight
-        let currentWeightNormalized = (currentProfile.weight == nil || currentProfile.weight == 0) ? nil : currentProfile.weight
-        
-        let heightChanged = profileHeightNormalized != currentHeightNormalized
-        let weightChanged = profileWeightNormalized != currentWeightNormalized
+        // Direct comparison since backend handles undefined properly
+        let heightChanged = profile.height != currentProfile.height
+        let weightChanged = profile.weight != currentProfile.weight
         
         // Debug logging for troubleshooting
         print("🔍 Profile Update Change Detection:")
@@ -432,8 +460,8 @@ final class ProfileViewModel {
             profilePicture: profilePictureChanged ? profile.profileImageURL : nil,
             dateOfBirth: dateOfBirthChanged ? profile.dateOfBirth : nil,
             gender: genderChanged ? profile.gender : nil,
-            height: heightChanged ? profileHeightNormalized : nil,
-            weight: weightChanged ? profileWeightNormalized : nil
+            height: heightChanged ? profile.height : nil,
+            weight: weightChanged ? profile.weight : nil
         )
     }
     

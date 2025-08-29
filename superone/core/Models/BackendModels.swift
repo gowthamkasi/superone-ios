@@ -1110,6 +1110,57 @@ nonisolated struct UpdatedUserProfile: Codable, Sendable {
         case height
         case weight
     }
+    
+    // Custom initializer to handle Int to Double conversion for height/weight
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        print("🔍 UpdatedUserProfile decoding debug:")
+        
+        id = try container.decode(String.self, forKey: .id)
+        email = try container.decode(String.self, forKey: .email)
+        firstName = try container.decode(String.self, forKey: .firstName)
+        lastName = try container.decode(String.self, forKey: .lastName)
+        mobileNumber = try container.decodeIfPresent(String.self, forKey: .mobileNumber)
+        dob = try container.decodeIfPresent(Date.self, forKey: .dob)
+        gender = try container.decodeIfPresent(String.self, forKey: .gender)
+        
+        print("   Basic fields decoded successfully")
+        
+        // Handle height - could be Int or Double from backend
+        if container.contains(.height) {
+            do {
+                height = try container.decodeIfPresent(Double.self, forKey: .height)
+                print("   height decoded as Double: \(height?.description ?? "nil")")
+            } catch {
+                print("   height Double decode failed, trying Int: \(error)")
+                let heightInt = try container.decodeIfPresent(Int.self, forKey: .height)
+                height = heightInt.map { Double($0) }
+                print("   height decoded as Int->Double: \(height?.description ?? "nil")")
+            }
+        } else {
+            height = nil
+            print("   height field not present")
+        }
+        
+        // Handle weight - could be Int or Double from backend
+        if container.contains(.weight) {
+            do {
+                weight = try container.decodeIfPresent(Double.self, forKey: .weight)
+                print("   weight decoded as Double: \(weight?.description ?? "nil")")
+            } catch {
+                print("   weight Double decode failed, trying Int: \(error)")
+                let weightInt = try container.decodeIfPresent(Int.self, forKey: .weight)
+                weight = weightInt.map { Double($0) }
+                print("   weight decoded as Int->Double: \(weight?.description ?? "nil")")
+            }
+        } else {
+            weight = nil
+            print("   weight field not present")
+        }
+        
+        print("✅ UpdatedUserProfile decoded successfully")
+    }
 }
 
 // MARK: - User Models

@@ -398,7 +398,9 @@ class NetworkService: ObservableObject {
                 // WORKAROUND: Manual JSON encoding to avoid Alamofire JSONParameterEncoder Swift 6 crash
                 let jsonData: Data
                 do {
-                    jsonData = try JSONEncoder().encode(body)
+                    let encoder = JSONEncoder()
+                    encoder.dateEncodingStrategy = .iso8601 // Consistent with decoding strategy
+                    jsonData = try encoder.encode(body)
                 } catch {
                     continuation.resume(throwing: NetworkError.encodingError)
                     return
@@ -502,38 +504,11 @@ class NetworkService: ObservableObject {
             
             do {
                 let decoder = JSONDecoder()
-                // Configure custom date decoding strategy to handle multiple ISO8601 formats
-                decoder.dateDecodingStrategy = .custom { decoder in
-                    let container = try decoder.singleValueContainer()
-                    let dateString = try container.decode(String.self)
-                    
-                    // Try multiple ISO8601 formats to handle backend responses
-                    let formatters = [
-                        ISO8601DateFormatter(), // Standard format
-                        {
-                            let formatter = ISO8601DateFormatter()
-                            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                            return formatter
-                        }(),
-                        {
-                            let formatter = ISO8601DateFormatter() 
-                            formatter.formatOptions = [.withInternetDateTime]
-                            return formatter
-                        }()
-                    ]
-                    
-                    for formatter in formatters {
-                        if let date = formatter.date(from: dateString) {
-                            return date
-                        }
-                    }
-                    
-                    // If all ISO8601 formats fail, throw error with detailed info
-                    throw DecodingError.dataCorruptedError(
-                        in: container,
-                        debugDescription: "Invalid date format: \(dateString)"
-                    )
-                }
+                // Use simple, reliable .iso8601 strategy as recommended by Apple and SwiftWithVincent blog
+                decoder.dateDecodingStrategy = .iso8601
+                
+                print("🔍 Using simplified .iso8601 date decoding strategy")
+                print("🔍 Expected backend date format: '1995-08-19T00:00:00.000Z' or similar ISO8601")
                 
                 // Log raw response data for debugging
                 let rawResponseString = String(data: data, encoding: .utf8) ?? "Could not convert data to string"
