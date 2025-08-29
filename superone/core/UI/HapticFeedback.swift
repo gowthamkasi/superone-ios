@@ -61,4 +61,9 @@ struct HapticFeedback {
             }
         }
     }
+    
+    /// Soft impact haptic feedback (alias for light)
+    static func soft() {
+        light()
+    }
 }

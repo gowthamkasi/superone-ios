@@ -92,9 +92,18 @@ final class AppointmentsViewModel {
     
     // MARK: - Detailed Labs Filter Properties
     
-    /// Distance filter
+    /// Distance filter (legacy - keeping for compatibility)
     var selectedDistanceFilter: DistanceFilter = .any {
         didSet {
+            applyFilters()
+        }
+    }
+    
+    /// Distance slider value for modern filter UI
+    var distanceSliderValue: Double = 25.0 {
+        didSet {
+            // Update the legacy filter based on slider value
+            selectedDistanceFilter = distanceFilterFromSliderValue(distanceSliderValue)
             applyFilters()
         }
     }
@@ -733,6 +742,7 @@ final class AppointmentsViewModel {
     /// Reset all lab filters to default values
     func resetLabFilters() {
         selectedDistanceFilter = .any
+        distanceSliderValue = 25.0
         selectedLabFeatures.removeAll()
         selectedMinimumRating = .any
         selectedWaitTime = .any
@@ -767,6 +777,22 @@ final class AppointmentsViewModel {
                selectedServiceType != nil ||
                selectedLocation != nil
     }
+    
+    /// Convert slider value to corresponding distance filter
+    private func distanceFilterFromSliderValue(_ value: Double) -> DistanceFilter {
+        if value >= 25.0 {
+            return .any
+        } else if value >= 10.0 {
+            return .within25km
+        } else if value >= 5.0 {
+            return .within10km
+        } else if value >= 2.0 {
+            return .within5km
+        } else {
+            return .within2km
+        }
+    }
+    
     
     // MARK: - Private Methods
     

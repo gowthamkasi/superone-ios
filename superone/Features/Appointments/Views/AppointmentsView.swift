@@ -78,7 +78,7 @@ struct AppointmentsView: View {
                 TestsFilterSheet(viewModel: viewModel)
             }
             .sheet(isPresented: $viewModel.showLabsFilterSheet) {
-                LabsFilterSheet(viewModel: viewModel)
+                ModernLabsFilterSheet(viewModel: viewModel)
             }
             .alert("Cancel Appointment", isPresented: $viewModel.showCancelAlert) {
                 Button("Cancel", role: .cancel) { }
@@ -906,31 +906,54 @@ struct LabsSearchBar: View {
     @Bindable var viewModel: AppointmentsViewModel
     let onFilterTap: () -> Void
     
+    private var activeFilterCount: Int {
+        var count = 0
+        
+        if viewModel.selectedDistanceFilter != .any {
+            count += 1
+        }
+        
+        count += viewModel.selectedLabFeatures.count
+        
+        if viewModel.selectedMinimumRating != .any {
+            count += 1
+        }
+        
+        return count
+    }
+    
     var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(HealthColors.secondaryText)
-            
-            TextField("Search labs, tests, or areas...", text: $viewModel.searchText)
-                .textFieldStyle(PlainTextFieldStyle())
-                .font(HealthTypography.body)
-            
-            if !viewModel.searchText.isEmpty {
-                Button(action: { viewModel.searchText = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(HealthColors.secondaryText)
+        HStack(spacing: HealthSpacing.sm) {
+            // Search field
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(HealthColors.secondaryText)
+                
+                TextField("Search labs, tests, or areas...", text: $viewModel.searchText)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .font(HealthTypography.body)
+                
+                if !viewModel.searchText.isEmpty {
+                    Button(action: { 
+                        viewModel.searchText = ""
+                        HapticFeedback.light()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(HealthColors.secondaryText)
+                    }
                 }
             }
+            .padding(.horizontal, HealthSpacing.lg)
+            .padding(.vertical, HealthSpacing.md)
+            .background(HealthColors.secondaryBackground)
+            .cornerRadius(HealthCornerRadius.button)
             
-            Button(action: onFilterTap) {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                    .foregroundColor(HealthColors.primary)
-            }
+            // Modern filter button
+            ModernFilterButton(
+                activeFilterCount: activeFilterCount,
+                onTap: onFilterTap
+            )
         }
-        .padding(.horizontal, HealthSpacing.lg)
-        .padding(.vertical, HealthSpacing.md)
-        .background(HealthColors.secondaryBackground)
-        .cornerRadius(HealthCornerRadius.button)
     }
 }
 
