@@ -471,13 +471,16 @@ struct LabReportProcessingActivity: Identifiable, Sendable {
 
 /// Errors that can occur during notification operations
 /// Sendable-compliant error type for Swift 6.0+ concurrency safety
-enum NotificationError: Error, @preconcurrency LocalizedError, Sendable {
+enum NotificationError: Error, Sendable {
     case notificationNotFound
     case networkError
     case invalidOperation
-    
+}
+
+// MARK: - LocalizedError Conformance
+extension NotificationError: LocalizedError {
     /// Error description implementation
-    var errorDescription: String? {
+    nonisolated var errorDescription: String? {
         switch self {
         case .notificationNotFound:
             return "Notification not found"
@@ -489,7 +492,7 @@ enum NotificationError: Error, @preconcurrency LocalizedError, Sendable {
     }
     
     /// Additional LocalizedError properties for better error handling
-    var failureReason: String? {
+    nonisolated var failureReason: String? {
         switch self {
         case .notificationNotFound:
             return "The requested notification could not be located in the system."
@@ -501,7 +504,7 @@ enum NotificationError: Error, @preconcurrency LocalizedError, Sendable {
     }
     
     /// Recovery suggestions for users
-    var recoverySuggestion: String? {
+    nonisolated var recoverySuggestion: String? {
         switch self {
         case .notificationNotFound:
             return "Please refresh the notification list and try again."

@@ -192,7 +192,7 @@ struct HealthInsightDetailView: View {
                     }
                 )
                 
-                if insight.severity == .critical {
+                if insight.severity == InsightSeverity.critical {
                     ActionRecommendationCard(
                         icon: "phone.fill",
                         title: "Contact Healthcare Provider",
@@ -523,10 +523,10 @@ struct ShareOptionButton: View {
 #Preview {
     let mockInsight = HealthInsight(
         id: "mock-insight-1",
-        category: .cardiovascular,
+        category: HealthCategory.cardiovascular,
         title: "Cholesterol Levels Need Attention",
         description: "Your recent lab results show elevated LDL cholesterol levels that exceed the recommended range. High LDL cholesterol is a significant risk factor for cardiovascular disease and should be addressed through dietary changes, exercise, and possibly medication. Consider reducing saturated fat intake and increasing fiber consumption.",
-        severity: .warning,
+        severity: InsightSeverity.warning,
         actionRequired: true,
         relatedBiomarkers: ["Total Cholesterol", "LDL Cholesterol", "HDL Cholesterol", "Triglycerides"]
     )

@@ -832,6 +832,23 @@ struct LabReportDocument: Codable, Identifiable, Sendable, Equatable {
     let metadata: [String: String]?
     let data: Data?
     
+    nonisolated enum CodingKeys: String, CodingKey {
+        case id
+        case fileName
+        case filePath
+        case fileSize
+        case mimeType
+        case uploadDate
+        case processingStatus
+        case documentType
+        case healthCategory
+        case extractedText
+        case ocrConfidence
+        case thumbnail
+        case metadata
+        case data
+    }
+    
     init(id: String = UUID().uuidString, fileName: String, filePath: String? = nil, fileSize: Int64, mimeType: String, uploadDate: Date = Date(), processingStatus: ProcessingStatus, documentType: DocumentType? = nil, healthCategory: HealthCategory? = nil, extractedText: String? = nil, ocrConfidence: Double? = nil, thumbnail: Data? = nil, metadata: [String: String]? = nil, data: Data? = nil) {
         self.id = id
         self.fileName = fileName
@@ -847,6 +864,44 @@ struct LabReportDocument: Codable, Identifiable, Sendable, Equatable {
         self.thumbnail = thumbnail
         self.metadata = metadata
         self.data = data
+    }
+    
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(String.self, forKey: .id)
+        fileName = try container.decode(String.self, forKey: .fileName)
+        filePath = try container.decodeIfPresent(String.self, forKey: .filePath)
+        fileSize = try container.decode(Int64.self, forKey: .fileSize)
+        mimeType = try container.decode(String.self, forKey: .mimeType)
+        uploadDate = try container.decode(Date.self, forKey: .uploadDate)
+        processingStatus = try container.decode(ProcessingStatus.self, forKey: .processingStatus)
+        documentType = try container.decodeIfPresent(DocumentType.self, forKey: .documentType)
+        healthCategory = try container.decodeIfPresent(HealthCategory.self, forKey: .healthCategory)
+        extractedText = try container.decodeIfPresent(String.self, forKey: .extractedText)
+        ocrConfidence = try container.decodeIfPresent(Double.self, forKey: .ocrConfidence)
+        thumbnail = try container.decodeIfPresent(Data.self, forKey: .thumbnail)
+        metadata = try container.decodeIfPresent([String: String].self, forKey: .metadata)
+        data = try container.decodeIfPresent(Data.self, forKey: .data)
+    }
+    
+    nonisolated func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encode(fileName, forKey: .fileName)
+        try container.encodeIfPresent(filePath, forKey: .filePath)
+        try container.encode(fileSize, forKey: .fileSize)
+        try container.encode(mimeType, forKey: .mimeType)
+        try container.encode(uploadDate, forKey: .uploadDate)
+        try container.encode(processingStatus, forKey: .processingStatus)
+        try container.encodeIfPresent(documentType, forKey: .documentType)
+        try container.encodeIfPresent(healthCategory, forKey: .healthCategory)
+        try container.encodeIfPresent(extractedText, forKey: .extractedText)
+        try container.encodeIfPresent(ocrConfidence, forKey: .ocrConfidence)
+        try container.encodeIfPresent(thumbnail, forKey: .thumbnail)
+        try container.encodeIfPresent(metadata, forKey: .metadata)
+        try container.encodeIfPresent(data, forKey: .data)
     }
     
     /// Check if document processing can be retried
@@ -1593,7 +1648,7 @@ struct LabReportUploadResponse: Codable {
 // Duplicate removed - using original HealthAnalysisResponse definition above
 
 
-struct HealthInsight: Codable, Identifiable {
+struct HealthInsight: Codable, Identifiable, Sendable {
     let id: String
     let category: HealthCategory
     let title: String
@@ -1601,6 +1656,50 @@ struct HealthInsight: Codable, Identifiable {
     let severity: InsightSeverity
     let actionRequired: Bool
     let relatedBiomarkers: [String]
+    
+    nonisolated enum CodingKeys: String, CodingKey {
+        case id
+        case category
+        case title
+        case description
+        case severity
+        case actionRequired
+        case relatedBiomarkers
+    }
+    
+    init(id: String = UUID().uuidString, category: HealthCategory, title: String, description: String, severity: InsightSeverity, actionRequired: Bool, relatedBiomarkers: [String]) {
+        self.id = id
+        self.category = category
+        self.title = title
+        self.description = description
+        self.severity = severity
+        self.actionRequired = actionRequired
+        self.relatedBiomarkers = relatedBiomarkers
+    }
+    
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(String.self, forKey: .id)
+        category = try container.decode(HealthCategory.self, forKey: .category)
+        title = try container.decode(String.self, forKey: .title)
+        description = try container.decode(String.self, forKey: .description)
+        severity = try container.decode(InsightSeverity.self, forKey: .severity)
+        actionRequired = try container.decode(Bool.self, forKey: .actionRequired)
+        relatedBiomarkers = try container.decode([String].self, forKey: .relatedBiomarkers)
+    }
+    
+    nonisolated func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encode(category, forKey: .category)
+        try container.encode(title, forKey: .title)
+        try container.encode(description, forKey: .description)
+        try container.encode(severity, forKey: .severity)
+        try container.encode(actionRequired, forKey: .actionRequired)
+        try container.encode(relatedBiomarkers, forKey: .relatedBiomarkers)
+    }
 }
 
 struct HealthRecommendation: Codable {

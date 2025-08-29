@@ -342,8 +342,8 @@ struct DocumentPreviewCard: View {
             fileName: "blood_work_results.pdf",
             fileSize: 2_456_789,
             mimeType: "application/pdf",
-            processingStatus: .pending,
-            documentType: .bloodWork
+            processingStatus: ProcessingStatus.pending,
+            documentType: DocumentType.bloodWork
         )
     )
     .padding()
@@ -355,9 +355,9 @@ struct DocumentPreviewCard: View {
             fileName: "lipid_panel.jpg",
             fileSize: 1_234_567,
             mimeType: "image/jpeg",
-            processingStatus: .processing,
-            documentType: .lipidPanel,
-            healthCategory: .cardiovascular
+            processingStatus: ProcessingStatus.processing,
+            documentType: DocumentType.lipidPanel,
+            healthCategory: HealthCategory.cardiovascular
         )
     )
     .padding()
@@ -369,9 +369,9 @@ struct DocumentPreviewCard: View {
             fileName: "comprehensive_metabolic_panel.pdf",
             fileSize: 3_789_456,
             mimeType: "application/pdf",
-            processingStatus: .completed,
-            documentType: .metabolicPanel,
-            healthCategory: .metabolic,
+            processingStatus: ProcessingStatus.completed,
+            documentType: DocumentType.metabolicPanel,
+            healthCategory: HealthCategory.metabolic,
             ocrConfidence: 0.92
         )
     )
@@ -384,9 +384,9 @@ struct DocumentPreviewCard: View {
             fileName: "thyroid_function.jpg",
             fileSize: 987_654,
             mimeType: "image/jpeg",
-            processingStatus: .failed,
-            documentType: .thyroidFunction,
-            healthCategory: .endocrine
+            processingStatus: ProcessingStatus.failed,
+            documentType: DocumentType.thyroidFunction,
+            healthCategory: HealthCategory.endocrine
         )
     )
     .padding()
