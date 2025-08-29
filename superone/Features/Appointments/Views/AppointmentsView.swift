@@ -198,8 +198,10 @@ struct AppointmentsView: View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.lg) {
                 // Search bar
-                TestsSearchBar(
+                UnifiedSearchBar(
                     searchText: $viewModel.testsSearchText,
+                    placeholder: "Search tests or results...",
+                    hasActiveFilters: false, // Tests tab doesn't currently have active filter tracking
                     onFilterTap: {
                         viewModel.showTestsFilterSheet = true
                     }
@@ -270,8 +272,10 @@ struct AppointmentsView: View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.lg) {
                 // Search bar
-                LabsSearchBar(
-                    viewModel: viewModel,
+                UnifiedSearchBar(
+                    searchText: $viewModel.searchText,
+                    placeholder: "Search labs, tests, or areas...",
+                    hasActiveFilters: viewModel.hasActiveFilters,
                     onFilterTap: {
                         viewModel.showLabsFilterSheet = true
                     }
@@ -870,92 +874,11 @@ struct TestCard: View {
     }
 }
 
-struct TestsSearchBar: View {
-    @Binding var searchText: String
-    let onFilterTap: () -> Void
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(HealthColors.secondaryText)
-            
-            TextField("Search tests or results...", text: $searchText)
-                .textFieldStyle(PlainTextFieldStyle())
-                .font(HealthTypography.body)
-            
-            if !searchText.isEmpty {
-                Button(action: { searchText = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(HealthColors.secondaryText)
-                }
-            }
-            
-            Button(action: onFilterTap) {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                    .foregroundColor(HealthColors.primary)
-            }
-        }
-        .padding(.horizontal, HealthSpacing.lg)
-        .padding(.vertical, HealthSpacing.md)
-        .background(HealthColors.secondaryBackground)
-        .cornerRadius(HealthCornerRadius.button)
-    }
-}
+// TestsSearchBar has been replaced by UnifiedSearchBar component
+// Located at: Design/Components/UnifiedSearchBar.swift
 
-struct LabsSearchBar: View {
-    @Bindable var viewModel: AppointmentsViewModel
-    let onFilterTap: () -> Void
-    
-    private var activeFilterCount: Int {
-        var count = 0
-        
-        if viewModel.selectedDistanceFilter != .any {
-            count += 1
-        }
-        
-        count += viewModel.selectedLabFeatures.count
-        
-        if viewModel.selectedMinimumRating != .any {
-            count += 1
-        }
-        
-        return count
-    }
-    
-    var body: some View {
-        HStack(spacing: HealthSpacing.sm) {
-            // Search field
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(HealthColors.secondaryText)
-                
-                TextField("Search labs, tests, or areas...", text: $viewModel.searchText)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .font(HealthTypography.body)
-                
-                if !viewModel.searchText.isEmpty {
-                    Button(action: { 
-                        viewModel.searchText = ""
-                        HapticFeedback.light()
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(HealthColors.secondaryText)
-                    }
-                }
-            }
-            .padding(.horizontal, HealthSpacing.lg)
-            .padding(.vertical, HealthSpacing.md)
-            .background(HealthColors.secondaryBackground)
-            .cornerRadius(HealthCornerRadius.button)
-            
-            // Modern filter button
-            ModernFilterButton(
-                activeFilterCount: activeFilterCount,
-                onTap: onFilterTap
-            )
-        }
-    }
-}
+// LabsSearchBar has been replaced by UnifiedSearchBar component
+// Located at: Design/Components/UnifiedSearchBar.swift
 
 
 

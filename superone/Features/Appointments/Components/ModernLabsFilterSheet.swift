@@ -20,6 +20,15 @@ struct ModernLabsFilterSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: HealthSpacing.xl) {
                     
+                    // Active Filters Summary (moved to top for better UX)
+                    if viewModel.hasActiveFilters {
+                        ActiveFiltersSummary(viewModel: viewModel)
+                        
+                        // Divider (only shown when filters are active)
+                        Divider()
+                            .background(HealthColors.border)
+                    }
+                    
                     // Distance Section with Slider
                     VStack(alignment: .leading, spacing: HealthSpacing.lg) {
                         DistanceSliderView(distanceValue: $viewModel.distanceSliderValue)
@@ -54,15 +63,6 @@ struct ModernLabsFilterSheet: View {
                             .onChange(of: viewModel.selectedMinimumRating) { _, _ in
                                 hasChanges = true
                             }
-                    }
-                    
-                    // Active Filters Summary (if any)
-                    if viewModel.hasActiveFilters {
-                        // Divider
-                        Divider()
-                            .background(HealthColors.border)
-                        
-                        ActiveFiltersSummary(viewModel: viewModel)
                     }
                     
                     // Bottom spacing for sheet

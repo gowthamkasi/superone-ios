@@ -88,7 +88,7 @@ struct RatingOptionRow: View {
                         HStack(spacing: 2) {
                             ForEach(0..<5, id: \.self) { index in
                                 Image(systemName: starIcon(for: index, rating: rating))
-                                    .font(.system(size: 18, weight: .medium))
+                                    .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(starColor(for: index, rating: rating, isSelected: isSelected))
                             }
                         }
@@ -105,7 +105,7 @@ struct RatingOptionRow: View {
                 // Selection indicator
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
+                        .font(.system(size: 14))
                         .foregroundColor(.white)
                         .transition(.scale.combined(with: .opacity))
                 } else if rating != .any {
@@ -115,9 +115,9 @@ struct RatingOptionRow: View {
                         .foregroundColor(HealthColors.secondaryText)
                 }
             }
-            .padding(.horizontal, HealthSpacing.lg)
-            .padding(.vertical, HealthSpacing.md)
-            .frame(minHeight: 52) // Slightly taller for stars
+            .padding(.horizontal, HealthSpacing.md)
+            .padding(.vertical, HealthSpacing.sm)
+            .frame(minHeight: 44) // Match other filter chips
             .background(
                 RoundedRectangle(cornerRadius: HealthCornerRadius.button)
                     .fill(
