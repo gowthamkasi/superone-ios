@@ -101,8 +101,22 @@ dependencies: [
    xcodebuild -scheme superone -destination 'platform=iOS Simulator,name=iPhone 15 Pro' test
    ```
 
-## 📁 Project Structure
+## 📁 Current Project Structure
 
+**Current (Documentation Phase):**
+```
+superone/
+├── README.md                     # This file
+├── CLAUDE.md                     # Development guidance
+├── DEVELOPMENT_PLAN.md           # 7-phase implementation roadmap
+├── docs/                         # Comprehensive planning documentation
+│   ├── ios_app_functionality.md  # Complete screen specifications (862 lines)
+│   ├── ios_design_style_guide.md # UI/UX implementation details (714 lines)
+│   └── ios_health_app_setup.md   # Technical setup requirements (523 lines)
+└── superone.xcodeproj/           # Xcode project shell
+```
+
+**Planned Structure (When Implementation Begins):**
 ```
 superone/
 ├── App/                          # App configuration and entry point
@@ -110,25 +124,16 @@ superone/
 │   └── AppState.swift            # Global app state management
 ├── Features/                     # Feature-based modular architecture
 │   ├── Appointments/             # Appointment booking and management
-│   │   ├── Views/               # SwiftUI views
-│   │   ├── ViewModels/          # Presentation logic
-│   │   └── Components/          # Reusable UI components
 │   ├── Dashboard/               # Main health overview
 │   ├── LabReports/              # Lab report processing and analysis
 │   ├── Profile/                 # User profile and settings
 │   └── Location/                # Location services and UI
 ├── Core/                        # Shared business logic
 │   ├── Services/                # Business services
-│   │   ├── LocationManager.swift # Location services with iOS 18+ features
-│   │   ├── HealthKitManager.swift # HealthKit integration
-│   │   └── NetworkManager.swift  # API communication
 │   ├── Models/                  # Data models and entities
 │   └── Configuration/           # App configuration
 ├── Design/                      # Design system and components
 │   ├── DesignSystem/            # Colors, typography, spacing
-│   │   ├── HealthColors.swift   # Health-focused color palette
-│   │   ├── HealthTypography.swift # Typography system
-│   │   └── HealthSpacing.swift  # Spacing and layout constants
 │   └── Components/              # Reusable UI components
 └── Resources/                   # Assets and resources
     ├── Assets.xcassets          # Images and colors
@@ -182,16 +187,28 @@ superone/
 - **Release**: Production builds with optimizations
 - **TestFlight**: Beta builds with analytics and crash reporting
 
-## 🧪 Testing
+## 📋 Development Phases
 
-### Test Coverage
-- **Unit Tests**: Core business logic and services
-- **Integration Tests**: API communication and data flow
-- **UI Tests**: Critical user journeys and accessibility
+The project follows a comprehensive 7-phase development approach over 12 weeks:
 
-### Running Tests
+1. **Foundation Setup** (Week 1-2): Project initialization, dependencies, design system
+2. **Core Services & Authentication** (Week 3-4): HealthKit, networking, biometric auth
+3. **Dashboard & Health Overview** (Week 5-6): Main interface, health scores
+4. **Lab Report Processing** (Week 7-8): OCR integration, document scanning
+5. **AI Health Analysis** (Week 9-10): Backend integration, recommendations
+6. **Appointments & Integration** (Week 11): LabLoop integration, booking system
+7. **Profile & Settings** (Week 12): User management, settings, help system
+
+## 🧪 Testing (Planned)
+
+### Test Coverage Goals
+- **Unit Tests**: 80% coverage for core services
+- **Integration Tests**: HealthKit, API, OCR workflows
+- **UI Tests**: Critical user flows, accessibility compliance
+
+### Future Testing Commands
 ```bash
-# Run all tests
+# Run all tests (when implemented)
 xcodebuild test -scheme superone -destination 'platform=iOS Simulator,name=iPhone 15 Pro'
 
 # Run specific test suite
@@ -278,9 +295,16 @@ health tracking, lab tests, medical appointments, health insights, lab reports, 
 
 ## 🔗 Related Projects
 
-- **[Super One Backend](../backend/)**: Node.js/Fastify health analysis API
-- **[LabLoop B2B](../../labloop/)**: Lab management system for healthcare providers
+### Super One Health Ecosystem
+- **[Super One Backend](../backend/)**: Node.js/Fastify health analysis API (primary integration)
 - **[React Native App](../mobile-app/)**: Cross-platform health companion app
+- **[LabLoop B2B](../../labloop/)**: Lab management system for healthcare providers
+
+### Integration Points
+- **Backend API**: Real-time health data synchronization via REST API
+- **OCR Processing**: AWS Textract via backend (primary), Vision framework (fallback)
+- **LabLoop Integration**: Appointment booking and lab facility discovery
+- **HealthKit**: Native iOS health data integration with backend sync
 
 ## 📄 License
 
@@ -295,7 +319,17 @@ For development support and questions:
 
 ---
 
-**Version**: 1.0.0 (Build 1)  
-**Last Updated**: January 2025  
-**Minimum iOS**: 18.0  
+**Project Phase**: Planning & Documentation  
+**Target Version**: 1.0.0 (Build 1)  
+**Last Updated**: August 2025  
+**Planned iOS Target**: 18.0+  
 **Target Device**: iPhone (Universal)
+
+## 📚 Next Steps
+
+1. **Review Documentation**: Examine comprehensive planning docs in `docs/` directory
+2. **Create Xcode Project**: Initialize actual iOS project structure
+3. **Implement Foundation**: Set up core services and architecture
+4. **Begin Development**: Follow the 7-phase development plan
+
+For detailed implementation guidance, see `DEVELOPMENT_PLAN.md` and `CLAUDE.md`.
