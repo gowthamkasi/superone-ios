@@ -242,26 +242,19 @@ struct NotificationSheet: View {
     }
     
     private var notificationsList: some View {
-        LazyVStack(spacing: HealthSpacing.md) {
-            ForEach(filteredNotifications) { notification in
-                NotificationCard(
-                    notification: notification,
-                    onTap: {
-                        handleNotificationTap(notification)
-                    },
-                    onMarkAsRead: {
-                        Task {
-                            await markNotificationAsRead(notification)
-                        }
-                    },
-                    onDelete: {
-                        notificationToDelete = notification
-                        showingDeleteConfirmation = true
-                    }
-                )
-                .id(notification.id)
+        NotificationCardListView(
+            notifications: filteredNotifications,
+            onNotificationTap: handleNotificationTap,
+            onMarkAsRead: { notification in
+                Task {
+                    await markNotificationAsRead(notification)
+                }
+            },
+            onDelete: { notification in
+                notificationToDelete = notification
+                showingDeleteConfirmation = true
             }
-        }
+        )
     }
     
     // MARK: - Helper Methods
