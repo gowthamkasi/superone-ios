@@ -2,6 +2,14 @@
 
 A comprehensive health tracking and lab appointment booking app built with SwiftUI for iOS 18+.
 
+## 🚧 Project Status
+
+**Current Phase**: Planning & Documentation  
+**Implementation Status**: Documentation-only (no actual iOS code exists yet)  
+**Next Phase**: Foundation setup and Xcode project creation
+
+This repository currently contains comprehensive planning documentation for a future native iOS SwiftUI application. The planned iOS app will provide a native SwiftUI interface for the Super One Health ecosystem, featuring lab report OCR processing, AI-powered health insights, and appointment booking.
+
 ## 🏥 Overview
 
 Super One Health is a native iOS application that provides users with comprehensive health tracking, lab report analysis, and appointment booking capabilities. The app integrates with the Super One backend API to deliver AI-powered health insights and seamless appointment management.
@@ -67,7 +75,7 @@ dependencies: [
 - **macOS Sonoma 14.5+** with Apple Silicon Mac (16GB+ unified memory recommended)
 - **iOS 18.0+** simulator or device for testing
 
-### Installation
+### Current Setup (Documentation Phase)
 
 1. **Clone the repository**
    ```bash
@@ -75,21 +83,17 @@ dependencies: [
    cd "Super One/superone"
    ```
 
-2. **Open in Xcode**
+2. **Review planning documentation**
+   - `docs/ios_app_functionality.md` - Complete screen specifications and user flows
+   - `docs/ios_design_style_guide.md` - UI/UX implementation details
+   - `docs/ios_health_app_setup.md` - Technical setup requirements
+   - `DEVELOPMENT_PLAN.md` - 7-phase implementation roadmap
+
+3. **Future setup (when Xcode project is created)**
    ```bash
+   # Open in Xcode
    open superone.xcodeproj
-   ```
-
-3. **Configure signing**
-   - Select your development team in project settings
-   - Configure App ID and provisioning profiles
-
-4. **Set up permissions**
-   - Ensure Info.plist includes required usage descriptions
-   - Configure HealthKit entitlements
-
-5. **Build and run**
-   ```bash
+   
    # Build the app
    xcodebuild -scheme superone -configuration Debug build
    
