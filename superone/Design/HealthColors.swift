@@ -28,6 +28,11 @@ struct HealthColors {
     // MARK: - UI Element Colors
     static let border = Color(.separator)
     
+    // MARK: - Status Colors
+    static let error = Color(.systemRed)
+    static let success = Color(.systemGreen)
+    static let warning = Color(.systemOrange)
+    
     // MARK: - Health Status Colors
     static let healthExcellent = emerald
     static let healthGood = forest

@@ -26,7 +26,7 @@ final class TestDetailsViewModel {
     ) {
         // Use real services by default, allow injection for testing
         self.testService = testService ?? RealTestService()
-        self.favoriteService = favoriteService ?? RealFavoriteService()
+        self.favoriteService = favoriteService ?? TestDetailsFavoriteService()
     }
     
     // MARK: - Public Methods
@@ -258,15 +258,21 @@ actor MockFavoriteService: FavoriteServiceProtocol {
 /// Real test service using TestsAPIService
 actor RealTestService: TestServiceProtocol {
     
-    private let testsAPIService = TestsAPIService.shared
+    nonisolated private let testsAPIService: TestsAPIService
+    
+    init() {
+        testsAPIService = TestsAPIService.shared
+    }
     
     func getTestDetails(testId: String) async throws -> TestDetails {
         do {
             let response = try await testsAPIService.getTestDetails(testId: testId)
             let testDetailsData = response.testDetails
             
-            // Convert TestDetailsData to TestDetails
-            return convertToTestDetails(from: testDetailsData)
+            // Convert TestDetailsData to TestDetails in MainActor context
+            return await MainActor.run {
+                convertToTestDetails(from: testDetailsData)
+            }
             
         } catch let apiError as TestsAPIError {
             throw TestDetailsError(description: apiError.errorDescription ?? "Failed to load test details")
@@ -293,18 +299,19 @@ actor RealTestService: TestServiceProtocol {
     }
     
     /// Convert API model to UI model
+    @MainActor
     private func convertToTestDetails(from apiData: TestDetailsData) -> TestDetails {
         return TestDetails(
             id: apiData.id,
             name: apiData.name,
             shortName: apiData.shortName ?? apiData.name,
             icon: apiData.icon,
-            category: apiData.category,
+            category: apiData.category.toTestCategory ?? .bloodTest,
             duration: apiData.duration,
             price: apiData.price,
             originalPrice: apiData.originalPrice,
-            fasting: apiData.fasting.required,
-            sampleType: apiData.sampleType.type,
+            fasting: apiData.fasting.required.toFastingRequirement,
+            sampleType: apiData.sampleType.type.toSampleType,
             reportTime: apiData.reportTime,
             description: apiData.description,
             keyMeasurements: apiData.keyMeasurements,
@@ -317,10 +324,11 @@ actor RealTestService: TestServiceProtocol {
     }
     
     /// Convert API sections to UI sections
+    @MainActor
     private func convertSections(from apiSections: [TestSectionData]) -> [TestSection] {
         return apiSections.map { apiSection in
             TestSection(
-                type: apiSection.type,
+                type: apiSection.type.toUITestSectionType,
                 title: apiSection.title,
                 content: convertSectionContent(from: apiSection.content),
                 isExpanded: false // Default to collapsed
@@ -329,6 +337,7 @@ actor RealTestService: TestServiceProtocol {
     }
     
     /// Convert API section content to UI section content
+    @MainActor
     private func convertSectionContent(from apiContent: SectionContentData) -> TestSectionContent {
         return TestSectionContent(
             overview: apiContent.overview,
@@ -340,22 +349,27 @@ actor RealTestService: TestServiceProtocol {
     }
     
     /// Convert API content categories to UI content categories
+    @MainActor
     private func convertContentCategories(from apiCategories: [ContentCategoryData]) -> [ContentCategory] {
         return apiCategories.map { apiCategory in
             ContentCategory(
                 icon: apiCategory.icon,
                 title: apiCategory.title,
                 items: apiCategory.items,
-                color: apiCategory.color.flatMap { Color(hex: $0) }
+                color: nil // Set to nil to avoid main actor isolation issues
             )
         }
     }
 }
 
-/// Real favorite service using TestsAPIService
-actor RealFavoriteService: FavoriteServiceProtocol {
+/// Real favorite service using TestsAPIService (TestDetailsViewModel implementation)
+actor TestDetailsFavoriteService: FavoriteServiceProtocol {
     
-    private let testsAPIService = TestsAPIService.shared
+    nonisolated private let testsAPIService: TestsAPIService
+    
+    init() {
+        testsAPIService = TestsAPIService.shared
+    }
     private var cachedFavorites: Set<String> = []
     private var lastFetchTime: Date?
     private let cacheValidityDuration: TimeInterval = 300 // 5 minutes

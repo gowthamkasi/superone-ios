@@ -174,6 +174,98 @@ struct HealthDestructiveButtonStyle: ButtonStyle {
     }
 }
 
+// MARK: - Generic HealthButtonStyle
+struct HealthButtonStyle: ButtonStyle {
+    let style: ButtonStyleType
+    @Environment(\.isEnabled) private var isEnabled
+    
+    enum ButtonStyleType {
+        case primary
+        case secondary
+        case destructive
+        case small
+    }
+    
+    init(style: ButtonStyleType = .primary) {
+        self.style = style
+    }
+    
+    func makeBody(configuration: SwiftUI.ButtonStyle.Configuration) -> some View {
+        configuration.label
+            .font(font)
+            .foregroundColor(foregroundColor)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .background(
+                RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                    .fill(backgroundColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: HealthCornerRadius.button)
+                            .strokeBorder(borderColor, lineWidth: borderWidth)
+                    )
+            )
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .opacity(isEnabled ? 1.0 : 0.6)
+    }
+    
+    private var font: Font {
+        switch style {
+        case .primary, .secondary, .destructive:
+            return HealthTypography.buttonPrimary
+        case .small:
+            return HealthTypography.buttonSmall
+        }
+    }
+    
+    private var foregroundColor: Color {
+        switch style {
+        case .primary, .destructive:
+            return .white
+        case .secondary, .small:
+            return isEnabled ? HealthColors.primary : HealthColors.healthNeutral
+        }
+    }
+    
+    private var backgroundColor: Color {
+        switch style {
+        case .primary:
+            return isEnabled ? HealthColors.primary : HealthColors.healthNeutral
+        case .secondary, .small:
+            return Color.clear
+        case .destructive:
+            return isEnabled ? HealthColors.error : HealthColors.healthNeutral
+        }
+    }
+    
+    private var borderColor: Color {
+        switch style {
+        case .primary, .destructive:
+            return Color.clear
+        case .secondary, .small:
+            return isEnabled ? HealthColors.primary : HealthColors.healthNeutral
+        }
+    }
+    
+    private var borderWidth: CGFloat {
+        switch style {
+        case .primary, .destructive:
+            return 0
+        case .secondary, .small:
+            return 1.5
+        }
+    }
+    
+    private var height: CGFloat {
+        switch style {
+        case .primary, .secondary, .destructive:
+            return HealthSpacing.buttonHeight
+        case .small:
+            return HealthSpacing.buttonHeightSmall
+        }
+    }
+}
+
 // MARK: - Button Components
 struct HealthPrimaryButton: View {
     let title: String

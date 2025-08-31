@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 // MARK: - Core Enums (API-Compatible)
 
@@ -24,6 +25,42 @@ enum APITestCategory: String, CaseIterable, Sendable, Codable {
     case fitness = "fitness"
     case allergy = "allergy"
     case infection = "infection"
+    
+    /// Display name for UI
+    var displayName: String {
+        switch self {
+        case .bloodTest: return "Blood Test"
+        case .imaging: return "Imaging"
+        case .cardiology: return "Cardiology"
+        case .women: return "Women's Health"
+        case .diabetes: return "Diabetes"
+        case .thyroid: return "Thyroid"
+        case .liver: return "Liver Function"
+        case .kidney: return "Kidney Function"
+        case .cancer: return "Cancer Screening"
+        case .fitness: return "Fitness"
+        case .allergy: return "Allergy"
+        case .infection: return "Infection"
+        }
+    }
+    
+    /// Color for UI display
+    var color: Color {
+        switch self {
+        case .bloodTest: return .green
+        case .imaging: return .blue
+        case .cardiology: return .red
+        case .women: return .pink
+        case .diabetes: return .orange
+        case .thyroid: return .purple
+        case .liver: return .brown
+        case .kidney: return .cyan
+        case .cancer: return .red
+        case .fitness: return .green
+        case .allergy: return .yellow
+        case .infection: return .red
+        }
+    }
 }
 
 /// Fasting requirements for API compatibility
@@ -638,5 +675,91 @@ struct RelatedPackageData: Codable, Sendable, Identifiable {
     nonisolated enum CodingKeys: String, CodingKey {
         case id, name, price
         case testCount = "test_count"
+    }
+}
+
+// MARK: - Type Conversion Extensions
+
+/// Extension to convert between TestCategory and APITestCategory
+extension TestCategory {
+    /// Convert TestCategory to APITestCategory
+    var toAPITestCategory: APITestCategory? {
+        switch self {
+        case .bloodTest: return .bloodTest
+        case .imaging: return .imaging
+        case .cardiology: return .cardiology
+        case .women: return .women
+        case .diabetes: return .diabetes
+        case .thyroid: return .thyroid
+        case .liver: return .liver
+        case .kidney: return .kidney
+        case .cancer: return .cancer
+        case .fitness: return .fitness
+        case .allergy: return .allergy
+        case .infection: return .infection
+        }
+    }
+}
+
+extension APITestCategory {
+    /// Convert APITestCategory to TestCategory
+    nonisolated var toTestCategory: TestCategory? {
+        switch self {
+        case .bloodTest: return .bloodTest
+        case .imaging: return .imaging
+        case .cardiology: return .cardiology
+        case .women: return .women
+        case .diabetes: return .diabetes
+        case .thyroid: return .thyroid
+        case .liver: return .liver
+        case .kidney: return .kidney
+        case .cancer: return .cancer
+        case .fitness: return .fitness
+        case .allergy: return .allergy
+        case .infection: return .infection
+        }
+    }
+}
+
+extension APIFastingRequirement {
+    /// Convert APIFastingRequirement to FastingRequirement
+    nonisolated var toFastingRequirement: FastingRequirement {
+        switch self {
+        case .none: return .none
+        case .hours8: return .hours8
+        case .hours10: return .hours10
+        case .hours12: return .hours12
+        case .hours14: return .hours14
+        case .overnight: return .overnight
+        }
+    }
+}
+
+extension APISampleType {
+    /// Convert APISampleType to SampleType
+    nonisolated var toSampleType: SampleType {
+        switch self {
+        case .blood: return .blood
+        case .urine: return .urine
+        case .saliva: return .saliva
+        case .stool: return .stool
+        case .tissue: return .tissue
+        case .swab: return .swab
+        case .breath: return .breath
+        case .imaging: return .imaging
+        }
+    }
+}
+
+extension APITestSectionType {
+    /// Convert APITestSectionType to UITestSectionType
+    nonisolated var toUITestSectionType: UITestSectionType {
+        switch self {
+        case .about: return .about
+        case .whyNeeded: return .whyNeeded
+        case .insights: return .insights
+        case .preparation: return .preparation
+        case .results: return .results
+        }
     }
 }

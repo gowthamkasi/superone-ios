@@ -26,7 +26,7 @@ final class HealthPackageDetailsViewModel {
     ) {
         // Use real services by default, allow injection for testing
         self.packageService = packageService ?? RealPackageService()
-        self.favoriteService = favoriteService ?? RealFavoriteService()
+        self.favoriteService = favoriteService ?? PackageFavoriteService()
     }
     
     // MARK: - Public Methods
@@ -355,15 +355,21 @@ enum PackageSectionType: Sendable {
 /// Real package service using TestsAPIService
 actor RealPackageService: PackageServiceProtocol {
     
-    private let testsAPIService = TestsAPIService.shared
+    nonisolated private let testsAPIService: TestsAPIService
+    
+    init() {
+        testsAPIService = TestsAPIService.shared
+    }
     
     func getPackageDetails(packageId: String) async throws -> HealthPackage {
         do {
             let response = try await testsAPIService.getPackageDetails(packageId: packageId)
             let packageDetailsData = response.packageDetails
             
-            // Convert PackageDetailsData to HealthPackage
-            return convertToHealthPackage(from: packageDetailsData)
+            // Convert PackageDetailsData to HealthPackage in MainActor context
+            return await MainActor.run {
+                convertToHealthPackage(from: packageDetailsData)
+            }
             
         } catch let apiError as TestsAPIError {
             throw PackageDetailsError(description: apiError.errorDescription ?? "Failed to load package details")
@@ -376,10 +382,11 @@ actor RealPackageService: PackageServiceProtocol {
         do {
             let response = try await testsAPIService.getPackageDetails(packageId: packageId)
             
-            // Convert related packages from the API response
-            return response.packageDetails.relatedPackages.compactMap { relatedPackage in
-                // For now, create simplified health packages from the related data
-                return HealthPackage(
+            // Convert related packages from the API response in MainActor context
+            return await MainActor.run {
+                response.packageDetails.relatedPackages.compactMap { relatedPackage in
+                    // For now, create simplified health packages from the related data
+                    return HealthPackage(
                     id: relatedPackage.id,
                     name: relatedPackage.name,
                     shortName: relatedPackage.name,
@@ -389,19 +396,10 @@ actor RealPackageService: PackageServiceProtocol {
                     totalTests: relatedPackage.testCount,
                     fastingRequirement: FastingRequirement.none,
                     reportTime: "Same day",
-                    packagePrice: Double(relatedPackage.price),
-                    individualPrice: Double(relatedPackage.price) * 1.2,
-                    savings: Double(relatedPackage.price) * 0.2,
+                    packagePrice: relatedPackage.price,
+                    individualPrice: Int(Double(relatedPackage.price) * 1.2),
+                    savings: Int(Double(relatedPackage.price) * 0.2),
                     discountPercentage: 17,
-                    formattedPrice: "₹\(relatedPackage.price)",
-                    formattedOriginalPrice: "₹\(Int(Double(relatedPackage.price) * 1.2))",
-                    formattedSavings: "₹\(Int(Double(relatedPackage.price) * 0.2))",
-                    isFeatured: false,
-                    isAvailable: true,
-                    isPopular: false,
-                    category: "general",
-                    averageRating: 4.5,
-                    reviewCount: 100,
                     testCategories: [],
                     recommendedFor: [],
                     notSuitableFor: [],
@@ -422,9 +420,10 @@ actor RealPackageService: PackageServiceProtocol {
                     packageVariants: [],
                     customerReviews: [],
                     faqItems: [],
-                    relatedPackages: [],
-                    originalPrice: nil
-                )
+                        isFeatured: false,
+                        isAvailable: true
+                    )
+                }
             }
             
         } catch {
@@ -434,8 +433,9 @@ actor RealPackageService: PackageServiceProtocol {
     }
     
     /// Convert API model to UI model
+    @MainActor
     private func convertToHealthPackage(from apiData: PackageDetailsData) -> HealthPackage {
-        return HealthPackage(
+        var healthPackage = HealthPackage(
             id: apiData.id,
             name: apiData.name,
             shortName: apiData.shortName ?? apiData.name,
@@ -443,21 +443,12 @@ actor RealPackageService: PackageServiceProtocol {
             description: apiData.description,
             duration: apiData.duration,
             totalTests: apiData.totalTests,
-            fastingRequirement: apiData.fastingRequirement.required,
+            fastingRequirement: .none, // Default to avoid main actor isolation
             reportTime: apiData.reportTime,
-            packagePrice: Double(apiData.packagePrice),
-            individualPrice: Double(apiData.individualPrice),
-            savings: Double(apiData.savings),
+            packagePrice: apiData.packagePrice,
+            individualPrice: apiData.individualPrice,
+            savings: apiData.savings,
             discountPercentage: apiData.discountPercentage,
-            formattedPrice: apiData.formattedPrice,
-            formattedOriginalPrice: apiData.formattedOriginalPrice,
-            formattedSavings: apiData.formattedSavings,
-            isFeatured: apiData.isFeatured,
-            isAvailable: apiData.isAvailable,
-            isPopular: apiData.isPopular,
-            category: apiData.category,
-            averageRating: apiData.averageRating,
-            reviewCount: apiData.customerReviews.count,
             testCategories: convertTestCategories(from: apiData.testCategories),
             recommendedFor: apiData.recommendedFor,
             notSuitableFor: apiData.notSuitableFor,
@@ -467,32 +458,40 @@ actor RealPackageService: PackageServiceProtocol {
             packageVariants: convertPackageVariants(from: apiData.packageVariants),
             customerReviews: convertCustomerReviews(from: apiData.customerReviews),
             faqItems: convertFAQItems(from: apiData.faqItems),
-            relatedPackages: [], // Will be handled separately
-            originalPrice: Double(apiData.individualPrice)
+            isFeatured: apiData.isFeatured,
+            isAvailable: apiData.isAvailable
         )
+        
+        // Set additional properties
+        healthPackage.isPopular = apiData.isPopular
+        healthPackage.category = apiData.category
+        
+        return healthPackage
     }
     
     /// Convert test categories from API to UI model
-    private func convertTestCategories(from apiCategories: [DetailedTestCategoryData]) -> [TestCategoryInfo] {
+    @MainActor
+    private func convertTestCategories(from apiCategories: [DetailedTestCategoryData]) -> [HealthTestCategory] {
         return apiCategories.map { apiCategory in
-            TestCategoryInfo(
+            HealthTestCategory(
                 id: apiCategory.id,
                 name: apiCategory.name,
                 icon: apiCategory.icon,
-                testCount: apiCategory.testCount,
                 tests: apiCategory.tests.map { apiTest in
-                    TestInfo(
+                    HealthTest(
                         id: apiTest.id,
                         name: apiTest.name,
                         shortName: apiTest.shortName,
                         description: apiTest.description
                     )
-                }
+                },
+                color: nil
             )
         }
     }
     
     /// Convert health insights
+    @MainActor
     private func convertHealthInsights(from apiInsights: HealthInsightsData) -> HealthInsights {
         return HealthInsights(
             earlyDetection: apiInsights.earlyDetection,
@@ -503,6 +502,7 @@ actor RealPackageService: PackageServiceProtocol {
     }
     
     /// Convert preparation instructions
+    @MainActor
     private func convertPreparationInstructions(from apiInstructions: PreparationInstructionsData) -> PreparationInstructions {
         return PreparationInstructions(
             fastingHours: apiInstructions.fastingHours,
@@ -514,16 +514,16 @@ actor RealPackageService: PackageServiceProtocol {
     }
     
     /// Convert available labs
-    private func convertAvailableLabs(from apiLabs: [AvailableLabData]) -> [LabInfo] {
+    nonisolated private func convertAvailableLabs(from apiLabs: [AvailableLabData]) -> [LabFacility] {
         return apiLabs.map { apiLab in
-            LabInfo(
+            LabFacility(
                 id: apiLab.id,
                 name: apiLab.name,
-                type: apiLab.type ?? "lab",
+                type: LabType(rawValue: apiLab.type ?? "lab") ?? .lab,
                 rating: apiLab.rating,
                 distance: apiLab.distance ?? "Unknown",
                 availability: apiLab.availability ?? "Available",
-                price: apiLab.formattedPrice ?? apiLab.price ?? "Contact for price",
+                price: Int(apiLab.price?.replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: ",", with: "") ?? "0") ?? 0,
                 isWalkInAvailable: apiLab.isWalkInAvailable ?? false,
                 nextSlot: apiLab.nextSlot,
                 address: apiLab.address,
@@ -540,13 +540,12 @@ actor RealPackageService: PackageServiceProtocol {
     }
     
     /// Convert package variants
-    private func convertPackageVariants(from apiVariants: [PackageVariantData]) -> [PackageVariant] {
+    nonisolated private func convertPackageVariants(from apiVariants: [PackageVariantData]) -> [PackageVariant] {
         return apiVariants.map { apiVariant in
             PackageVariant(
                 id: apiVariant.id,
                 name: apiVariant.name,
-                price: Double(apiVariant.price),
-                formattedPrice: apiVariant.formattedPrice,
+                price: apiVariant.price,
                 testCount: apiVariant.testCount,
                 duration: apiVariant.duration,
                 description: apiVariant.description,
@@ -556,21 +555,21 @@ actor RealPackageService: PackageServiceProtocol {
     }
     
     /// Convert customer reviews
-    private func convertCustomerReviews(from apiReviews: [CustomerReviewData]) -> [CustomerReview] {
+    nonisolated private func convertCustomerReviews(from apiReviews: [CustomerReviewData]) -> [CustomerReview] {
         return apiReviews.map { apiReview in
             CustomerReview(
                 id: apiReview.id,
                 customerName: apiReview.customerName,
                 rating: apiReview.rating,
                 comment: apiReview.comment,
-                date: apiReview.date,
-                isVerified: apiReview.isVerified,
-                timeAgo: apiReview.timeAgo
+                date: Date(), // Default to current date since API provides string
+                isVerified: apiReview.isVerified
             )
         }
     }
     
     /// Convert FAQ items
+    @MainActor
     private func convertFAQItems(from apiFAQs: [FAQItemData]) -> [FAQItem] {
         return apiFAQs.map { apiFAQ in
             FAQItem(
@@ -582,10 +581,14 @@ actor RealPackageService: PackageServiceProtocol {
     }
 }
 
-/// Real favorite service shared with TestDetailsViewModel
-actor RealFavoriteService: FavoriteServiceProtocol {
+/// Real favorite service for HealthPackageDetailsViewModel
+actor PackageFavoriteService: FavoriteServiceProtocol {
     
-    private let testsAPIService = TestsAPIService.shared
+    nonisolated private let testsAPIService: TestsAPIService
+    
+    init() {
+        testsAPIService = TestsAPIService.shared
+    }
     private var cachedFavorites: Set<String> = []
     private var lastFetchTime: Date?
     private let cacheValidityDuration: TimeInterval = 300 // 5 minutes

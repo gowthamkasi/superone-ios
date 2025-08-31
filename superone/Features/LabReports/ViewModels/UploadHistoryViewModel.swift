@@ -80,7 +80,7 @@ final class UploadHistoryViewModel {
             
             // Load from API
             let historyResponse = try await labReportAPIService.getUploadHistory(
-                page: 1,
+                offset: 0,
                 limit: itemsPerPage * 3 // Load more initially
             )
             
@@ -117,7 +117,7 @@ final class UploadHistoryViewModel {
         do {
             currentPage += 1
             let historyResponse = try await labReportAPIService.getUploadHistory(
-                page: currentPage,
+                offset: currentPage * itemsPerPage,
                 limit: itemsPerPage
             )
             

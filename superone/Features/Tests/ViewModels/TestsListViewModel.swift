@@ -32,7 +32,9 @@ final class TestsListViewModel {
     var selectedCategory: TestCategory? = nil {
         didSet {
             if selectedCategory != oldValue {
-                resetAndLoadTests()
+                Task { @MainActor in
+                    await resetAndLoadTests()
+                }
             }
         }
     }
@@ -70,7 +72,7 @@ final class TestsListViewModel {
     /// Current test filters
     private var currentFilters: TestFilters? {
         return TestFilters(
-            category: selectedCategory,
+            category: selectedCategory?.toAPITestCategory,
             available: true // Always show only available tests
         )
     }
@@ -85,7 +87,7 @@ final class TestsListViewModel {
     
     init() {
         // Load initial data
-        Task {
+        Task { @MainActor in
             await loadTests()
         }
     }
@@ -192,7 +194,7 @@ final class TestsListViewModel {
         // Cancel previous suggestions task
         suggestionsTask?.cancel()
         
-        suggestionsTask = Task {
+        suggestionsTask = Task { @MainActor in
             // Debounce for 300ms
             try? await Task.sleep(nanoseconds: 300_000_000)
             
@@ -231,7 +233,7 @@ final class TestsListViewModel {
         // Load more when we're near the end (last 5 items)
         if let index = tests.firstIndex(where: { $0.id == testId }),
            index >= tests.count - 5 {
-            Task {
+            Task { @MainActor in
                 await loadMoreTests()
             }
         }
@@ -244,7 +246,7 @@ final class TestsListViewModel {
         // Cancel previous search task
         searchTask?.cancel()
         
-        searchTask = Task {
+        searchTask = Task { @MainActor in
             // Debounce for 500ms
             try? await Task.sleep(nanoseconds: 500_000_000)
             
@@ -254,7 +256,7 @@ final class TestsListViewModel {
         }
         
         // Load suggestions immediately for better UX
-        Task {
+        Task { @MainActor in
             await loadSearchSuggestions(for: searchText)
         }
     }
@@ -336,7 +338,7 @@ extension TestsListViewModel {
     
     /// Retry the failed operation
     func retry() {
-        Task {
+        Task { @MainActor in
             await loadTests()
         }
     }
