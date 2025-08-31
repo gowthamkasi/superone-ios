@@ -37,8 +37,7 @@ final class TestsAPIService {
     ///   - search: Search query for tests
     ///   - filters: Test filters for category, price, etc.
     /// - Returns: Tests list response with pagination
-    @MainActor
-    func getTests(
+    nonisolated func getTests(
         offset: Int = 0,
         limit: Int = 20,
         search: String? = nil,
@@ -102,7 +101,10 @@ final class TestsAPIService {
             // Make network request
             let response: BaseResponse<TestsListData> = try await networkService.get(
                 url,
-                responseType: BaseResponse<TestsListData>.self
+                responseType: BaseResponse<TestsListData>.self,
+                parameters: nil,
+                headers: nil,
+                useCache: true
             )
             
             // Validate response
@@ -124,14 +126,16 @@ final class TestsAPIService {
     /// Get detailed information for a specific test
     /// - Parameter testId: Unique test identifier
     /// - Returns: Comprehensive test details
-    @MainActor
-    func getTestDetails(testId: String) async throws -> TestDetailsResponse {
+    nonisolated func getTestDetails(testId: String) async throws -> TestDetailsResponse {
         let url = buildURL(endpoint: "\(baseEndpoint)/\(testId)")
         
         do {
             let response: BaseResponse<TestDetailsData> = try await networkService.get(
                 url,
-                responseType: BaseResponse<TestDetailsData>.self
+                responseType: BaseResponse<TestDetailsData>.self,
+                parameters: nil,
+                headers: nil,
+                useCache: true
             )
             
             try response.validate()
@@ -151,8 +155,7 @@ final class TestsAPIService {
     ///   - search: Search query
     ///   - filters: Package filters
     /// - Returns: Health packages list response
-    @MainActor
-    func getPackages(
+    nonisolated func getPackages(
         offset: Int = 0,
         limit: Int = 10,
         search: String? = nil,
@@ -211,7 +214,10 @@ final class TestsAPIService {
         do {
             let response: BaseResponse<PackagesListData> = try await networkService.get(
                 url,
-                responseType: BaseResponse<PackagesListData>.self
+                responseType: BaseResponse<PackagesListData>.self,
+                parameters: nil,
+                headers: nil,
+                useCache: true
             )
             
             try response.validate()
@@ -232,14 +238,16 @@ final class TestsAPIService {
     /// Get detailed information for a specific health package
     /// - Parameter packageId: Unique package identifier
     /// - Returns: Comprehensive package details
-    @MainActor
-    func getPackageDetails(packageId: String) async throws -> PackageDetailsResponse {
+    nonisolated func getPackageDetails(packageId: String) async throws -> PackageDetailsResponse {
         let url = buildURL(endpoint: "\(packagesEndpoint)/\(packageId)")
         
         do {
             let response: BaseResponse<PackageDetailsData> = try await networkService.get(
                 url,
-                responseType: BaseResponse<PackageDetailsData>.self
+                responseType: BaseResponse<PackageDetailsData>.self,
+                parameters: nil,
+                headers: nil,
+                useCache: true
             )
             
             try response.validate()
@@ -255,8 +263,7 @@ final class TestsAPIService {
     /// Toggle favorite status for a test
     /// - Parameter testId: Test identifier
     /// - Returns: Updated favorite status
-    @MainActor
-    func toggleFavorite(testId: String) async throws -> FavoriteStatusResponse {
+    nonisolated func toggleFavorite(testId: String) async throws -> FavoriteStatusResponse {
         // First check current status to determine action
         let currentFavorites = try await getUserFavorites(offset: 0, limit: 50)
         let isFavorite = currentFavorites.favorites.contains { $0.id == testId }
@@ -264,8 +271,8 @@ final class TestsAPIService {
         let url = buildURL(endpoint: "\(baseEndpoint)/\(testId)/favorite")
         do {
             let response: BaseResponse<FavoriteStatusData> = isFavorite 
-                ? try await networkService.delete(url, responseType: BaseResponse<FavoriteStatusData>.self)
-                : try await networkService.post(url, responseType: BaseResponse<FavoriteStatusData>.self)
+                ? try await networkService.delete(url, responseType: BaseResponse<FavoriteStatusData>.self, headers: nil)
+                : try await networkService.post(url, body: Optional<String>.none, responseType: BaseResponse<FavoriteStatusData>.self, headers: nil)
             
             try response.validate()
             let data = try response.getData()
@@ -285,8 +292,7 @@ final class TestsAPIService {
     ///   - offset: Number of records to skip
     ///   - limit: Maximum records to return
     /// - Returns: User's favorite tests
-    @MainActor
-    func getUserFavorites(
+    nonisolated func getUserFavorites(
         offset: Int = 0,
         limit: Int = 20
     ) async throws -> FavoritesListResponse {
@@ -301,7 +307,10 @@ final class TestsAPIService {
         do {
             let response: BaseResponse<FavoritesListData> = try await networkService.get(
                 url,
-                responseType: BaseResponse<FavoritesListData>.self
+                responseType: BaseResponse<FavoritesListData>.self,
+                parameters: nil,
+                headers: nil,
+                useCache: true
             )
             
             try response.validate()
@@ -322,8 +331,7 @@ final class TestsAPIService {
     ///   - query: Search query (minimum 2 characters)
     ///   - limit: Maximum suggestions to return
     /// - Returns: Search suggestions
-    @MainActor
-    func getSearchSuggestions(
+    nonisolated func getSearchSuggestions(
         query: String,
         limit: Int = 10
     ) async throws -> SearchSuggestionsResponse {
@@ -342,7 +350,10 @@ final class TestsAPIService {
         do {
             let response: BaseResponse<SearchSuggestionsData> = try await networkService.get(
                 url,
-                responseType: BaseResponse<SearchSuggestionsData>.self
+                responseType: BaseResponse<SearchSuggestionsData>.self,
+                parameters: nil,
+                headers: nil,
+                useCache: false
             )
             
             try response.validate()
@@ -361,7 +372,7 @@ final class TestsAPIService {
     // MARK: - Private Helper Methods
     
     /// Build URL with base path and query parameters
-    private func buildURL(endpoint: String, queryParams: [String: String] = [:]) -> String {
+    nonisolated private func buildURL(endpoint: String, queryParams: [String: String] = [:]) -> String {
         var url = endpoint
         
         if !queryParams.isEmpty {
@@ -386,26 +397,26 @@ final class TestsAPIService {
 
 /// Test filters for API requests
 struct TestFilters: Sendable {
-    let category: TestCategory?
+    let category: APITestCategory?
     let priceMin: Int?
     let priceMax: Int?
     let fastingRequired: Bool?
-    let sampleType: SampleType?
+    let sampleType: APISampleType?
     let featured: Bool?
     let available: Bool?
     let sortBy: TestSortField?
-    let sortOrder: TestsSortOrder?
+    let sortOrder: TestAPISort?
     
     init(
-        category: TestCategory? = nil,
+        category: APITestCategory? = nil,
         priceMin: Int? = nil,
         priceMax: Int? = nil,
         fastingRequired: Bool? = nil,
-        sampleType: SampleType? = nil,
+        sampleType: APISampleType? = nil,
         featured: Bool? = nil,
         available: Bool? = nil,
         sortBy: TestSortField? = nil,
-        sortOrder: TestsSortOrder? = nil
+        sortOrder: TestAPISort? = nil
     ) {
         self.category = category
         self.priceMin = priceMin
@@ -429,7 +440,7 @@ struct PackageFilters: Sendable {
     let popular: Bool?
     let available: Bool?
     let sortBy: PackageSortField?
-    let sortOrder: TestsSortOrder?
+    let sortOrder: TestAPISort?
     
     init(
         priceMin: Int? = nil,
@@ -440,7 +451,7 @@ struct PackageFilters: Sendable {
         popular: Bool? = nil,
         available: Bool? = nil,
         sortBy: PackageSortField? = nil,
-        sortOrder: TestsSortOrder? = nil
+        sortOrder: TestAPISort? = nil
     ) {
         self.priceMin = priceMin
         self.priceMax = priceMax
@@ -471,7 +482,7 @@ enum PackageSortField: String, CaseIterable, Sendable {
     case savings = "savings"
 }
 
-enum TestsSortOrder: String, CaseIterable, Sendable {
+enum TestAPISort: String, CaseIterable, Sendable {
     case ascending = "asc"
     case descending = "desc"
 }

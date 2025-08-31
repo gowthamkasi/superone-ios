@@ -152,12 +152,12 @@ enum SampleType: String, CaseIterable, Sendable, Codable {
 /// Collapsible section model
 struct TestSection: Sendable, Identifiable {
     let id = UUID()
-    let type: TestSectionType
+    let type: UITestSectionType
     let title: String
     let content: TestSectionContent
     var isExpanded: Bool
     
-    init(type: TestSectionType, title: String, content: TestSectionContent, isExpanded: Bool = false) {
+    init(type: UITestSectionType, title: String, content: TestSectionContent, isExpanded: Bool = false) {
         self.type = type
         self.title = title
         self.content = content
@@ -165,8 +165,8 @@ struct TestSection: Sendable, Identifiable {
     }
 }
 
-/// Section type enumeration
-enum TestSectionType: String, CaseIterable, Sendable, Codable {
+/// Section type enumeration for test details
+enum UITestSectionType: String, CaseIterable, Sendable, Codable {
     case about = "about"
     case whyNeeded = "why_needed"
     case insights = "insights"

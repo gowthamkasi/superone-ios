@@ -8,6 +8,46 @@
 
 @preconcurrency import Foundation
 
+// MARK: - Core Enums (API-Compatible)
+
+/// Test category enumeration for API compatibility
+enum APITestCategory: String, CaseIterable, Sendable, Codable {
+    case bloodTest = "blood_test"
+    case imaging = "imaging"
+    case cardiology = "cardiology"
+    case women = "women_health"
+    case diabetes = "diabetes"
+    case thyroid = "thyroid"
+    case liver = "liver"
+    case kidney = "kidney"
+    case cancer = "cancer_screening"
+    case fitness = "fitness"
+    case allergy = "allergy"
+    case infection = "infection"
+}
+
+/// Fasting requirements for API compatibility
+enum APIFastingRequirement: String, CaseIterable, Sendable, Codable {
+    case none = "none"
+    case hours8 = "8_hours"
+    case hours10 = "10_hours"
+    case hours12 = "12_hours"
+    case hours14 = "14_hours"
+    case overnight = "overnight"
+}
+
+/// Sample type enumeration for API compatibility
+enum APISampleType: String, CaseIterable, Sendable, Codable {
+    case blood = "blood"
+    case urine = "urine"
+    case saliva = "saliva"
+    case stool = "stool"
+    case tissue = "tissue"
+    case swab = "swab"
+    case breath = "breath"
+    case imaging = "imaging"
+}
+
 // MARK: - API Data Models
 
 struct TestsListData: Codable, Sendable {
@@ -29,7 +69,7 @@ struct TestItemData: Codable, Sendable, Identifiable {
     let name: String
     let shortName: String?
     let icon: String
-    let category: TestCategory
+    let category: APITestCategory
     let duration: String
     let price: String
     let originalPrice: String?
@@ -60,7 +100,7 @@ struct TestDetailsData: Codable, Sendable {
     let name: String
     let shortName: String?
     let icon: String
-    let category: TestCategory
+    let category: APITestCategory
     let duration: String
     let price: String
     let originalPrice: String?
@@ -218,8 +258,8 @@ struct PackageDetailsData: Codable, Sendable {
 
 // MARK: - Supporting Data Models
 
-struct FastingRequirementData: Codable, Sendable {
-    let required: FastingRequirement
+@preconcurrency struct FastingRequirementData: Codable, Sendable {
+    let required: APIFastingRequirement
     let displayText: String
     let instructions: String?
     
@@ -230,8 +270,8 @@ struct FastingRequirementData: Codable, Sendable {
     }
 }
 
-struct SampleTypeData: Codable, Sendable {
-    let type: SampleType
+@preconcurrency struct SampleTypeData: Codable, Sendable {
+    let type: APISampleType
     let displayName: String
     let icon: String
     
@@ -257,7 +297,7 @@ struct FavoritesListData: Codable, Sendable {
     let pagination: OffsetPagination
 }
 
-struct FavoriteTestData: Codable, Sendable, Identifiable {
+@preconcurrency struct FavoriteTestData: Codable, Sendable, Identifiable {
     let id: String
     let name: String
     let price: String
@@ -280,19 +320,19 @@ struct SearchSuggestionsData: Codable, Sendable {
     }
 }
 
-struct SearchSuggestionData: Codable, Sendable {
+@preconcurrency struct SearchSuggestionData: Codable, Sendable {
     let text: String
     let type: SuggestionType
     let count: Int
 }
 
-enum SuggestionType: String, Codable, Sendable {
+@preconcurrency enum SuggestionType: String, Codable, Sendable {
     case test = "test"
     case package = "package"
     case category = "category"
 }
 
-struct FiltersAppliedData: Codable, Sendable {
+@preconcurrency struct FiltersAppliedData: Codable, Sendable {
     let search: String?
     let category: String?
     let priceRange: PriceRangeData
@@ -305,7 +345,7 @@ struct FiltersAppliedData: Codable, Sendable {
     }
 }
 
-struct AvailableFiltersData: Codable, Sendable {
+@preconcurrency struct AvailableFiltersData: Codable, Sendable {
     let categories: [CategoryFilterData]
     let priceRange: PriceRangeData
     let sampleTypes: [SampleTypeFilterData]
@@ -319,7 +359,7 @@ struct AvailableFiltersData: Codable, Sendable {
     }
 }
 
-struct PackageFiltersAppliedData: Codable, Sendable {
+@preconcurrency struct PackageFiltersAppliedData: Codable, Sendable {
     let search: String?
     let priceRange: PriceRangeData
     
@@ -329,7 +369,7 @@ struct PackageFiltersAppliedData: Codable, Sendable {
     }
 }
 
-struct PackageAvailableFiltersData: Codable, Sendable {
+@preconcurrency struct PackageAvailableFiltersData: Codable, Sendable {
     let priceRange: PriceRangeData
     let testCountRange: TestCountRangeData
     let categories: [CategoryFilterData]
@@ -341,17 +381,17 @@ struct PackageAvailableFiltersData: Codable, Sendable {
     }
 }
 
-struct PriceRangeData: Codable, Sendable {
+@preconcurrency struct PriceRangeData: Codable, Sendable {
     let min: Int
     let max: Int
 }
 
-struct TestCountRangeData: Codable, Sendable {
+@preconcurrency struct TestCountRangeData: Codable, Sendable {
     let min: Int
     let max: Int
 }
 
-struct CategoryFilterData: Codable, Sendable {
+@preconcurrency struct CategoryFilterData: Codable, Sendable {
     let key: String
     let displayName: String
     let count: Int
@@ -363,7 +403,7 @@ struct CategoryFilterData: Codable, Sendable {
     }
 }
 
-struct SampleTypeFilterData: Codable, Sendable {
+@preconcurrency struct SampleTypeFilterData: Codable, Sendable {
     let key: String
     let displayName: String
     let count: Int
@@ -374,7 +414,7 @@ struct SampleTypeFilterData: Codable, Sendable {
     }
 }
 
-struct FastingOptionData: Codable, Sendable {
+@preconcurrency struct FastingOptionData: Codable, Sendable {
     let key: String
     let displayText: String
     let count: Int
@@ -387,8 +427,8 @@ struct FastingOptionData: Codable, Sendable {
 
 // MARK: - Additional Data Models
 
-struct TestSectionData: Codable, Sendable {
-    let type: TestSectionType
+@preconcurrency struct TestSectionData: Codable, Sendable {
+    let type: APITestSectionType
     let title: String
     let content: SectionContentData
     
@@ -397,7 +437,26 @@ struct TestSectionData: Codable, Sendable {
     }
 }
 
-struct SectionContentData: Codable, Sendable {
+/// API-specific test section type enumeration
+@preconcurrency enum APITestSectionType: String, CaseIterable, Sendable, Codable {
+    case about = "about"
+    case whyNeeded = "why_needed"
+    case insights = "insights"
+    case preparation = "preparation"
+    case results = "results"
+    
+    var displayName: String {
+        switch self {
+        case .about: return "About"
+        case .whyNeeded: return "Why Needed"
+        case .insights: return "Insights"
+        case .preparation: return "Preparation"
+        case .results: return "Results"
+        }
+    }
+}
+
+@preconcurrency struct SectionContentData: Codable, Sendable {
     let overview: String?
     let bulletPoints: [String]
     let categories: [ContentCategoryData]
@@ -411,21 +470,21 @@ struct SectionContentData: Codable, Sendable {
     }
 }
 
-struct ContentCategoryData: Codable, Sendable {
+@preconcurrency struct ContentCategoryData: Codable, Sendable {
     let icon: String
     let title: String
     let items: [String]
     let color: String?
 }
 
-struct RelatedTestData: Codable, Sendable, Identifiable {
+@preconcurrency struct RelatedTestData: Codable, Sendable, Identifiable {
     let id: String
     let name: String
     let price: String
     let category: String
 }
 
-struct AvailableLabData: Codable, Sendable, Identifiable {
+@preconcurrency struct AvailableLabData: Codable, Sendable, Identifiable {
     let id: String
     let name: String
     let location: String
@@ -463,7 +522,7 @@ struct AvailableLabData: Codable, Sendable, Identifiable {
     }
 }
 
-struct TestCategoryData: Codable, Sendable {
+@preconcurrency struct TestCategoryData: Codable, Sendable {
     let name: String
     let icon: String
     let testCount: Int
@@ -474,7 +533,7 @@ struct TestCategoryData: Codable, Sendable {
     }
 }
 
-struct DetailedTestCategoryData: Codable, Sendable, Identifiable {
+@preconcurrency struct DetailedTestCategoryData: Codable, Sendable, Identifiable {
     let id: String
     let name: String
     let icon: String
@@ -487,7 +546,7 @@ struct DetailedTestCategoryData: Codable, Sendable, Identifiable {
     }
 }
 
-struct CategoryTestData: Codable, Sendable, Identifiable {
+@preconcurrency struct CategoryTestData: Codable, Sendable, Identifiable {
     let id: String
     let name: String
     let shortName: String?
@@ -499,7 +558,7 @@ struct CategoryTestData: Codable, Sendable, Identifiable {
     }
 }
 
-struct HealthInsightsData: Codable, Sendable {
+@preconcurrency struct HealthInsightsData: Codable, Sendable {
     let earlyDetection: [String]
     let healthMonitoring: [String]
     let aiPoweredAnalysis: [String]
@@ -513,7 +572,7 @@ struct HealthInsightsData: Codable, Sendable {
     }
 }
 
-struct PreparationInstructionsData: Codable, Sendable {
+@preconcurrency struct PreparationInstructionsData: Codable, Sendable {
     let fastingHours: Int
     let dayBefore: [String]
     let morningOfTest: [String]
@@ -529,7 +588,7 @@ struct PreparationInstructionsData: Codable, Sendable {
     }
 }
 
-struct PackageVariantData: Codable, Sendable, Identifiable {
+@preconcurrency struct PackageVariantData: Codable, Sendable, Identifiable {
     let id: String
     let name: String
     let price: Int
@@ -547,7 +606,7 @@ struct PackageVariantData: Codable, Sendable, Identifiable {
     }
 }
 
-struct CustomerReviewData: Codable, Sendable, Identifiable {
+@preconcurrency struct CustomerReviewData: Codable, Sendable, Identifiable {
     let id: String
     let customerName: String
     let rating: Double
@@ -564,13 +623,13 @@ struct CustomerReviewData: Codable, Sendable, Identifiable {
     }
 }
 
-struct FAQItemData: Codable, Sendable, Identifiable {
+@preconcurrency struct FAQItemData: Codable, Sendable, Identifiable {
     let id: String
     let question: String
     let answer: String
 }
 
-struct RelatedPackageData: Codable, Sendable, Identifiable {
+@preconcurrency struct RelatedPackageData: Codable, Sendable, Identifiable {
     let id: String
     let name: String
     let price: Int
