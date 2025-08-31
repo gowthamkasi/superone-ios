@@ -1,49 +1,40 @@
 import SwiftUI
 
-/// Simple tests list view for navigation to test details
+/// Tests list view with real API integration and infinite scroll
 struct TestsListView: View {
     
     // MARK: - Properties
-    @State private var searchText = ""
-    @State private var selectedCategory: TestCategory? = nil
-    private let tests = [
-        TestDetails.sampleCBC(),
-        TestDetails.sampleLipidProfile()
-    ]
-    
-    // MARK: - Computed Properties
-    private var filteredTests: [TestDetails] {
-        var filtered = tests
-        
-        // Filter by category
-        if let category = selectedCategory {
-            filtered = filtered.filter { $0.category == category }
-        }
-        
-        // Filter by search text
-        if !searchText.isEmpty {
-            filtered = filtered.filter { test in
-                test.name.localizedCaseInsensitiveContains(searchText) ||
-                test.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
-            }
-        }
-        
-        return filtered
-    }
+    @State private var viewModel = TestsListViewModel()
+    @State private var showSuggestions = false
     
     // MARK: - Body
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Search and filter section
-                searchAndFilterSection
+            ZStack {
+                VStack(spacing: 0) {
+                    // Search and filter section
+                    searchAndFilterSection
+                    
+                    // Tests list
+                    testsList
+                }
                 
-                // Tests list
-                testsList
+                // Search suggestions overlay
+                if showSuggestions && viewModel.shouldShowSuggestions {
+                    searchSuggestionsOverlay
+                }
+                
+                // Error overlay
+                if let error = viewModel.error {
+                    errorOverlay(error: error)
+                }
             }
             .navigationTitle("Health Tests")
             .navigationBarTitleDisplayMode(.large)
             .background(HealthColors.secondaryBackground.ignoresSafeArea())
+            .refreshable {
+                await viewModel.refreshTests()
+            }
         }
     }
     
@@ -55,12 +46,21 @@ struct TestsListView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(HealthColors.secondaryText)
                 
-                TextField("Search tests...", text: $searchText)
+                TextField("Search tests...", text: $viewModel.searchText)
                     .textFieldStyle(PlainTextFieldStyle())
+                    .onTapGesture {
+                        showSuggestions = true
+                    }
+                    .onChange(of: viewModel.searchText) { _, newValue in
+                        if !newValue.isEmpty {
+                            showSuggestions = true
+                        }
+                    }
                 
-                if !searchText.isEmpty {
+                if !viewModel.searchText.isEmpty {
                     Button {
-                        searchText = ""
+                        viewModel.clearSearch()
+                        showSuggestions = false
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(HealthColors.secondaryText)
@@ -77,16 +77,23 @@ struct TestsListView: View {
                     // All categories button
                     CategoryFilterChip(
                         title: "All",
-                        isSelected: selectedCategory == nil,
-                        action: { selectedCategory = nil }
+                        isSelected: viewModel.selectedCategory == nil,
+                        action: { 
+                            viewModel.selectedCategory = nil
+                            showSuggestions = false
+                        }
                     )
                     
                     // Individual category buttons
                     ForEach(TestCategory.allCases, id: \.self) { category in
                         CategoryFilterChip(
                             title: category.displayName,
-                            isSelected: selectedCategory == category,
-                            action: { selectedCategory = category }
+                            isSelected: viewModel.selectedCategory == category,
+                            count: viewModel.categoryCount(for: category),
+                            action: { 
+                                viewModel.selectedCategory = category
+                                showSuggestions = false
+                            }
                         )
                     }
                 }
@@ -102,37 +109,181 @@ struct TestsListView: View {
     private var testsList: some View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.md) {
-                if filteredTests.isEmpty {
+                if viewModel.shouldShowLoading {
+                    loadingView
+                } else if viewModel.isEmpty {
                     emptyStateView
                 } else {
-                    ForEach(filteredTests, id: \.id) { test in
+                    ForEach(viewModel.tests, id: \.id) { test in
                         NavigationLink(destination: TestDetailsView(testId: test.id)) {
                             TestListCard(test: test)
                         }
                         .buttonStyle(PlainButtonStyle())
+                        .onAppear {
+                            // Trigger infinite scroll when item appears
+                            viewModel.checkForLoadMore(testId: test.id)
+                        }
+                    }
+                    
+                    // Load more indicator
+                    if viewModel.shouldShowLoadMore {
+                        loadMoreView
                     }
                 }
             }
             .padding(.horizontal, HealthSpacing.screenPadding)
             .padding(.vertical, HealthSpacing.lg)
         }
+        .onTapGesture {
+            showSuggestions = false
+        }
+    }
+    
+    // MARK: - Loading View
+    private var loadingView: some View {
+        VStack(spacing: HealthSpacing.lg) {
+            ProgressView()
+                .scaleEffect(1.2)
+                .tint(HealthColors.primary)
+            
+            Text("Loading tests...")
+                .healthTextStyle(.body, color: HealthColors.secondaryText)
+        }
+        .padding(.top, HealthSpacing.xxxxl)
+    }
+    
+    // MARK: - Load More View
+    private var loadMoreView: some View {
+        HStack(spacing: HealthSpacing.sm) {
+            ProgressView()
+                .scaleEffect(0.8)
+                .tint(HealthColors.primary)
+            
+            Text("Loading more tests...")
+                .healthTextStyle(.caption1, color: HealthColors.secondaryText)
+        }
+        .padding(HealthSpacing.lg)
     }
     
     // MARK: - Empty State
     private var emptyStateView: some View {
         VStack(spacing: HealthSpacing.lg) {
-            Image(systemName: "magnifyingglass")
+            Image(systemName: viewModel.searchText.isEmpty ? "testtube.2" : "magnifyingglass")
                 .font(.system(size: 48))
                 .foregroundColor(HealthColors.secondaryText)
             
-            Text("No tests found")
+            Text(viewModel.searchText.isEmpty ? "No tests available" : "No tests found")
                 .healthTextStyle(.title3, color: HealthColors.primaryText)
             
-            Text("Try adjusting your search or filter criteria")
+            Text(viewModel.searchText.isEmpty ? 
+                "Check back later for available tests" : 
+                "Try adjusting your search or filter criteria")
                 .healthTextStyle(.body, color: HealthColors.secondaryText)
                 .multilineTextAlignment(.center)
         }
         .padding(.top, HealthSpacing.xxxxl)
+    }
+    
+    // MARK: - Search Suggestions Overlay
+    private var searchSuggestionsOverlay: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Spacer to position below search bar
+            Rectangle()
+                .fill(Color.clear)
+                .frame(height: 120) // Approximate height of search and filter section
+            
+            // Suggestions list
+            VStack(alignment: .leading, spacing: 0) {
+                if viewModel.isLoadingSuggestions {
+                    HStack {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Loading suggestions...")
+                            .healthTextStyle(.caption1, color: HealthColors.secondaryText)
+                        Spacer()
+                    }
+                    .padding(HealthSpacing.md)
+                } else {
+                    ForEach(viewModel.searchSuggestions, id: \.text) { suggestion in
+                        Button {
+                            viewModel.applySuggestion(suggestion)
+                            showSuggestions = false
+                        } label: {
+                            HStack {
+                                Image(systemName: suggestionIcon(for: suggestion.type))
+                                    .foregroundColor(HealthColors.primary)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(suggestion.text)
+                                        .healthTextStyle(.bodyMedium, color: HealthColors.primaryText)
+                                    
+                                    Text("\(suggestion.count) results")
+                                        .healthTextStyle(.caption2, color: HealthColors.secondaryText)
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding(HealthSpacing.md)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Divider()
+                            .padding(.leading, HealthSpacing.md)
+                    }
+                }
+            }
+            .background(HealthColors.primaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.md))
+            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+            .padding(.horizontal, HealthSpacing.screenPadding)
+            
+            Spacer()
+        }
+        .background(Color.clear)
+        .onTapGesture {
+            showSuggestions = false
+        }
+    }
+    
+    // MARK: - Error Overlay
+    private func errorOverlay(error: TestsAPIError) -> some View {
+        VStack(spacing: HealthSpacing.lg) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 48))
+                .foregroundColor(HealthColors.error)
+            
+            Text("Something went wrong")
+                .healthTextStyle(.title3, color: HealthColors.primaryText)
+            
+            Text(viewModel.errorMessage)
+                .healthTextStyle(.body, color: HealthColors.secondaryText)
+                .multilineTextAlignment(.center)
+            
+            if viewModel.canRetry {
+                Button("Try Again") {
+                    viewModel.retry()
+                }
+                .buttonStyle(HealthButtonStyle(style: .primary))
+            }
+        }
+        .padding(HealthSpacing.xl)
+        .background(HealthColors.primaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.lg))
+        .shadow(color: .black.opacity(0.1), radius: 12, x: 0, y: 8)
+        .padding(.horizontal, HealthSpacing.screenPadding)
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func suggestionIcon(for type: SuggestionType) -> String {
+        switch type {
+        case .test:
+            return "testtube.2"
+        case .package:
+            return "doc.text.fill"
+        case .category:
+            return "tag.fill"
+        }
     }
 }
 
@@ -141,22 +292,37 @@ struct TestsListView: View {
 private struct CategoryFilterChip: View {
     let title: String
     let isSelected: Bool
+    let count: Int
     let action: () -> Void
+    
+    init(title: String, isSelected: Bool, count: Int = 0, action: @escaping () -> Void) {
+        self.title = title
+        self.isSelected = isSelected
+        self.count = count
+        self.action = action
+    }
     
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .healthTextStyle(.captionMedium, color: isSelected ? .white : HealthColors.primaryText)
-                .padding(.horizontal, HealthSpacing.md)
-                .padding(.vertical, HealthSpacing.sm)
-                .background(
-                    isSelected ? HealthColors.primary : HealthColors.primaryBackground
-                )
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(HealthColors.border, lineWidth: isSelected ? 0 : 1)
-                )
+            HStack(spacing: HealthSpacing.xs) {
+                Text(title)
+                    .healthTextStyle(.captionMedium, color: isSelected ? .white : HealthColors.primaryText)
+                
+                if count > 0 && !isSelected {
+                    Text("(\(count))")
+                        .healthTextStyle(.caption2, color: HealthColors.secondaryText)
+                }
+            }
+            .padding(.horizontal, HealthSpacing.md)
+            .padding(.vertical, HealthSpacing.sm)
+            .background(
+                isSelected ? HealthColors.primary : HealthColors.primaryBackground
+            )
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(HealthColors.border, lineWidth: isSelected ? 0 : 1)
+            )
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -165,7 +331,7 @@ private struct CategoryFilterChip: View {
 // MARK: - Test List Card
 
 private struct TestListCard: View {
-    let test: TestDetails
+    let test: TestItemData
     
     var body: some View {
         HStack(spacing: HealthSpacing.md) {
@@ -240,6 +406,7 @@ private struct TestListCard: View {
 
 // MARK: - Previews
 
+#if DEBUG
 struct TestsListView_Previews: PreviewProvider {
     static var previews: some View {
         TestsListView()
@@ -251,3 +418,4 @@ struct TestsListView_Previews: PreviewProvider {
             .previewDisplayName("Dark Mode")
     }
 }
+#endif

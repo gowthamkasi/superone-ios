@@ -30,20 +30,20 @@ final class AppointmentAPIService {
     /// - Parameters:
     ///   - userId: User ID to fetch appointments for
     ///   - status: Optional status filter
-    ///   - page: Page number for pagination
+    ///   - offset: Number of records to skip (default: 0)
     ///   - limit: Number of results per page
     /// - Returns: Array of appointments
     func getUserAppointments(
         userId: String,
         status: AppointmentStatus? = nil,
-        page: Int = 1,
+        offset: Int = 0,
         limit: Int = 10
     ) async throws -> [Appointment] {
         
         // Build query parameters
         var queryParams: [String: String] = [
             "userId": userId,
-            "page": String(page),
+            "offset": String(offset),
             "limit": String(limit)
         ]
         

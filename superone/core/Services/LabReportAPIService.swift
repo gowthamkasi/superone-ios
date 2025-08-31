@@ -173,11 +173,11 @@ final class LabReportAPIService: ObservableObject, Sendable {
     
     /// Get upload history with pagination
     /// - Parameters:
-    ///   - page: Page number (default: 1)
+    ///   - offset: Number of records to skip (default: 0)
     ///   - limit: Items per page (default: 10)
     /// - Returns: Paginated upload history
-    func getUploadHistory(page: Int = 1, limit: Int = 10) async throws -> UploadHistoryData {
-        let endpoint = "\(baseUploadPath)/history?page=\(page)&limit=\(limit)"
+    func getUploadHistory(offset: Int = 0, limit: Int = 10) async throws -> UploadHistoryData {
+        let endpoint = "\(baseUploadPath)/history?offset=\(offset)&limit=\(limit)"
         
         var request = try await createAuthenticatedRequest(
             path: endpoint,
@@ -253,7 +253,7 @@ final class LabReportAPIService: ObservableObject, Sendable {
     /// Get filtered upload history with advanced options
     /// - Parameter filterRequest: Filter criteria for history
     /// - Returns: Filtered upload history
-    func getFilteredUploadHistory(_ filterRequest: HistoryFilterRequest, page: Int = 1, limit: Int = 10) async throws -> UploadHistoryData {
+    func getFilteredUploadHistory(_ filterRequest: HistoryFilterRequest, offset: Int = 0, limit: Int = 10) async throws -> UploadHistoryData {
         let endpoint = "\(baseUploadPath)/history/filtered"
         
         var request = try await createAuthenticatedRequest(
@@ -270,13 +270,13 @@ final class LabReportAPIService: ObservableObject, Sendable {
         }
         
         struct FilteredHistoryPagination: Codable {
-            let page: Int
+            let offset: Int
             let limit: Int
         }
         
         let requestBody = FilteredHistoryRequest(
             filters: filterRequest,
-            pagination: FilteredHistoryPagination(page: page, limit: limit)
+            pagination: FilteredHistoryPagination(offset: offset, limit: limit)
         )
         
         request.httpBody = try JSONEncoder().encode(requestBody)

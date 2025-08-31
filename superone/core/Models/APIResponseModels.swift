@@ -82,6 +82,34 @@ struct Pagination: Codable, Equatable, Sendable {
     }
 }
 
+/// Offset-based pagination metadata for modern APIs
+struct OffsetPagination: Codable, Equatable, Sendable {
+    let offset: Int
+    let limit: Int
+    let total: Int
+    let hasMore: Bool
+    
+    // Convenience properties for UI integration
+    var currentPage: Int {
+        return (offset / limit) + 1
+    }
+    
+    var totalPages: Int {
+        return (total + limit - 1) / limit
+    }
+    
+    var nextOffset: Int? {
+        return hasMore ? offset + limit : nil
+    }
+    
+    nonisolated enum CodingKeys: String, CodingKey {
+        case offset
+        case limit
+        case total
+        case hasMore = "has_more"
+    }
+}
+
 // MARK: - Authentication Response Models
 
 /// User response (for /user/me endpoint)

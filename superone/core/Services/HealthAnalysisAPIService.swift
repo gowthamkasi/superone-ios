@@ -226,15 +226,15 @@ final class HealthAnalysisAPIService: ObservableObject, Sendable {
     
     /// Get analysis history with pagination
     /// - Parameters:
-    ///   - page: Page number (default: 1)
+    ///   - offset: Number of records to skip (default: 0)
     ///   - limit: Items per page (default: 10)
     /// - Returns: Paginated analysis history
     func getAnalysisHistory(
-        page: Int = 1,
+        offset: Int = 0,
         limit: Int = 10
     ) async throws -> AnalysisHistoryResponse {
         
-        let endpoint = "\(baseAnalysisPath)/history?page=\(page)&limit=\(limit)"
+        let endpoint = "\(baseAnalysisPath)/history?offset=\(offset)&limit=\(limit)"
         
         let request = try await createAuthenticatedRequest(
             path: endpoint,

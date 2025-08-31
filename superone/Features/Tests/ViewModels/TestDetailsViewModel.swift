@@ -15,16 +15,18 @@ final class TestDetailsViewModel {
     private(set) var canShare = true
     
     // MARK: - Private Properties
+    private let testsAPIService = TestsAPIService.shared
     private let testService: TestServiceProtocol
     private let favoriteService: FavoriteServiceProtocol
     
     // MARK: - Initialization
     init(
-        testService: TestServiceProtocol = MockTestService(),
-        favoriteService: FavoriteServiceProtocol = MockFavoriteService()
+        testService: TestServiceProtocol? = nil,
+        favoriteService: FavoriteServiceProtocol? = nil
     ) {
-        self.testService = testService
-        self.favoriteService = favoriteService
+        // Use real services by default, allow injection for testing
+        self.testService = testService ?? RealTestService()
+        self.favoriteService = favoriteService ?? RealFavoriteService()
     }
     
     // MARK: - Public Methods
@@ -248,6 +250,195 @@ actor MockFavoriteService: FavoriteServiceProtocol {
     func getAllFavorites() async throws -> [String] {
         try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
         return Array(favorites)
+    }
+}
+
+// MARK: - Real Implementations
+
+/// Real test service using TestsAPIService
+actor RealTestService: TestServiceProtocol {
+    
+    private let testsAPIService = TestsAPIService.shared
+    
+    func getTestDetails(testId: String) async throws -> TestDetails {
+        do {
+            let response = try await testsAPIService.getTestDetails(testId: testId)
+            let testDetailsData = response.testDetails
+            
+            // Convert TestDetailsData to TestDetails
+            return convertToTestDetails(from: testDetailsData)
+            
+        } catch let apiError as TestsAPIError {
+            throw TestDetailsError(description: apiError.errorDescription ?? "Failed to load test details")
+        } catch {
+            throw TestDetailsError(description: error.localizedDescription)
+        }
+    }
+    
+    func getRelatedTests(testId: String) async throws -> [TestDetails] {
+        do {
+            let response = try await testsAPIService.getTestDetails(testId: testId)
+            
+            // Convert related tests from the API response
+            return response.testDetails.relatedTests.compactMap { relatedTest in
+                // For now, return empty since we need to make separate API calls for each related test
+                // In a real implementation, you might have a batch API endpoint
+                return nil
+            }
+            
+        } catch {
+            // Return empty array on error rather than throwing
+            return []
+        }
+    }
+    
+    /// Convert API model to UI model
+    private func convertToTestDetails(from apiData: TestDetailsData) -> TestDetails {
+        return TestDetails(
+            id: apiData.id,
+            name: apiData.name,
+            shortName: apiData.shortName ?? apiData.name,
+            icon: apiData.icon,
+            category: apiData.category,
+            duration: apiData.duration,
+            price: apiData.price,
+            originalPrice: apiData.originalPrice,
+            fasting: apiData.fasting.required,
+            sampleType: apiData.sampleType.type,
+            reportTime: apiData.reportTime,
+            description: apiData.description,
+            keyMeasurements: apiData.keyMeasurements,
+            healthBenefits: apiData.healthBenefits,
+            sections: convertSections(from: apiData.sections),
+            isFeatured: apiData.isFeatured,
+            isAvailable: apiData.isAvailable,
+            tags: apiData.tags
+        )
+    }
+    
+    /// Convert API sections to UI sections
+    private func convertSections(from apiSections: [TestSectionData]) -> [TestSection] {
+        return apiSections.map { apiSection in
+            TestSection(
+                type: apiSection.type,
+                title: apiSection.title,
+                content: convertSectionContent(from: apiSection.content),
+                isExpanded: false // Default to collapsed
+            )
+        }
+    }
+    
+    /// Convert API section content to UI section content
+    private func convertSectionContent(from apiContent: SectionContentData) -> TestSectionContent {
+        return TestSectionContent(
+            overview: apiContent.overview,
+            bulletPoints: apiContent.bulletPoints,
+            categories: convertContentCategories(from: apiContent.categories),
+            tips: apiContent.tips,
+            warnings: apiContent.warnings
+        )
+    }
+    
+    /// Convert API content categories to UI content categories
+    private func convertContentCategories(from apiCategories: [ContentCategoryData]) -> [ContentCategory] {
+        return apiCategories.map { apiCategory in
+            ContentCategory(
+                icon: apiCategory.icon,
+                title: apiCategory.title,
+                items: apiCategory.items,
+                color: apiCategory.color.flatMap { Color(hex: $0) }
+            )
+        }
+    }
+}
+
+/// Real favorite service using TestsAPIService
+actor RealFavoriteService: FavoriteServiceProtocol {
+    
+    private let testsAPIService = TestsAPIService.shared
+    private var cachedFavorites: Set<String> = []
+    private var lastFetchTime: Date?
+    private let cacheValidityDuration: TimeInterval = 300 // 5 minutes
+    
+    func isFavorite(testId: String) async throws -> Bool {
+        await refreshFavoritesIfNeeded()
+        return cachedFavorites.contains(testId)
+    }
+    
+    func addFavorite(testId: String) async throws {
+        do {
+            let response = try await testsAPIService.toggleFavorite(testId: testId)
+            if response.isFavorite {
+                cachedFavorites.insert(testId)
+            }
+        } catch let apiError as TestsAPIError {
+            throw TestDetailsError(description: apiError.errorDescription ?? "Failed to add favorite")
+        }
+    }
+    
+    func removeFavorite(testId: String) async throws {
+        do {
+            let response = try await testsAPIService.toggleFavorite(testId: testId)
+            if !response.isFavorite {
+                cachedFavorites.remove(testId)
+            }
+        } catch let apiError as TestsAPIError {
+            throw TestDetailsError(description: apiError.errorDescription ?? "Failed to remove favorite")
+        }
+    }
+    
+    func getAllFavorites() async throws -> [String] {
+        await refreshFavoritesIfNeeded()
+        return Array(cachedFavorites)
+    }
+    
+    /// Refresh favorites cache if needed
+    private func refreshFavoritesIfNeeded() async {
+        let now = Date()
+        
+        // Check if cache is still valid
+        if let lastFetch = lastFetchTime,
+           now.timeIntervalSince(lastFetch) < cacheValidityDuration {
+            return
+        }
+        
+        do {
+            let response = try await testsAPIService.getUserFavorites(offset: 0, limit: 100)
+            cachedFavorites = Set(response.favorites.map { $0.id })
+            lastFetchTime = now
+        } catch {
+            // Keep existing cache on error
+        }
+    }
+}
+
+// MARK: - Color Extension
+
+extension Color {
+    /// Initialize Color from hex string
+    init?(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            return nil
+        }
+        
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
     }
 }
 

@@ -15,16 +15,18 @@ final class HealthPackageDetailsViewModel {
     private(set) var canShare = true
     
     // MARK: - Private Properties
+    private let testsAPIService = TestsAPIService.shared
     private let packageService: PackageServiceProtocol
     private let favoriteService: FavoriteServiceProtocol
     
     // MARK: - Initialization
     init(
-        packageService: PackageServiceProtocol = MockPackageService(),
-        favoriteService: FavoriteServiceProtocol = MockFavoriteService()
+        packageService: PackageServiceProtocol? = nil,
+        favoriteService: FavoriteServiceProtocol? = nil
     ) {
-        self.packageService = packageService
-        self.favoriteService = favoriteService
+        // Use real services by default, allow injection for testing
+        self.packageService = packageService ?? RealPackageService()
+        self.favoriteService = favoriteService ?? RealFavoriteService()
     }
     
     // MARK: - Public Methods
@@ -344,6 +346,298 @@ enum PackageSectionType: Sendable {
             return "person.2.circle"
         case .faq:
             return "questionmark.circle"
+        }
+    }
+}
+
+// MARK: - Real Implementations
+
+/// Real package service using TestsAPIService
+actor RealPackageService: PackageServiceProtocol {
+    
+    private let testsAPIService = TestsAPIService.shared
+    
+    func getPackageDetails(packageId: String) async throws -> HealthPackage {
+        do {
+            let response = try await testsAPIService.getPackageDetails(packageId: packageId)
+            let packageDetailsData = response.packageDetails
+            
+            // Convert PackageDetailsData to HealthPackage
+            return convertToHealthPackage(from: packageDetailsData)
+            
+        } catch let apiError as TestsAPIError {
+            throw PackageDetailsError(description: apiError.errorDescription ?? "Failed to load package details")
+        } catch {
+            throw PackageDetailsError(description: error.localizedDescription)
+        }
+    }
+    
+    func getRelatedPackages(packageId: String) async throws -> [HealthPackage] {
+        do {
+            let response = try await testsAPIService.getPackageDetails(packageId: packageId)
+            
+            // Convert related packages from the API response
+            return response.packageDetails.relatedPackages.compactMap { relatedPackage in
+                // For now, create simplified health packages from the related data
+                return HealthPackage(
+                    id: relatedPackage.id,
+                    name: relatedPackage.name,
+                    shortName: relatedPackage.name,
+                    icon: "📋",
+                    description: "Related health package",
+                    duration: "30 minutes",
+                    totalTests: relatedPackage.testCount,
+                    fastingRequirement: FastingRequirement.none,
+                    reportTime: "Same day",
+                    packagePrice: Double(relatedPackage.price),
+                    individualPrice: Double(relatedPackage.price) * 1.2,
+                    savings: Double(relatedPackage.price) * 0.2,
+                    discountPercentage: 17,
+                    formattedPrice: "₹\(relatedPackage.price)",
+                    formattedOriginalPrice: "₹\(Int(Double(relatedPackage.price) * 1.2))",
+                    formattedSavings: "₹\(Int(Double(relatedPackage.price) * 0.2))",
+                    isFeatured: false,
+                    isAvailable: true,
+                    isPopular: false,
+                    category: "general",
+                    averageRating: 4.5,
+                    reviewCount: 100,
+                    testCategories: [],
+                    recommendedFor: [],
+                    notSuitableFor: [],
+                    healthInsights: HealthInsights(
+                        earlyDetection: [],
+                        healthMonitoring: [],
+                        aiPoweredAnalysis: [],
+                        additionalBenefits: []
+                    ),
+                    preparationInstructions: PreparationInstructions(
+                        fastingHours: 0,
+                        dayBefore: [],
+                        morningOfTest: [],
+                        whatToBring: [],
+                        generalTips: []
+                    ),
+                    availableLabs: [],
+                    packageVariants: [],
+                    customerReviews: [],
+                    faqItems: [],
+                    relatedPackages: [],
+                    originalPrice: nil
+                )
+            }
+            
+        } catch {
+            // Return empty array on error rather than throwing
+            return []
+        }
+    }
+    
+    /// Convert API model to UI model
+    private func convertToHealthPackage(from apiData: PackageDetailsData) -> HealthPackage {
+        return HealthPackage(
+            id: apiData.id,
+            name: apiData.name,
+            shortName: apiData.shortName ?? apiData.name,
+            icon: apiData.icon,
+            description: apiData.description,
+            duration: apiData.duration,
+            totalTests: apiData.totalTests,
+            fastingRequirement: apiData.fastingRequirement.required,
+            reportTime: apiData.reportTime,
+            packagePrice: Double(apiData.packagePrice),
+            individualPrice: Double(apiData.individualPrice),
+            savings: Double(apiData.savings),
+            discountPercentage: apiData.discountPercentage,
+            formattedPrice: apiData.formattedPrice,
+            formattedOriginalPrice: apiData.formattedOriginalPrice,
+            formattedSavings: apiData.formattedSavings,
+            isFeatured: apiData.isFeatured,
+            isAvailable: apiData.isAvailable,
+            isPopular: apiData.isPopular,
+            category: apiData.category,
+            averageRating: apiData.averageRating,
+            reviewCount: apiData.customerReviews.count,
+            testCategories: convertTestCategories(from: apiData.testCategories),
+            recommendedFor: apiData.recommendedFor,
+            notSuitableFor: apiData.notSuitableFor,
+            healthInsights: convertHealthInsights(from: apiData.healthInsights),
+            preparationInstructions: convertPreparationInstructions(from: apiData.preparationInstructions),
+            availableLabs: convertAvailableLabs(from: apiData.availableLabs),
+            packageVariants: convertPackageVariants(from: apiData.packageVariants),
+            customerReviews: convertCustomerReviews(from: apiData.customerReviews),
+            faqItems: convertFAQItems(from: apiData.faqItems),
+            relatedPackages: [], // Will be handled separately
+            originalPrice: Double(apiData.individualPrice)
+        )
+    }
+    
+    /// Convert test categories from API to UI model
+    private func convertTestCategories(from apiCategories: [DetailedTestCategoryData]) -> [TestCategoryInfo] {
+        return apiCategories.map { apiCategory in
+            TestCategoryInfo(
+                id: apiCategory.id,
+                name: apiCategory.name,
+                icon: apiCategory.icon,
+                testCount: apiCategory.testCount,
+                tests: apiCategory.tests.map { apiTest in
+                    TestInfo(
+                        id: apiTest.id,
+                        name: apiTest.name,
+                        shortName: apiTest.shortName,
+                        description: apiTest.description
+                    )
+                }
+            )
+        }
+    }
+    
+    /// Convert health insights
+    private func convertHealthInsights(from apiInsights: HealthInsightsData) -> HealthInsights {
+        return HealthInsights(
+            earlyDetection: apiInsights.earlyDetection,
+            healthMonitoring: apiInsights.healthMonitoring,
+            aiPoweredAnalysis: apiInsights.aiPoweredAnalysis,
+            additionalBenefits: apiInsights.additionalBenefits
+        )
+    }
+    
+    /// Convert preparation instructions
+    private func convertPreparationInstructions(from apiInstructions: PreparationInstructionsData) -> PreparationInstructions {
+        return PreparationInstructions(
+            fastingHours: apiInstructions.fastingHours,
+            dayBefore: apiInstructions.dayBefore,
+            morningOfTest: apiInstructions.morningOfTest,
+            whatToBring: apiInstructions.whatToBring,
+            generalTips: apiInstructions.generalTips
+        )
+    }
+    
+    /// Convert available labs
+    private func convertAvailableLabs(from apiLabs: [AvailableLabData]) -> [LabInfo] {
+        return apiLabs.map { apiLab in
+            LabInfo(
+                id: apiLab.id,
+                name: apiLab.name,
+                type: apiLab.type ?? "lab",
+                rating: apiLab.rating,
+                distance: apiLab.distance ?? "Unknown",
+                availability: apiLab.availability ?? "Available",
+                price: apiLab.formattedPrice ?? apiLab.price ?? "Contact for price",
+                isWalkInAvailable: apiLab.isWalkInAvailable ?? false,
+                nextSlot: apiLab.nextSlot,
+                address: apiLab.address,
+                phoneNumber: apiLab.phoneNumber,
+                location: apiLab.location,
+                services: apiLab.services ?? [],
+                reviewCount: apiLab.reviewCount ?? 0,
+                operatingHours: apiLab.operatingHours ?? "9 AM - 6 PM",
+                isRecommended: apiLab.isRecommended ?? false,
+                offersHomeCollection: apiLab.offersHomeCollection ?? false,
+                acceptsInsurance: apiLab.acceptsInsurance ?? false
+            )
+        }
+    }
+    
+    /// Convert package variants
+    private func convertPackageVariants(from apiVariants: [PackageVariantData]) -> [PackageVariant] {
+        return apiVariants.map { apiVariant in
+            PackageVariant(
+                id: apiVariant.id,
+                name: apiVariant.name,
+                price: Double(apiVariant.price),
+                formattedPrice: apiVariant.formattedPrice,
+                testCount: apiVariant.testCount,
+                duration: apiVariant.duration,
+                description: apiVariant.description,
+                isPopular: apiVariant.isPopular
+            )
+        }
+    }
+    
+    /// Convert customer reviews
+    private func convertCustomerReviews(from apiReviews: [CustomerReviewData]) -> [CustomerReview] {
+        return apiReviews.map { apiReview in
+            CustomerReview(
+                id: apiReview.id,
+                customerName: apiReview.customerName,
+                rating: apiReview.rating,
+                comment: apiReview.comment,
+                date: apiReview.date,
+                isVerified: apiReview.isVerified,
+                timeAgo: apiReview.timeAgo
+            )
+        }
+    }
+    
+    /// Convert FAQ items
+    private func convertFAQItems(from apiFAQs: [FAQItemData]) -> [FAQItem] {
+        return apiFAQs.map { apiFAQ in
+            FAQItem(
+                id: apiFAQ.id,
+                question: apiFAQ.question,
+                answer: apiFAQ.answer
+            )
+        }
+    }
+}
+
+/// Real favorite service shared with TestDetailsViewModel
+actor RealFavoriteService: FavoriteServiceProtocol {
+    
+    private let testsAPIService = TestsAPIService.shared
+    private var cachedFavorites: Set<String> = []
+    private var lastFetchTime: Date?
+    private let cacheValidityDuration: TimeInterval = 300 // 5 minutes
+    
+    func isFavorite(testId: String) async throws -> Bool {
+        await refreshFavoritesIfNeeded()
+        return cachedFavorites.contains(testId)
+    }
+    
+    func addFavorite(testId: String) async throws {
+        do {
+            let response = try await testsAPIService.toggleFavorite(testId: testId)
+            if response.isFavorite {
+                cachedFavorites.insert(testId)
+            }
+        } catch let apiError as TestsAPIError {
+            throw PackageDetailsError(description: apiError.errorDescription ?? "Failed to add favorite")
+        }
+    }
+    
+    func removeFavorite(testId: String) async throws {
+        do {
+            let response = try await testsAPIService.toggleFavorite(testId: testId)
+            if !response.isFavorite {
+                cachedFavorites.remove(testId)
+            }
+        } catch let apiError as TestsAPIError {
+            throw PackageDetailsError(description: apiError.errorDescription ?? "Failed to remove favorite")
+        }
+    }
+    
+    func getAllFavorites() async throws -> [String] {
+        await refreshFavoritesIfNeeded()
+        return Array(cachedFavorites)
+    }
+    
+    /// Refresh favorites cache if needed
+    private func refreshFavoritesIfNeeded() async {
+        let now = Date()
+        
+        // Check if cache is still valid
+        if let lastFetch = lastFetchTime,
+           now.timeIntervalSince(lastFetch) < cacheValidityDuration {
+            return
+        }
+        
+        do {
+            let response = try await testsAPIService.getUserFavorites(offset: 0, limit: 100)
+            cachedFavorites = Set(response.favorites.map { $0.id })
+            lastFetchTime = now
+        } catch {
+            // Keep existing cache on error
         }
     }
 }
