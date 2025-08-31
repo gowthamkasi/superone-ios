@@ -202,28 +202,56 @@ struct NotificationCardView: View {
     }
 }
 
-// MARK: - Notification Card List Component
+// MARK: - Notification List Component
 
-/// Container view for displaying a list of notification cards with proper spacing
-struct NotificationCardListView: View {
+/// Native iOS List component for notification cards with swipe-to-delete functionality
+struct NotificationListView: View {
     let notifications: [HealthNotification]
     let onNotificationTap: (HealthNotification) -> Void
     let onMarkAsRead: ((HealthNotification) -> Void)?
     let onDelete: ((HealthNotification) -> Void)?
     
     var body: some View {
-        LazyVStack(spacing: HealthSpacing.md) {
+        List {
             ForEach(notifications) { notification in
                 NotificationCardView(
                     notification: notification,
-                    onTap: { onNotificationTap(notification) },
-                    onMarkAsRead: onMarkAsRead != nil ? { onMarkAsRead!(notification) } : nil,
-                    onDelete: onDelete != nil ? { onDelete!(notification) } : nil
+                    onTap: { onNotificationTap(notification) }
                 )
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .swipeActions(edge: .trailing) {
+                    // Delete action
+                    if let onDelete = onDelete {
+                        Button(role: .destructive) {
+                            HapticFeedback.impactMedium()
+                            onDelete(notification)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        .tint(.red)
+                    }
+                    
+                    // Mark as read/unread action
+                    if let onMarkAsRead = onMarkAsRead {
+                        Button {
+                            HapticFeedback.light()
+                            onMarkAsRead(notification)
+                        } label: {
+                            if notification.isRead {
+                                Label("Mark as Unread", systemImage: "circle")
+                            } else {
+                                Label("Mark as Read", systemImage: "checkmark.circle")
+                            }
+                        }
+                        .tint(notification.isRead ? HealthColors.healthWarning : HealthColors.healthGood)
+                    }
+                }
                 .id(notification.id)
             }
         }
-        .padding(.horizontal, HealthSpacing.screenPadding)
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
 }
 
