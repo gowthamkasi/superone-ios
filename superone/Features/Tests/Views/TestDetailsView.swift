@@ -45,21 +45,145 @@ struct TestDetailsView: View {
             // Header section
             headerSection
             
-            // Main content sections
-            VStack(spacing: HealthSpacing.lg) {
-                // Test overview card
-                if let test = viewModel.testDetails {
-                    testOverviewCard(test: test)
-                        .padding(.horizontal, HealthSpacing.screenPadding)
-                }
-                
-                // Information sections
-                if let state = viewModel.testDetailsState {
-                    informationSections(state: state)
-                        .padding(.horizontal, HealthSpacing.screenPadding)
+            // Main content sections with state management
+            Group {
+                if viewModel.isLoading {
+                    loadingStateView
+                } else if let errorMessage = viewModel.errorMessage {
+                    errorStateView(message: errorMessage)
+                } else if let test = viewModel.testDetails {
+                    contentStateView(test: test)
+                } else {
+                    emptyStateView
                 }
             }
             .padding(.top, HealthSpacing.xs)
+            .animation(.easeInOut(duration: 0.3), value: viewModel.isLoading)
+            .animation(.easeInOut(duration: 0.3), value: viewModel.testDetails?.id)
+        }
+    }
+    
+    // MARK: - Loading State View
+    private var loadingStateView: some View {
+        VStack(spacing: HealthSpacing.lg) {
+            // Loading skeleton for test overview card
+            loadingSkeletonCard
+                .padding(.horizontal, HealthSpacing.screenPadding)
+            
+            // Loading skeletons for information sections
+            VStack(spacing: HealthSpacing.lg) {
+                ForEach(0..<3, id: \.self) { _ in
+                    loadingSkeletonSection
+                        .padding(.horizontal, HealthSpacing.screenPadding)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Error State View
+    private func errorStateView(message: String) -> some View {
+        VStack(spacing: HealthSpacing.lg) {
+            Spacer()
+            
+            VStack(spacing: HealthSpacing.lg) {
+                // Error icon
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(HealthColors.error)
+                
+                // Error title
+                Text("Unable to Load Test Details")
+                    .healthTextStyle(.title2, color: HealthColors.primaryText)
+                    .multilineTextAlignment(.center)
+                
+                // Error message
+                Text(message)
+                    .healthTextStyle(.body, color: HealthColors.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, HealthSpacing.lg)
+                
+                // Retry button
+                Button {
+                    Task { @MainActor in
+                        await loadTestDetails()
+                    }
+                } label: {
+                    HStack(spacing: HealthSpacing.sm) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Try Again")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, HealthSpacing.lg)
+                    .padding(.vertical, HealthSpacing.md)
+                    .background(HealthColors.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.md))
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, HealthSpacing.screenPadding)
+    }
+    
+    // MARK: - Empty State View
+    private var emptyStateView: some View {
+        VStack(spacing: HealthSpacing.lg) {
+            Spacer()
+            
+            VStack(spacing: HealthSpacing.lg) {
+                // Empty state icon
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 48))
+                    .foregroundColor(HealthColors.secondaryText)
+                
+                // Empty state title
+                Text("Test Details Not Found")
+                    .healthTextStyle(.title2, color: HealthColors.primaryText)
+                    .multilineTextAlignment(.center)
+                
+                // Empty state message
+                Text("The test you're looking for couldn't be found. It may have been removed or is temporarily unavailable.")
+                    .healthTextStyle(.body, color: HealthColors.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, HealthSpacing.lg)
+                
+                // Back to tests button
+                Button {
+                    dismiss()
+                } label: {
+                    HStack(spacing: HealthSpacing.sm) {
+                        Image(systemName: "arrow.left")
+                        Text("Back to Tests")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, HealthSpacing.lg)
+                    .padding(.vertical, HealthSpacing.md)
+                    .background(HealthColors.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.md))
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, HealthSpacing.screenPadding)
+    }
+    
+    // MARK: - Content State View
+    private func contentStateView(test: TestDetails) -> some View {
+        VStack(spacing: HealthSpacing.lg) {
+            // Test overview card
+            testOverviewCard(test: test)
+                .padding(.horizontal, HealthSpacing.screenPadding)
+            
+            // Information sections
+            if let state = viewModel.testDetailsState {
+                informationSections(state: state)
+                    .padding(.horizontal, HealthSpacing.screenPadding)
+            }
         }
     }
     
@@ -238,6 +362,84 @@ struct TestDetailsView: View {
         await MainActor.run {
             viewModel.loadTestDetails(testId: testId)
         }
+    }
+    
+    // MARK: - Loading Skeleton Views
+    
+    private var loadingSkeletonCard: some View {
+        VStack(spacing: HealthSpacing.lg) {
+            // Header skeleton
+            HStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(HealthColors.secondaryBackground)
+                    .frame(width: 60, height: 60)
+                
+                VStack(alignment: .leading, spacing: HealthSpacing.sm) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(HealthColors.secondaryBackground)
+                        .frame(height: 20)
+                    
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(HealthColors.secondaryBackground)
+                        .frame(width: 120, height: 16)
+                }
+                
+                Spacer()
+            }
+            
+            // Grid skeleton
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: HealthSpacing.md) {
+                ForEach(0..<4, id: \.self) { _ in
+                    VStack(spacing: HealthSpacing.sm) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(HealthColors.secondaryBackground)
+                            .frame(height: 16)
+                        
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(HealthColors.secondaryBackground)
+                            .frame(height: 12)
+                    }
+                    .padding(HealthSpacing.md)
+                    .background(HealthColors.primaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.sm))
+                }
+            }
+        }
+        .padding(HealthSpacing.lg)
+        .background(HealthColors.primaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.card))
+        .healthCardShadow()
+    }
+    
+    private var loadingSkeletonSection: some View {
+        VStack(alignment: .leading, spacing: HealthSpacing.md) {
+            // Section header skeleton
+            HStack {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(HealthColors.secondaryBackground)
+                    .frame(width: 24, height: 24)
+                
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(HealthColors.secondaryBackground)
+                    .frame(width: 150, height: 18)
+                
+                Spacer()
+            }
+            
+            // Content lines skeleton
+            VStack(spacing: HealthSpacing.sm) {
+                ForEach(0..<3, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(HealthColors.secondaryBackground)
+                        .frame(height: 14)
+                        .frame(maxWidth: index == 2 ? .infinity * 0.7 : .infinity, alignment: .leading)
+                }
+            }
+        }
+        .padding(HealthSpacing.lg)
+        .background(HealthColors.primaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.card))
+        .healthCardShadow()
     }
 }
 
