@@ -262,9 +262,7 @@ struct NotificationListView: View {
         VStack(spacing: HealthSpacing.lg) {
             NotificationCardView(
                 notification: NotificationFactory.sampleNotifications()[0],
-                onTap: { print("Tapped notification") },
-                onMarkAsRead: { print("Mark as read") },
-                onDelete: { print("Delete notification") }
+                onTap: { print("Tapped notification") }
             )
             .padding(.horizontal, HealthSpacing.screenPadding)
         }
@@ -278,9 +276,7 @@ struct NotificationListView: View {
         VStack(spacing: HealthSpacing.lg) {
             NotificationCardView(
                 notification: NotificationFactory.sampleNotifications()[2], // Read notification
-                onTap: { print("Tapped notification") },
-                onMarkAsRead: { print("Mark as unread") },
-                onDelete: { print("Delete notification") }
+                onTap: { print("Tapped notification") }
             )
             .padding(.horizontal, HealthSpacing.screenPadding)
         }
@@ -289,9 +285,9 @@ struct NotificationListView: View {
     .background(HealthColors.background)
 }
 
-#Preview("Multiple Cards") {
-    ScrollView {
-        NotificationCardListView(
+#Preview("Native List with Swipe Actions") {
+    NavigationView {
+        NotificationListView(
             notifications: NotificationFactory.sampleNotifications(),
             onNotificationTap: { notification in
                 print("Tapped: \(notification.title)")
@@ -303,14 +299,14 @@ struct NotificationListView: View {
                 print("Delete: \(notification.title)")
             }
         )
-        .padding(.vertical, HealthSpacing.xl)
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.large)
     }
-    .background(HealthColors.background)
 }
 
 #Preview("Dark Mode") {
-    ScrollView {
-        NotificationCardListView(
+    NavigationView {
+        NotificationListView(
             notifications: Array(NotificationFactory.sampleNotifications().prefix(3)),
             onNotificationTap: { notification in
                 print("Tapped: \(notification.title)")
@@ -322,8 +318,8 @@ struct NotificationListView: View {
                 print("Delete: \(notification.title)")
             }
         )
-        .padding(.vertical, HealthSpacing.xl)
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.large)
     }
-    .background(HealthColors.background)
     .preferredColorScheme(.dark)
 }
