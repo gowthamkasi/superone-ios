@@ -301,12 +301,13 @@ struct NotificationCardView: View {
     
     // MARK: - Computed Properties
     
-    private var cardBackground: Color {
+    @ViewBuilder
+    private var cardBackground: some View {
         if notification.isRead {
-            return Color(.secondarySystemBackground)
+            Color(.secondarySystemBackground)
         } else {
             // Slightly highlighted background for unread notifications
-            return notification.category.color.opacity(0.02)
+            notification.category.color.opacity(0.02)
                 .blendMode(.overlay)
                 .background(Color(.secondarySystemBackground))
         }
