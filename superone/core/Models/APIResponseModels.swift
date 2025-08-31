@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Base Response Models
 
 /// Base response structure for all API responses
-struct BaseResponse<T: Codable>: Codable, Sendable where T: Sendable {
+nonisolated struct BaseResponse<T: Codable>: Codable, Sendable where T: Sendable {
     let success: Bool
     let message: String?
     let data: T?
@@ -333,7 +333,7 @@ struct LogoutData: @preconcurrency Codable, Equatable, Sendable {
 }
 
 /// Logout response matching backend API contract
-struct LogoutResponse: @preconcurrency Codable, Equatable, Sendable {
+struct LogoutResponse: Codable, Equatable, Sendable {
     let success: Bool
     let message: String?
     let data: LogoutData?
@@ -735,7 +735,7 @@ extension BaseResponse {
 extension BaseResponse {
     
     /// Validate response and throw error if invalid
-    func validate() throws {
+    nonisolated func validate() throws {
         if !success {
             throw ErrorResponse(
                 error: message ?? "Unknown error occurred",
@@ -749,7 +749,7 @@ extension BaseResponse {
     }
     
     /// Get data or throw error
-    func getData() throws -> T {
+    nonisolated func getData() throws -> T {
         try validate()
         
         guard let data = data else {

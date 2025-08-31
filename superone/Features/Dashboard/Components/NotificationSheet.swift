@@ -65,7 +65,9 @@ struct NotificationSheet: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
-                        Button("Mark All Read", action: showMarkAllReadConfirmation)
+                        Button("Mark All Read") {
+                            showMarkAllReadConfirmation()
+                        }
                         Button("Clear All", role: .destructive) {
                             Task {
                                 await clearAllNotifications()

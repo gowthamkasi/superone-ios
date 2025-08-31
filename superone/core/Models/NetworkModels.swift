@@ -236,7 +236,7 @@ struct FileUploadResponse: Codable, Sendable {
 // MARK: - Error Response Models
 
 /// Standard error response format
-struct ErrorResponse: Codable, Error, Sendable, @preconcurrency LocalizedError {
+nonisolated struct ErrorResponse: Codable, Error, Sendable, LocalizedError {
     let error: String
     let message: String
     let code: String?
@@ -253,7 +253,7 @@ struct ErrorResponse: Codable, Error, Sendable, @preconcurrency LocalizedError {
         case requestId = "request_id"
     }
     
-    init(error: String, message: String, code: String? = nil, details: String? = nil, timestamp: Date? = nil, requestId: String? = nil) {
+    nonisolated init(error: String, message: String, code: String? = nil, details: String? = nil, timestamp: Date? = nil, requestId: String? = nil) {
         self.error = error
         self.message = message
         self.code = code
@@ -281,15 +281,15 @@ struct ErrorResponse: Codable, Error, Sendable, @preconcurrency LocalizedError {
     
     // MARK: - LocalizedError Implementation
     
-    var errorDescription: String? {
+    nonisolated var errorDescription: String? {
         return error
     }
     
-    var failureReason: String? {
+    nonisolated var failureReason: String? {
         return details
     }
     
-    var recoverySuggestion: String? {
+    nonisolated var recoverySuggestion: String? {
         switch code {
         case "AUTHENTICATION_REQUIRED":
             return "Please log in again"
