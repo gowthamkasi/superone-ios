@@ -121,26 +121,24 @@ struct NotificationSheet: View {
     // MARK: - Content Views
     
     private func contentView(geometry: GeometryProxy) -> some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: HealthSpacing.lg) {
-                // Filter Section
-                filterSection
-                
-                // Notifications List
-                if filteredNotifications.isEmpty {
+        VStack(spacing: 0) {
+            // Filter Section - Fixed at top
+            filterSection
+                .padding(.horizontal, HealthSpacing.screenPadding)
+                .padding(.vertical, HealthSpacing.md)
+                .background(HealthColors.background)
+            
+            // Notifications List - Native List with full space utilization
+            if filteredNotifications.isEmpty {
+                ScrollView {
                     emptyStateView
-                } else {
-                    notificationsList
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                
-                // Bottom spacing for safe area
-                Spacer()
-                    .frame(height: HealthSpacing.xl)
+                .scrollContentBackground(.hidden)
+            } else {
+                notificationsList
             }
-            .padding(.horizontal, HealthSpacing.screenPadding)
-            .padding(.top, HealthSpacing.md)
         }
-        .scrollContentBackground(.hidden)
     }
     
     private var loadingView: some View {
