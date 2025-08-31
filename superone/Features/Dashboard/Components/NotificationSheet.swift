@@ -240,7 +240,7 @@ struct NotificationSheet: View {
     }
     
     private var notificationsList: some View {
-        NotificationCardListView(
+        NotificationListView(
             notifications: filteredNotifications,
             onNotificationTap: handleNotificationTap,
             onMarkAsRead: { notification in
@@ -249,8 +249,9 @@ struct NotificationSheet: View {
                 }
             },
             onDelete: { notification in
-                notificationToDelete = notification
-                showingDeleteConfirmation = true
+                Task {
+                    await deleteNotification(notification)
+                }
             }
         )
     }
