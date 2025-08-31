@@ -224,7 +224,7 @@ struct NotificationListView: View {
                     // Delete action
                     if let onDelete = onDelete {
                         Button(role: .destructive) {
-                            HapticFeedback.impactMedium()
+                            HapticFeedback.medium()
                             onDelete(notification)
                         } label: {
                             Label("Delete", systemImage: "trash")
