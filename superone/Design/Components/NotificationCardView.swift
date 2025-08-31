@@ -64,6 +64,17 @@ struct NotificationCardView: View {
             )
         }
         .buttonStyle(PlainButtonStyle())
+        .background(
+            // Subtle card container with border and shadow for visual separation
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(accessibilityHint)
@@ -218,8 +229,9 @@ struct NotificationListView: View {
                     notification: notification,
                     onTap: { onNotificationTap(notification) }
                 )
-                .listRowInsets(EdgeInsets())
+                .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                 .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
                 .swipeActions(edge: .trailing) {
                     // Delete action
                     if let onDelete = onDelete {
