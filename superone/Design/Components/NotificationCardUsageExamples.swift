@@ -81,7 +81,7 @@ NotificationCardView(
                 .foregroundColor(HealthColors.secondaryText)
                 .padding(.horizontal, HealthSpacing.screenPadding)
             
-            NotificationCardListView(
+            NotificationListView(
                 notifications: Array(notifications.prefix(3)),
                 onNotificationTap: { notification in
                     handleNotificationTap(notification)
@@ -95,7 +95,7 @@ NotificationCardView(
             )
             
             codeExample("""
-NotificationCardListView(
+NotificationListView(
     notifications: notifications,
     onNotificationTap: { notification in
         navigateToDetail(notification)
@@ -227,8 +227,7 @@ NotificationCardListView(
                         title: "Unread Notification",
                         message: "This notification hasn't been read yet. Notice the stronger border and accent styling."
                     ),
-                    onTap: { },
-                    onMarkAsRead: { }
+                    onTap: { }
                 )
                 
                 // Read notification
@@ -238,8 +237,7 @@ NotificationCardListView(
                         title: "Read Notification", 
                         message: "This notification has been read. Notice the subtle styling and checkmark."
                     ),
-                    onTap: { },
-                    onMarkAsRead: { }
+                    onTap: { }
                 )
             }
             .padding(.horizontal, HealthSpacing.screenPadding)
