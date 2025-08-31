@@ -26,7 +26,7 @@ struct TestDetails: Sendable, Identifiable {
 }
 
 /// Test category enumeration
-enum TestCategory: String, CaseIterable, Sendable {
+enum TestCategory: String, CaseIterable, Sendable, Codable {
     case bloodTest = "blood_test"
     case imaging = "imaging"
     case cardiology = "cardiology"
@@ -76,7 +76,7 @@ enum TestCategory: String, CaseIterable, Sendable {
 }
 
 /// Fasting requirements
-enum FastingRequirement: String, CaseIterable, Sendable {
+enum FastingRequirement: String, CaseIterable, Sendable, Codable {
     case none = "none"
     case hours8 = "8_hours"
     case hours10 = "10_hours"
@@ -112,7 +112,7 @@ enum FastingRequirement: String, CaseIterable, Sendable {
 }
 
 /// Sample type enumeration
-enum SampleType: String, CaseIterable, Sendable {
+enum SampleType: String, CaseIterable, Sendable, Codable {
     case blood = "blood"
     case urine = "urine"
     case saliva = "saliva"
@@ -166,7 +166,7 @@ struct TestSection: Sendable, Identifiable {
 }
 
 /// Section type enumeration
-enum TestSectionType: String, CaseIterable, Sendable {
+enum TestSectionType: String, CaseIterable, Sendable, Codable {
     case about = "about"
     case whyNeeded = "why_needed"
     case insights = "insights"

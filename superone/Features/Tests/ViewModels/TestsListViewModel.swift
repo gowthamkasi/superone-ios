@@ -146,9 +146,9 @@ final class TestsListViewModel {
             currentOffset = response.pagination.nextOffset ?? currentOffset
             
         } catch let apiError as TestsAPIError {
-            error = apiError
+            self.error = apiError
         } catch {
-            error = TestsAPIError.fetchFailed(error.localizedDescription)
+            self.error = TestsAPIError.fetchFailed(error.localizedDescription)
         }
         
         isLoadingMore = false
@@ -175,9 +175,9 @@ final class TestsListViewModel {
             }
             
         } catch let apiError as TestsAPIError {
-            error = apiError
+            self.error = apiError
         } catch {
-            error = TestsAPIError.favoriteUpdateFailed(error.localizedDescription)
+            self.error = TestsAPIError.favoriteUpdateFailed(error.localizedDescription)
         }
     }
     
@@ -260,12 +260,10 @@ final class TestsListViewModel {
     }
     
     /// Reset pagination and load tests
-    private func resetAndLoadTests() {
+    private func resetAndLoadTests() async {
         currentOffset = 0
         hasMoreTests = true
-        Task {
-            await loadTests()
-        }
+        await loadTests()
     }
 }
 
