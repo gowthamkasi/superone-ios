@@ -14,27 +14,8 @@ struct BookingSummaryView: View {
     @State private var isConfirmingBooking = false
     @State private var showingSuccessView = false
     
-    // Sample lab data - would be passed from previous screen or fetched
-    private let labInfo = LabFacility(
-        id: "lab_booking_001",
-        name: "LabLoop Central Laboratory",
-        type: .lab,
-        rating: 4.8,
-        distance: "2.3 km",
-        availability: "Today 3:00 PM",
-        price: 2800,
-        isWalkInAvailable: true,
-        nextSlot: "Today 3:00 PM",
-        address: "MG Road, Bangalore",
-        phoneNumber: "+91-9876543210",
-        location: "MG Road, Bangalore",
-        services: ["Blood Work", "Lipid Panel"],
-        reviewCount: 245,
-        operatingHours: "8:00 AM - 8:00 PM",
-        isRecommended: true,
-        offersHomeCollection: false,
-        acceptsInsurance: true
-    )
+    // Lab data should be passed from previous screen or fetched from LabLoop API
+    // No hardcoded lab data - temporary placeholder for UI consistency
     
     // MARK: - Body
     var body: some View {
@@ -56,8 +37,7 @@ struct BookingSummaryView: View {
             BookingSuccessView(
                 testDetails: testDetails,
                 selectedDate: selectedDate,
-                selectedTimeSlot: selectedTimeSlot,
-                labInfo: labInfo
+                selectedTimeSlot: selectedTimeSlot
             )
         }
     }
@@ -120,7 +100,8 @@ struct BookingSummaryView: View {
                     .padding(.top, HealthSpacing.sm)
                 
                 // Lab information card
-                labInformationCard
+                // Lab information will be loaded from LabLoop API
+                loadingLabCard
                 
                 // Schedule card
                 scheduleCard
@@ -166,8 +147,8 @@ struct BookingSummaryView: View {
         .healthCardShadow()
     }
     
-    // MARK: - Lab Information Card
-    private var labInformationCard: some View {
+    // MARK: - Loading Lab Information Card
+    private var loadingLabCard: some View {
         VStack(alignment: .leading, spacing: HealthSpacing.md) {
             HStack(spacing: HealthSpacing.sm) {
                 // Lab icon
@@ -179,7 +160,7 @@ struct BookingSummaryView: View {
                     .clipShape(Circle())
                 
                 // Lab name
-                Text(labInfo.name)
+                Text("Lab Information Loading...")
                     .healthTextStyle(.headline, color: HealthColors.primaryText)
                 
                 Spacer()
@@ -191,7 +172,7 @@ struct BookingSummaryView: View {
                     .font(.system(size: 14))
                     .foregroundColor(HealthColors.secondaryText)
                 
-                Text(labInfo.location)
+                Text("Please wait while we load lab details")
                     .healthTextStyle(.body, color: HealthColors.secondaryText)
                 
                 Spacer()
@@ -416,13 +397,10 @@ struct BookingSummaryView: View {
         }
     }
     
-    /// Open Maps app with lab location
+    /// Maps functionality disabled - lab data needs to be loaded from API first
     private func openMaps() {
-        // Use the address string to open Maps
-        let addressString = labInfo.location.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        if let url = URL(string: "http://maps.apple.com/?q=\(addressString)") {
-            UIApplication.shared.open(url)
-        }
+        // Maps functionality disabled until lab data is loaded from LabLoop API
+        // TODO: Implement once real lab facility data is available
     }
     
     /// Handle booking confirmation
@@ -458,7 +436,6 @@ struct BookingSuccessView: View {
     let testDetails: TestDetails
     let selectedDate: Date
     let selectedTimeSlot: String
-    let labInfo: LabFacility
     
     @Environment(\.dismiss) private var dismiss
     
@@ -526,9 +503,9 @@ struct BookingSuccessView: View {
                         }
                         
                         HStack {
-                            Image(systemName: "location")
+                            Image(systemName: "envelope")
                                 .foregroundColor(HealthColors.secondaryText)
-                            Text(labInfo.name)
+                            Text("Lab details will be sent via email")
                                 .healthTextStyle(.body, color: HealthColors.primaryText)
                             Spacer()
                         }
@@ -565,27 +542,6 @@ struct BookingSuccessView: View {
     }
 }
 
-// MARK: - Previews
-struct BookingSummaryView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationStack {
-            BookingSummaryView(
-                testDetails: TestDetails.sampleCBC(),
-                selectedDate: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date(),
-                selectedTimeSlot: "9:30 AM - 9:45 AM"
-            )
-        }
-        .preferredColorScheme(.light)
-        .previewDisplayName("Light Mode")
-        
-        NavigationStack {
-            BookingSummaryView(
-                testDetails: TestDetails.sampleLipidProfile(),
-                selectedDate: Date(),
-                selectedTimeSlot: "10:00 AM - 12:00 PM"
-            )
-        }
-        .preferredColorScheme(.dark)
-        .previewDisplayName("Dark Mode")
-    }
-}
+// MARK: - Previews Removed
+// Preview data removed to eliminate all hardcoded test data
+// Use real LabLoop API data for development testing

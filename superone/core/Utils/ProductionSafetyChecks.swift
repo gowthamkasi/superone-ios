@@ -22,13 +22,14 @@ enum ProductionSafetyChecks {
         #if !DEBUG
         // In PRODUCTION builds only - detect mock data patterns
         
-        // Check for common mock data patterns
+        // Check for common mock data patterns (updated after cleanup)
         let mockDataPatterns = [
             "Complete Blood Count (CBC)",
             "₹500", "₹800", "₹1200",
-            "Lipid Profile",
-            "sampleCBC", "sampleLipidProfile",
-            "TestDetails.sample"
+            "Lipid Profile", "Thyroid Function Test",
+            "sampleCBC", "sampleLipidProfile", "sampleComprehensive",
+            "TestDetails.sample", "HealthPackage.sample",
+            "LabLoop Central Laboratory", "Zero Hospital"
         ]
         
         // This is a compile-time assertion that would catch mock data references
@@ -120,10 +121,11 @@ private extension String {
     var containsMockDataPatterns: Bool {
         let patterns = [
             "Complete Blood Count (CBC)",
-            "₹500", "₹800", "₹1200", "₹450",
-            "Lipid Profile",
-            "sampleCBC", "sampleLipidProfile",
-            "TestDetails.sample",
+            "₹500", "₹800", "₹1200", "₹450", "₹2800",
+            "Lipid Profile", "Thyroid Function Test", "Liver Function Test",
+            "sampleCBC", "sampleLipidProfile", "sampleComprehensive",
+            "TestDetails.sample", "HealthPackage.sample",
+            "LabLoop Central Laboratory", "Zero Hospital", "Home Health Collection",
             "mock", "Mock", "MOCK",
             "test@example.com",
             "placeholder",

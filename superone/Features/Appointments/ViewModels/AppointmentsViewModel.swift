@@ -350,10 +350,7 @@ final class AppointmentsViewModel {
                 // Load lab facilities from LabLoop API
                 labFacilities = try await labFacilityAPIService.searchFacilities()
                 
-                // Add some sample data for testing filters if API returns empty
-                if labFacilities.isEmpty {
-                    labFacilities = createSampleFacilities()
-                }
+                // Keep facilities empty if API returns empty - no fallback mock data
                 
                 applyFilters()
                 isLoadingFacilities = false
@@ -361,99 +358,14 @@ final class AppointmentsViewModel {
                 errorMessage = "Failed to load facilities: \(error.localizedDescription)"
                 showError = true
                 
-                // Provide sample data for testing in case of API failure
-                labFacilities = createSampleFacilities()
+                // Keep facilities empty on API failure - no fallback mock data
                 applyFilters()
                 isLoadingFacilities = false
             }
         }
     }
     
-    /// Create sample facilities for testing filter functionality
-    private func createSampleFacilities() -> [LabFacility] {
-        return [
-            LabFacility(
-                id: "1",
-                name: "LabLoop Central Laboratory",
-                type: .lab,
-                rating: 4.8,
-                distance: "2.3 km",
-                availability: "Open",
-                price: 1500,
-                isWalkInAvailable: true,
-                nextSlot: "Today 3:00 PM",
-                address: "123 Main St, Free Parking Available",
-                phoneNumber: "+91-9876543210",
-                location: "Mumbai, Maharashtra",
-                services: ["Blood Tests", "Same Day Reports", "Digital Reports"],
-                reviewCount: 234,
-                operatingHours: "6:00 AM - 10:00 PM",
-                isRecommended: true,
-                offersHomeCollection: true,
-                acceptsInsurance: true
-            ),
-            LabFacility(
-                id: "2",
-                name: "City Hospital Lab",
-                type: .hospital,
-                rating: 4.2,
-                distance: "5.1 km",
-                availability: "Open",
-                price: 2200,
-                isWalkInAvailable: true,
-                nextSlot: "Tomorrow 9:00 AM",
-                address: "456 Hospital Road",
-                phoneNumber: "+91-9876543211",
-                location: "Mumbai, Maharashtra",
-                services: ["All Tests", "Rapid Results"],
-                reviewCount: 156,
-                operatingHours: "24 Hours",
-                isRecommended: false,
-                offersHomeCollection: false,
-                acceptsInsurance: true
-            ),
-            LabFacility(
-                id: "3",
-                name: "Home Health Collection",
-                type: .homeCollection,
-                rating: 4.6,
-                distance: "1.2 km",
-                availability: "Available",
-                price: 800,
-                isWalkInAvailable: false,
-                nextSlot: "Today 6:00 PM",
-                address: "Service Area: Entire City",
-                phoneNumber: "+91-9876543212",
-                location: "Mumbai, Maharashtra",
-                services: ["Home Collection", "Digital Reports"],
-                reviewCount: 89,
-                operatingHours: "7:00 AM - 9:00 PM",
-                isRecommended: true,
-                offersHomeCollection: true,
-                acceptsInsurance: false
-            ),
-            LabFacility(
-                id: "4",
-                name: "Express Diagnostics",
-                type: .clinic,
-                rating: 3.9,
-                distance: "8.7 km",
-                availability: "Open",
-                price: 1200,
-                isWalkInAvailable: true,
-                nextSlot: "Tomorrow 11:00 AM",
-                address: "789 Clinic Street, Parking Available",
-                phoneNumber: "+91-9876543213",
-                location: "Mumbai, Maharashtra",
-                services: ["Basic Tests", "Same Day Service"],
-                reviewCount: 67,
-                operatingHours: "8:00 AM - 8:00 PM",
-                isRecommended: false,
-                offersHomeCollection: false,
-                acceptsInsurance: true
-            )
-        ]
-    }
+    // Removed createSampleFacilities method - no hardcoded facility data
     
     /// Select facility and show booking sheet
     func selectFacility(_ facility: LabFacility) {
@@ -881,118 +793,18 @@ final class AppointmentsViewModel {
     
     // MARK: - Health Packages and Individual Tests Management
     
-    /// Load sample test packages
+    /// Load test packages from LabLoop API
     func loadTestPackages() {
-        testPackages = [
-            TestPackage(
-                name: "Complete Checkup",
-                icon: "heart.text.square.fill",
-                description: "Comprehensive health screening with 45+ tests covering",
-                price: 2500,
-                testCount: 45,
-                categories: ["Cardiovascular", "Metabolic", "Liver Function", "Kidney Function", "Thyroid"]
-            ),
-            TestPackage(
-                name: "Heart Health Package",
-                icon: "heart.fill",
-                description: "Focused cardiac assessment including lipid profile, ECG, and cardiac markers",
-                price: 1800,
-                testCount: 12,
-                categories: ["Cardiovascular", "Cholesterol"]
-            ),
-            TestPackage(
-                name: "Diabetes Care Package",
-                icon: "drop.fill",
-                description: "Complete diabetes monitoring with glucose, HbA1c, and complications screening",
-                price: 1200,
-                testCount: 8,
-                categories: ["Metabolic", "Glucose"]
-            ),
-            TestPackage(
-                name: "Women's Health Package",
-                icon: "figure.dress.line.vertical.figure",
-                description: "Comprehensive women's health screening including hormones and reproductive health",
-                price: 2200,
-                testCount: 25,
-                categories: ["Hormonal", "Reproductive", "Nutritional"]
-            ),
-            TestPackage(
-                name: "Senior Citizen Package",
-                icon: "person.fill",
-                description: "Age-appropriate health screening for adults 60+ with bone health and vitals",
-                price: 2800,
-                testCount: 35,
-                categories: ["Bone Health", "Cardiovascular", "Metabolic", "Kidney Function"]
-            )
-        ]
+        // TODO: Replace with actual LabLoop API call
+        // testPackages = try await testsAPIService.fetchHealthPackages()
+        testPackages = [] // No hardcoded test data - use real API data
     }
     
-    /// Load individual tests from API (production) or provide fallback (dev/testing)
+    /// Load individual tests from LabLoop API
     func loadIndividualTests() {
-        #if DEBUG
-        // DEBUG: Only show comprehensive test list in development builds
-        individualTests = [
-            IndividualTest(
-                name: "Thyroid Function Test (TSH, T3, T4)",
-                icon: "thermometer",
-                description: "Complete thyroid hormone assessment for metabolic health evaluation",
-                price: 1200,
-                sampleType: "Blood",
-                category: "Endocrine",
-                fastingRequired: false
-            ),
-            IndividualTest(
-                name: "Vitamin D (25-OH)",
-                icon: "sun.max.fill",
-                description: "Vitamin D deficiency screening for bone health and immunity",
-                price: 1500,
-                sampleType: "Blood",
-                category: "Nutritional",
-                fastingRequired: false
-            ),
-            IndividualTest(
-                name: "HbA1c (Glycated Hemoglobin)",
-                icon: "chart.line.uptrend.xyaxis",
-                description: "3-month average blood sugar levels for diabetes monitoring",
-                price: 600,
-                sampleType: "Blood",
-                category: "Metabolic",
-                fastingRequired: false
-            ),
-            IndividualTest(
-                name: "Liver Function Test (LFT)",
-                icon: "lungs.fill",
-                description: "Comprehensive liver health assessment with enzyme levels",
-                price: 700,
-                sampleType: "Blood",
-                category: "Liver Function",
-                fastingRequired: true
-            ),
-            IndividualTest(
-                name: "Kidney Function Test (KFT)",
-                icon: "kidneys.fill",
-                description: "Creatinine, BUN, and eGFR for kidney health evaluation",
-                price: 650,
-                sampleType: "Blood + Urine",
-                category: "Kidney Function",
-                fastingRequired: false
-            ),
-            IndividualTest(
-                name: "Vitamin B12",
-                icon: "brain.head.profile",
-                description: "B12 deficiency screening for neurological and energy health",
-                price: 900,
-                sampleType: "Blood",
-                category: "Nutritional",
-                fastingRequired: false
-            )
-        ]
-        #else
-        // PRODUCTION: Load tests from LabLoop API
-        individualTests = []
-        // TODO: Replace with actual API call to LabLoop backend
-        // Task { await loadTestsFromAPI() }
-        #endif
+        // TODO: Replace with actual LabLoop API call
+        // individualTests = try await testsAPIService.fetchIndividualTests()
+        individualTests = [] // No hardcoded test data - use real API data
     }
     
     /// Select test type (health packages or individual tests)

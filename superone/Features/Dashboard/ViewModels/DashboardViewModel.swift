@@ -269,13 +269,9 @@ protocol HealthDataServiceProtocol {
 class ProductionHealthDataService: HealthDataServiceProtocol {
     
     func fetchFeaturedPackages() async throws -> [HealthPackage] {
-        // Simulate network delay
-        try await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconds
-        
-        // Return sample featured packages using the factory method
-        return [
-            HealthPackage.sampleComprehensive()
-        ]
+        // TODO: Replace with actual LabLoop API call
+        // No hardcoded packages - return empty array until API integration is complete
+        return []
     }
     
     // func fetchHealthScore() async throws -> HealthScore {

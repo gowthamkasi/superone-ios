@@ -965,17 +965,12 @@ struct QuickBookTestSection: View {
             
             VStack(spacing: HealthSpacing.sm) {
                 // Real test options will be loaded from API
-                // Mock data removed for production security
+                // No hardcoded test data for production security
                 Text("Loading available tests...")
                     .font(HealthTypography.body)
                     .foregroundColor(HealthColors.secondaryText)
                 
-                QuickTestRow(
-                    icon: "flame.fill",
-                    testName: "Diabetes Panel",
-                    price: "₹600",
-                    description: "Blood sugar monitoring"
-                )
+                // No hardcoded test data shown - only real API data
             }
         }
         .padding(HealthSpacing.lg)
@@ -1323,7 +1318,7 @@ struct HomeCollectionSection: View {
                     serviceName: "MedHome Diagnostics",
                     rating: 4.7,
                     availability: "Today 6PM-8PM",
-                    collectionFee: "₹200 (waived >₹1500)",
+                    collectionFee: "Collection fee details will be loaded from API",
                     coverage: "Service across Pune"
                 )
             }
@@ -1429,11 +1424,7 @@ struct QuickTestBookingSection: View {
                     .font(HealthTypography.body)
                     .foregroundColor(HealthColors.secondaryText)
                 
-                QuickTestBookingRow(
-                    testName: "Diabetes Panel",
-                    availability: "Available at 6 nearby labs",
-                    price: "From ₹550"
-                )
+                // No hardcoded test booking data shown - only real API data
             }
         }
         .padding(HealthSpacing.lg)

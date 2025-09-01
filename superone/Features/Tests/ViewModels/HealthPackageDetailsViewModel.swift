@@ -247,26 +247,19 @@ protocol PackageServiceProtocol: Sendable {
 actor MockPackageService: PackageServiceProtocol {
     
     func getPackageDetails(packageId: String) async throws -> HealthPackage {
-        // Simulate network delay
-        try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-        
-        return await MainActor.run {
-            switch packageId {
-            case "comprehensive_001":
-                return HealthPackage.sampleComprehensive()
-            default:
-                return HealthPackage.sampleComprehensive()
-            }
-        }
+        // TODO: Replace with actual LabLoop API call
+        // Simulate network delay then throw error - no hardcoded package data
+        try await Task.sleep(nanoseconds: 500_000_000)
+        throw NSError(domain: "HealthPackage", code: 404, userInfo: [NSLocalizedDescriptionKey: "Package not found"])
     }
     
     func getRelatedPackages(packageId: String) async throws -> [HealthPackage] {
         // Simulate network delay
         try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
         
-        return await MainActor.run {
-            [HealthPackage.sampleComprehensive()]
-        }
+        // TODO: Replace with actual LabLoop API call
+        // Return empty array - no hardcoded related packages
+        return []
     }
 }
 

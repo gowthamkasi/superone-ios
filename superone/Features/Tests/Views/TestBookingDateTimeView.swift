@@ -34,7 +34,7 @@ struct TestBookingDateTimeView: View {
         .background(HealthColors.secondaryBackground.ignoresSafeArea())
         .navigationDestination(isPresented: $navigateToSummary) {
             BookingSummaryView(
-                testDetails: testDetails ?? TestDetails.sampleCBC(),
+                testDetails: testDetails!,
                 selectedDate: selectedDate,
                 selectedTimeSlot: selectedTimeSlot ?? ""
             )
@@ -362,19 +362,6 @@ struct TestBookingDateTimeView: View {
     }
 }
 
-// MARK: - Previews
-struct TestBookingDateTimeView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationStack {
-            TestBookingDateTimeView(testDetails: TestDetails.sampleCBC())
-        }
-        .preferredColorScheme(.light)
-        .previewDisplayName("Light Mode")
-        
-        NavigationStack {
-            TestBookingDateTimeView(testDetails: TestDetails.sampleLipidProfile())
-        }
-        .preferredColorScheme(.dark)
-        .previewDisplayName("Dark Mode")
-    }
-}
+// MARK: - Preview Removed
+// Preview removed to eliminate hardcoded sample data references
+// Use real LabLoop API data for development testing

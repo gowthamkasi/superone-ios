@@ -34,7 +34,7 @@ struct PackageBookingDateTimeView: View {
         .background(HealthColors.secondaryBackground.ignoresSafeArea())
         .navigationDestination(isPresented: $navigateToSummary) {
             PackageBookingSummaryView(
-                packageDetails: packageDetails ?? HealthPackage.sampleComprehensive(),
+                packageDetails: packageDetails!,
                 selectedDate: selectedDate,
                 selectedTimeSlot: selectedTimeSlot ?? ""
             )
@@ -366,18 +366,6 @@ struct PackageBookingDateTimeView: View {
 }
 
 // MARK: - Previews
-struct PackageBookingDateTimeView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationStack {
-            PackageBookingDateTimeView(packageDetails: HealthPackage.sampleComprehensive())
-        }
-        .preferredColorScheme(.light)
-        .previewDisplayName("Light Mode")
-        
-        NavigationStack {
-            PackageBookingDateTimeView(packageDetails: HealthPackage.sampleComprehensive())
-        }
-        .preferredColorScheme(.dark)
-        .previewDisplayName("Dark Mode")
-    }
-}
+// MARK: - Preview Removed
+// Preview removed to eliminate hardcoded sample data references
+// Use real LabLoop API data for development testing

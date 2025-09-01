@@ -342,13 +342,6 @@ struct PriceDisplay: View {
     }
 }
 
-// MARK: - Preview
-#Preview("Health Package Card") {
-    HealthPackageCard(
-        package: HealthPackage.sampleComprehensive()
-    ) {
-        print("Package selected")
-    }
-    .padding()
-    .background(HealthColors.background)
-}
+// MARK: - Preview Removed
+// Preview removed to eliminate hardcoded test data references
+// Use real LabLoop API data for development testing
