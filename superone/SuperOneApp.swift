@@ -34,6 +34,9 @@ struct SuperOneApp: App {
                     .environment(flowManager)
                     .preferredColorScheme(themeManager.currentTheme.colorScheme)
                     .onAppear {
+                        // CRITICAL: Perform production safety checks first
+                        ProductionSafetyChecks.performAllSafetyChecks()
+                        
                         // Simple app initialization with native iOS 18 behavior
                         appState.loadUserPreferences()
                         

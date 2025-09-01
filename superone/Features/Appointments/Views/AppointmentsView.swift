@@ -12,10 +12,25 @@ struct AppointmentsView: View {
     
     @State private var viewModel = AppointmentsViewModel()
     @EnvironmentObject var appState: AppState
+    @Environment(AuthenticationManager.self) private var authManager
     @State private var selectedTab: AppointmentTab = .schedules
     
     var body: some View {
         NavigationStack {
+            // CRITICAL AUTHENTICATION GUARD - Block all access without valid authentication
+            if !authManager.isAuthenticated || !TokenManager.shared.hasStoredTokens() {
+                authenticationRequiredView
+                    .navigationTitle("Appointments")
+                    .background(HealthColors.background.ignoresSafeArea())
+                    .onAppear {
+                        // Force logout if tokens are invalid
+                        if !TokenManager.shared.hasStoredTokens() && authManager.isAuthenticated {
+                            Task { @MainActor in
+                                try? await authManager.signOut()
+                            }
+                        }
+                    }
+            } else {
             VStack(spacing: 0) {
                 // Tab selector
                 tabSelector
@@ -95,7 +110,52 @@ struct AppointmentsView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "An unknown error occurred")
             }
+            } // End of authenticated content
+        } // End of NavigationStack
+    }
+    
+    // MARK: - Authentication Required View
+    
+    private var authenticationRequiredView: some View {
+        VStack(spacing: HealthSpacing.xl) {
+            Spacer()
+            
+            VStack(spacing: HealthSpacing.lg) {
+                Image(systemName: "calendar.badge.exclamationmark")
+                    .font(.system(size: 64, weight: .light))
+                    .foregroundColor(HealthColors.primary)
+                
+                Text("Sign In Required")
+                    .healthTextStyle(.title2, color: HealthColors.primaryText)
+                
+                Text("Please sign in to view your appointments, schedule tests, and access lab booking services.")
+                    .healthTextStyle(.body, color: HealthColors.secondaryText)
+                    .multilineTextAlignment(.center)
+                
+                VStack(spacing: HealthSpacing.md) {
+                    Button("Sign In") {
+                        // Force logout to clear invalid state and redirect to login
+                        Task { @MainActor in
+                            try? await authManager.signOut()
+                        }
+                    }
+                    .buttonStyle(HealthButtonStyle(style: .primary))
+                    
+                    Text("Your appointments and health data are secure")
+                        .healthTextStyle(.caption1, color: HealthColors.tertiaryText)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(HealthSpacing.xl)
+            .background(HealthColors.primaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.xl))
+            .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
+            .padding(.horizontal, HealthSpacing.screenPadding)
+            
+            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(HealthColors.background)
     }
     
     // MARK: - Tab Selector
@@ -781,21 +841,8 @@ struct TestsSection: View {
             
             VStack(spacing: HealthSpacing.md) {
                 // For demo purposes, show placeholder test cards
-                TestCard(
-                    testName: "Complete Blood Count (CBC)",
-                    status: "Scheduled",
-                    appointmentInfo: "Tomorrow 9:30 AM",
-                    facilityName: "LabLoop Central Lab",
-                    onTap: {}
-                )
-                
-                TestCard(
-                    testName: "Lipid Profile",
-                    status: "Results Available",
-                    appointmentInfo: "Completed: Aug 15, 2025",
-                    facilityName: "LabLoop Central Lab",
-                    onTap: {}
-                )
+                // Real test cards will be populated from API data
+                // Mock data removed for production security
             }
         }
     }
@@ -917,19 +964,11 @@ struct QuickBookTestSection: View {
                 .foregroundColor(HealthColors.primaryText)
             
             VStack(spacing: HealthSpacing.sm) {
-                QuickTestRow(
-                    icon: "drop.fill",
-                    testName: "Complete Blood Count",
-                    price: "₹500",
-                    description: "Comprehensive blood analysis"
-                )
-                
-                QuickTestRow(
-                    icon: "heart.fill",
-                    testName: "Lipid Profile",
-                    price: "₹800",
-                    description: "Heart health assessment"
-                )
+                // Real test options will be loaded from API
+                // Mock data removed for production security
+                Text("Loading available tests...")
+                    .font(HealthTypography.body)
+                    .foregroundColor(HealthColors.secondaryText)
                 
                 QuickTestRow(
                     icon: "flame.fill",
@@ -1229,7 +1268,7 @@ struct EnhancedFacilityCard: View {
                     .foregroundColor(HealthColors.primaryText)
                 
                 HStack {
-                    Text("• CBC - ₹500 • Lipid Profile - ₹800")
+                    Text("• Pricing varies by test • Call for details")
                     Spacer()
                 }
                 .font(HealthTypography.captionRegular)
@@ -1384,17 +1423,11 @@ struct QuickTestBookingSection: View {
                 .foregroundColor(HealthColors.primaryText)
             
             VStack(spacing: HealthSpacing.sm) {
-                QuickTestBookingRow(
-                    testName: "Complete Blood Count",
-                    availability: "Available at 8 nearby labs",
-                    price: "From ₹450"
-                )
-                
-                QuickTestBookingRow(
-                    testName: "Lipid Profile",
-                    availability: "Available at 12 nearby labs",
-                    price: "From ₹700"
-                )
+                // Real test booking options will be loaded from API
+                // Mock data removed for production security
+                Text("Loading available tests...")
+                    .font(HealthTypography.body)
+                    .foregroundColor(HealthColors.secondaryText)
                 
                 QuickTestBookingRow(
                     testName: "Diabetes Panel",

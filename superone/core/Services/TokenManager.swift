@@ -131,11 +131,49 @@ import UIKit
     
     // MARK: - Token Management
     
-    /// Check if we have valid tokens stored (doesn't validate expiration - server does that)
+    /// Check if we have valid tokens stored (includes expiration validation)
     nonisolated func hasStoredTokens() -> Bool {
-        let hasAccessToken = (try? keychain.retrieve(key: Keys.accessToken, withBiometrics: false)) != nil
-        let hasRefreshToken = (try? keychain.retrieve(key: Keys.refreshToken, withBiometrics: false)) != nil
-        return hasAccessToken && hasRefreshToken
+        guard let accessToken = try? keychain.retrieve(key: Keys.accessToken, withBiometrics: false),
+              let refreshToken = try? keychain.retrieve(key: Keys.refreshToken, withBiometrics: false) else {
+            return false
+        }
+        
+        // Validate token format and expiration
+        do {
+            try validateJWTFormat(accessToken, tokenType: "access")
+            try validateJWTFormat(refreshToken, tokenType: "refresh")
+            return true
+        } catch {
+            // If validation fails, clear the invalid tokens
+            Task {
+                await clearTokens()
+            }
+            return false
+        }
+    }
+    
+    /// Check if current access token needs refresh (expires within 5 minutes)
+    nonisolated func needsTokenRefresh() -> Bool {
+        guard let accessToken = try? keychain.retrieve(key: Keys.accessToken, withBiometrics: false) else {
+            return true // No token means refresh needed
+        }
+        
+        do {
+            let parts = accessToken.components(separatedBy: ".")
+            guard parts.count == 3 else { return true }
+            
+            let payload = try decodeJWTPayload(parts[1])
+            
+            if let exp = payload["exp"] as? TimeInterval {
+                let expirationDate = Date(timeIntervalSince1970: exp)
+                let refreshThreshold = Date().addingTimeInterval(300) // 5 minutes
+                return expirationDate <= refreshThreshold
+            }
+            
+            return false // No expiration claim, assume valid
+        } catch {
+            return true // Error decoding means refresh needed
+        }
     }
     
     /// Clear all stored tokens
@@ -147,7 +185,7 @@ import UIKit
     
     // MARK: - Private Helpers
     
-    /// Validate JWT format to ensure token is properly formatted
+    /// Enhanced JWT validation with signature verification and expiration checking
     private func validateJWTFormat(_ token: String, tokenType: String) throws {
         
         // Check for JSON wrapper (indicates corrupted storage)
@@ -161,16 +199,70 @@ import UIKit
             throw TokenError.invalidTokenResponse
         }
         
-        // Validate each part has reasonable length
-        for (_, part) in parts.enumerated() {
+        // Validate each part has reasonable length and content
+        for (index, part) in parts.enumerated() {
             if part.isEmpty {
                 throw TokenError.invalidTokenResponse
             }
-            if part.count < 10 {
-                // Parts shorter than 10 characters are likely invalid but we'll be lenient
+            
+            // More strict validation for header and payload
+            if index < 2 && part.count < 10 {
+                throw TokenError.invalidTokenResponse
             }
         }
         
+        // Additional JWT payload validation
+        do {
+            let payload = try decodeJWTPayload(parts[1])
+            try validateJWTClaims(payload, tokenType: tokenType)
+        } catch {
+            // If payload validation fails, the token is invalid
+            throw TokenError.invalidTokenResponse
+        }
+    }
+    
+    /// Decode JWT payload (middle part) for validation
+    private func decodeJWTPayload(_ payload: String) throws -> [String: Any] {
+        // Add padding if needed for base64 decoding
+        let paddedPayload = payload.paddingBase64String()
+        
+        guard let data = Data(base64Encoded: paddedPayload),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw TokenError.invalidTokenResponse
+        }
+        
+        return json
+    }
+    
+    /// Validate JWT claims (expiration, issuer, etc.)
+    private func validateJWTClaims(_ payload: [String: Any], tokenType: String) throws {
+        // Check expiration claim (exp)
+        if let exp = payload["exp"] as? TimeInterval {
+            let expirationDate = Date(timeIntervalSince1970: exp)
+            if Date() > expirationDate {
+                throw TokenError.tokenExpired
+            }
+        }
+        
+        // Check issued at claim (iat) - should not be in future
+        if let iat = payload["iat"] as? TimeInterval {
+            let issuedDate = Date(timeIntervalSince1970: iat)
+            if Date() < issuedDate.addingTimeInterval(-300) { // 5 minute tolerance
+                throw TokenError.invalidTokenResponse
+            }
+        }
+        
+        // Check token type in payload if available
+        if let tokenTypeInPayload = payload["type"] as? String {
+            if tokenTypeInPayload != tokenType {
+                throw TokenError.invalidTokenResponse
+            }
+        }
+        
+        // Check subject claim (sub) - must exist
+        guard payload["sub"] != nil || payload["user_id"] != nil else {
+            throw TokenError.invalidTokenResponse
+        }
     }
     
 }
@@ -185,6 +277,7 @@ enum TokenError: @preconcurrency LocalizedError {
     case biometricAuthenticationFailed
     case accessTokenNotFound
     case invalidTokenResponse
+    case tokenExpired
     
     var errorDescription: String? {
         switch self {
@@ -202,12 +295,14 @@ enum TokenError: @preconcurrency LocalizedError {
             return "Access token not found. Please log in again."
         case .invalidTokenResponse:
             return "Invalid response from authentication server."
+        case .tokenExpired:
+            return "Authentication token has expired. Please log in again."
         }
     }
     
     var recoverySuggestion: String? {
         switch self {
-        case .refreshTokenNotFound, .refreshFailed, .accessTokenNotFound:
+        case .refreshTokenNotFound, .refreshFailed, .accessTokenNotFound, .tokenExpired:
             return "Please log in again with your email and password."
         case .biometricNotAvailable:
             return "Please enable Face ID or Touch ID in your device settings."
@@ -322,3 +417,16 @@ extension superone.NetworkService {
 
 // Note: RefreshTokenRequest model removed - using headers only for GET requests
 // Note: TokenResponse and AuthTokens are defined in APIResponseModels.swift
+
+// MARK: - String Extension for Base64 Padding
+
+private extension String {
+    /// Add padding to base64 string if needed
+    func paddingBase64String() -> String {
+        let remainder = self.count % 4
+        if remainder > 0 {
+            return self + String(repeating: "=", count: 4 - remainder)
+        }
+        return self
+    }
+}

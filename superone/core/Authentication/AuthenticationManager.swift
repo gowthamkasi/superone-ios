@@ -260,6 +260,8 @@ class AuthenticationManager {
                 await MainActor.run {
                     isAuthenticated = false
                     currentUser = nil
+                    // Post notification for automatic logout
+                    NotificationCenter.default.post(name: .userDidSignOut, object: nil)
                 }
             } else {
                 
@@ -340,8 +342,17 @@ class AuthenticationManager {
             case .sessionExpired:
                 showError("Session expired. Please sign in again.")
             }
-        } else if error is TokenError {
-            showError("Authentication token error. Please sign in again.")
+        } else if let tokenError = error as? TokenError {
+            switch tokenError {
+            case .tokenExpired:
+                showError("Your session has expired. Please sign in again.")
+            case .refreshTokenNotFound, .refreshFailed:
+                showError("Authentication expired. Please sign in again.")
+            case .invalidTokenResponse:
+                showError("Authentication error. Please sign in again.")
+            default:
+                showError("Authentication token error. Please sign in again.")
+            }
         } else if let networkError = error as? NetworkService.NetworkError {
             switch networkError {
             case .noConnection:
@@ -388,7 +399,7 @@ class AuthenticationManager {
         // Check for token-specific errors
         if let tokenError = error as? TokenError {
             switch tokenError {
-            case .refreshTokenNotFound, .invalidTokenResponse:
+            case .refreshTokenNotFound, .invalidTokenResponse, .tokenExpired:
                 return true // Token issues require clearing
             case .refreshFailed:
                 return false // Could be temporary server issue - preserve tokens for retry

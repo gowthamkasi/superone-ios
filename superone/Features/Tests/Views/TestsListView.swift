@@ -7,32 +7,36 @@ struct TestsListView: View {
     @State private var viewModel = TestsListViewModel()
     @State private var showSuggestions = false
     @Environment(\.authenticationContext) private var authContext
+    @Environment(AuthenticationManager.self) private var authManager
     
     // MARK: - Body
     var body: some View {
         NavigationView {
-            ZStack {
-                VStack(spacing: 0) {
-                    // Search and filter section
-                    searchAndFilterSection
+            // CRITICAL AUTHENTICATION GUARD - Block all access without valid authentication
+            if !authManager.isAuthenticated || !TokenManager.shared.hasStoredTokens() {
+                authenticationRequiredOverlay
+                    .navigationTitle("Health Tests")
+                    .navigationBarTitleDisplayMode(.large)
+                    .background(HealthColors.secondaryBackground.ignoresSafeArea())
+            } else {
+                ZStack {
+                    VStack(spacing: 0) {
+                        // Search and filter section
+                        searchAndFilterSection
+                        
+                        // Tests list
+                        testsList
+                    }
                     
-                    // Tests list
-                    testsList
-                }
-                
-                // Search suggestions overlay
-                if showSuggestions && viewModel.shouldShowSuggestions {
-                    searchSuggestionsOverlay
-                }
-                
-                // Authentication required overlay
-                if !authContext.isAuthenticated {
-                    authenticationRequiredOverlay
-                }
-                
-                // Error overlay
-                if let error = viewModel.error, authContext.isAuthenticated {
-                    errorOverlay(error: error)
+                    // Search suggestions overlay
+                    if showSuggestions && viewModel.shouldShowSuggestions {
+                        searchSuggestionsOverlay
+                    }
+                    
+                    // Error overlay
+                    if let error = viewModel.error {
+                        errorOverlay(error: error)
+                    }
                 }
             }
             .navigationTitle("Health Tests")
@@ -44,7 +48,8 @@ struct TestsListView: View {
             .onAppear {
                 #if DEBUG
                 print("🏥 TestsListView: Checking authentication state")
-                print("  - Is authenticated: \(authContext.isAuthenticated)")
+                print("  - AuthManager authenticated: \(authManager.isAuthenticated)")
+                print("  - AuthContext authenticated: \(authContext.isAuthenticated)")
                 
                 // Use Task for accessing hasStoredTokens to avoid actor isolation issues
                 Task {
@@ -53,10 +58,12 @@ struct TestsListView: View {
                 }
                 #endif
                 
-                // Check authentication state and load tests if authenticated
+                // CRITICAL: Only load data if authentication is valid
                 Task {
                     let hasTokens = TokenManager.shared.hasStoredTokens()
-                    if authContext.isAuthenticated && hasTokens {
+                    let isAuthenticated = authManager.isAuthenticated
+                    
+                    if isAuthenticated && hasTokens {
                         #if DEBUG
                         print("✅ TestsListView: User is authenticated - loading tests")
                         #endif
@@ -66,11 +73,18 @@ struct TestsListView: View {
                         }
                     } else {
                         #if DEBUG
-                        print("🔒 TestsListView: User not authenticated - clearing data")
+                        print("🔒 TestsListView: User not authenticated - clearing data and blocking access")
                         #endif
-                        // Clear any existing data if not authenticated
+                        // CRITICAL: Clear any existing data if not authenticated
                         await MainActor.run {
                             viewModel.clearTestsData()
+                        }
+                        
+                        // CRITICAL: Force logout if tokens are invalid
+                        if !hasTokens && isAuthenticated {
+                            Task { @MainActor in
+                                try? await authManager.signOut()
+                            }
                         }
                     }
                 }
@@ -145,56 +159,38 @@ struct TestsListView: View {
         .background(HealthColors.secondaryBackground)
     }
     
-    // MARK: - Tests List
+    // MARK: - Tests List (Authentication already verified at top level)
     private var testsList: some View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.md) {
-                // Only show content if authenticated
-                if authContext.isAuthenticated {
-                    if viewModel.shouldShowLoading {
-                        loadingView
-                    } else if viewModel.isEmpty {
-                        emptyStateView
-                    } else {
-                        #if DEBUG
-                        // Debug information for what data we're showing
-                        let _ = print("📋 TestsListView: Displaying \(viewModel.tests.count) tests")
-                        let _ = viewModel.tests.enumerated().forEach { index, test in
-                            print("  [\(index)]: \(test.name) - \(test.price) (ID: \(test.id))")
-                        }
-                        #endif
-                        
-                        ForEach(viewModel.tests, id: \.id) { test in
-                            NavigationLink(destination: TestDetailsView(testId: test.id)) {
-                                TestListCard(test: test)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .onAppear {
-                                // Trigger infinite scroll when item appears
-                                viewModel.checkForLoadMore(testId: test.id)
-                            }
-                        }
-                        
-                        // Load more indicator
-                        if viewModel.shouldShowLoadMore {
-                            loadMoreView
-                        }
-                    }
+                if viewModel.shouldShowLoading {
+                    loadingView
+                } else if viewModel.isEmpty {
+                    emptyStateView
                 } else {
-                    // Show placeholder content for unauthenticated state
-                    VStack(spacing: HealthSpacing.lg) {
-                        Image(systemName: "testtube.2")
-                            .font(.system(size: 48))
-                            .foregroundColor(HealthColors.secondaryText)
-                        
-                        Text("Discover Health Tests")
-                            .healthTextStyle(.title3, color: HealthColors.primaryText)
-                        
-                        Text("Sign in to explore hundreds of health tests and packages tailored for your wellness journey.")
-                            .healthTextStyle(.body, color: HealthColors.secondaryText)
-                            .multilineTextAlignment(.center)
+                    #if DEBUG
+                    // Debug information for what data we're showing
+                    let _ = print("📋 TestsListView: Displaying \(viewModel.tests.count) tests")
+                    let _ = viewModel.tests.enumerated().forEach { index, test in
+                        print("  [\(index)]: \(test.name) - \(test.price) (ID: \(test.id))")
                     }
-                    .padding(.top, HealthSpacing.xxxxl)
+                    #endif
+                    
+                    ForEach(viewModel.tests, id: \.id) { test in
+                        NavigationLink(destination: TestDetailsView(testId: test.id)) {
+                            TestListCard(test: test)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .onAppear {
+                            // Trigger infinite scroll when item appears
+                            viewModel.checkForLoadMore(testId: test.id)
+                        }
+                    }
+                    
+                    // Load more indicator
+                    if viewModel.shouldShowLoadMore {
+                        loadMoreView
+                    }
                 }
             }
             .padding(.horizontal, HealthSpacing.screenPadding)
@@ -313,34 +309,45 @@ struct TestsListView: View {
     
     // MARK: - Authentication Required Overlay
     private var authenticationRequiredOverlay: some View {
-        VStack(spacing: HealthSpacing.lg) {
-            Image(systemName: "person.crop.circle.badge.exclamationmark.fill")
-                .font(.system(size: 48))
-                .foregroundColor(HealthColors.primary)
+        VStack(spacing: HealthSpacing.xl) {
+            Spacer()
             
-            Text("Sign In Required")
-                .healthTextStyle(.title3, color: HealthColors.primaryText)
-            
-            Text("Please sign in to view available health tests and packages.")
-                .healthTextStyle(.body, color: HealthColors.secondaryText)
-                .multilineTextAlignment(.center)
-            
-            Button("Sign In") {
-                // Navigation to sign in would be handled by parent view or coordinator
-                // For now, we'll just clear the error to trigger a refresh
-                Task {
-                    if authContext.isAuthenticated {
-                        await viewModel.loadTests()
+            VStack(spacing: HealthSpacing.lg) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 64, weight: .light))
+                    .foregroundColor(HealthColors.primary)
+                
+                Text("Authentication Required")
+                    .healthTextStyle(.title2, color: HealthColors.primaryText)
+                
+                Text("Please sign in to access health tests, view your medical data, and book appointments securely.")
+                    .healthTextStyle(.body, color: HealthColors.secondaryText)
+                    .multilineTextAlignment(.center)
+                
+                VStack(spacing: HealthSpacing.md) {
+                    Button("Sign In") {
+                        // Force logout to clear invalid state and redirect to login
+                        Task { @MainActor in
+                            try? await authManager.signOut()
+                        }
                     }
+                    .buttonStyle(HealthButtonStyle(style: .primary))
+                    
+                    Text("Secure access to your health data")
+                        .healthTextStyle(.caption1, color: HealthColors.tertiaryText)
+                        .multilineTextAlignment(.center)
                 }
             }
-            .buttonStyle(HealthButtonStyle(style: .primary))
+            .padding(HealthSpacing.xl)
+            .background(HealthColors.primaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.xl))
+            .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
+            .padding(.horizontal, HealthSpacing.screenPadding)
+            
+            Spacer()
         }
-        .padding(HealthSpacing.xl)
-        .background(HealthColors.primaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.lg))
-        .shadow(color: .black.opacity(0.1), radius: 12, x: 0, y: 8)
-        .padding(.horizontal, HealthSpacing.screenPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(HealthColors.secondaryBackground)
     }
     
     // MARK: - Error Overlay

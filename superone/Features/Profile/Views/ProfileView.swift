@@ -17,7 +17,22 @@ struct ProfileView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
+            // CRITICAL AUTHENTICATION GUARD - Block all access without valid authentication
+            if !authManager.isAuthenticated || !TokenManager.shared.hasStoredTokens() {
+                authenticationRequiredView
+                    .navigationTitle("Profile")
+                    .navigationBarTitleDisplayMode(.large)
+                    .background(HealthColors.background.ignoresSafeArea())
+                    .onAppear {
+                        // Force logout if tokens are invalid
+                        if !TokenManager.shared.hasStoredTokens() && authManager.isAuthenticated {
+                            Task { @MainActor in
+                                try? await authManager.signOut()
+                            }
+                        }
+                    }
+            } else {
+                ScrollView {
                 VStack(spacing: HealthSpacing.xl) {
                     // Profile header
                     profileHeaderSection
@@ -145,7 +160,52 @@ struct ProfileView: View {
                 message: "Updating profile..."
             )
             // Biometric lifecycle methods removed for now
+            } // End of authenticated content
+        } // End of NavigationView
+    }
+    
+    // MARK: - Authentication Required View
+    
+    private var authenticationRequiredView: some View {
+        VStack(spacing: HealthSpacing.xl) {
+            Spacer()
+            
+            VStack(spacing: HealthSpacing.lg) {
+                Image(systemName: "person.badge.shield.checkmark.fill")
+                    .font(.system(size: 64, weight: .light))
+                    .foregroundColor(HealthColors.primary)
+                
+                Text("Secure Access Required")
+                    .healthTextStyle(.title2, color: HealthColors.primaryText)
+                
+                Text("Please sign in to access your profile, health data, and account settings.")
+                    .healthTextStyle(.body, color: HealthColors.secondaryText)
+                    .multilineTextAlignment(.center)
+                
+                VStack(spacing: HealthSpacing.md) {
+                    Button("Sign In") {
+                        // Force logout to clear invalid state and redirect to login
+                        Task { @MainActor in
+                            try? await authManager.signOut()
+                        }
+                    }
+                    .buttonStyle(HealthButtonStyle(style: .primary))
+                    
+                    Text("Your personal health information is protected")
+                        .healthTextStyle(.caption1, color: HealthColors.tertiaryText)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(HealthSpacing.xl)
+            .background(HealthColors.primaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.xl))
+            .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
+            .padding(.horizontal, HealthSpacing.screenPadding)
+            
+            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(HealthColors.background)
     }
     
     // MARK: - Profile Header Section

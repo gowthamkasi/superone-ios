@@ -927,27 +927,11 @@ final class AppointmentsViewModel {
         ]
     }
     
-    /// Load sample individual tests
+    /// Load individual tests from API (production) or provide fallback (dev/testing)
     func loadIndividualTests() {
+        #if DEBUG
+        // DEBUG: Only show comprehensive test list in development builds
         individualTests = [
-            IndividualTest(
-                name: "Complete Blood Count (CBC)",
-                icon: "drop.fill",
-                description: "Comprehensive blood analysis including RBC, WBC, platelets, and hemoglobin levels",
-                price: 500,
-                sampleType: "Blood",
-                category: "Hematology",
-                fastingRequired: false
-            ),
-            IndividualTest(
-                name: "Lipid Profile",
-                icon: "heart.fill",
-                description: "Cholesterol levels assessment including HDL, LDL, and triglycerides",
-                price: 800,
-                sampleType: "Blood",
-                category: "Cardiovascular",
-                fastingRequired: true
-            ),
             IndividualTest(
                 name: "Thyroid Function Test (TSH, T3, T4)",
                 icon: "thermometer",
@@ -1003,6 +987,12 @@ final class AppointmentsViewModel {
                 fastingRequired: false
             )
         ]
+        #else
+        // PRODUCTION: Load tests from LabLoop API
+        individualTests = []
+        // TODO: Replace with actual API call to LabLoop backend
+        // Task { await loadTestsFromAPI() }
+        #endif
     }
     
     /// Select test type (health packages or individual tests)
