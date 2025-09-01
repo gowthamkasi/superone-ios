@@ -241,10 +241,13 @@ final class TestDetailsState {
     }
 }
 
-// MARK: - Sample Data Factory
+// MARK: - Preview-Only Sample Data Factory
+// These methods are only available in DEBUG builds for SwiftUI previews
+// Production code uses real LabLoop API data through TestsAPIService
 
+#if DEBUG
 extension TestDetails {
-    /// Create sample Complete Blood Count (CBC) test
+    /// Create sample Complete Blood Count (CBC) test - DEBUG/Preview Only
     static func sampleCBC() -> TestDetails {
         return TestDetails(
             id: "cbc_001",
@@ -274,7 +277,7 @@ extension TestDetails {
         )
     }
     
-    /// Create sample Lipid Profile test
+    /// Create sample Lipid Profile test - DEBUG/Preview Only
     static func sampleLipidProfile() -> TestDetails {
         return TestDetails(
             id: "lipid_001",
@@ -496,3 +499,4 @@ extension TestDetails {
         ]
     }
 }
+#endif

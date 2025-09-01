@@ -42,15 +42,27 @@ struct TestsListView: View {
                 await viewModel.refreshTests()
             }
             .onAppear {
+                #if DEBUG
+                print("🏥 TestsListView: Checking authentication state")
+                print("  - Is authenticated: \(authContext.isAuthenticated)")
+                print("  - Has stored tokens: \(TokenManager.shared.hasStoredTokens())")
+                #endif
+                
                 // Check authentication state and load tests if authenticated
-                if authContext.isAuthenticated {
+                if authContext.isAuthenticated && TokenManager.shared.hasStoredTokens() {
+                    #if DEBUG
+                    print("✅ TestsListView: User is authenticated - loading tests")
+                    #endif
                     // Only load if we don't have tests already
-                    if viewModel.tests.isEmpty {
+                    if viewModel.tests.isEmpty && viewModel.error == nil {
                         Task {
                             await viewModel.loadTests()
                         }
                     }
                 } else {
+                    #if DEBUG
+                    print("🔒 TestsListView: User not authenticated - clearing data")
+                    #endif
                     // Clear any existing data if not authenticated
                     viewModel.clearTestsData()
                 }
@@ -136,6 +148,14 @@ struct TestsListView: View {
                     } else if viewModel.isEmpty {
                         emptyStateView
                     } else {
+                        #if DEBUG
+                        // Debug information for what data we're showing
+                        let _ = print("📋 TestsListView: Displaying \(viewModel.tests.count) tests")
+                        let _ = viewModel.tests.enumerated().forEach { index, test in
+                            print("  [\(index)]: \(test.name) - \(test.price) (ID: \(test.id))")
+                        }
+                        #endif
+                        
                         ForEach(viewModel.tests, id: \.id) { test in
                             NavigationLink(destination: TestDetailsView(testId: test.id)) {
                                 TestListCard(test: test)

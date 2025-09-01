@@ -57,8 +57,16 @@ class TestsAPIService: ObservableObject {
         
         // Ensure we have a valid authentication token
         guard let token = await tokenManager.getValidToken() else {
+            #if DEBUG
+            print("🔒 TestsAPIService: No valid authentication token available")
+            print("  - Has stored tokens: \(tokenManager.hasStoredTokens())")
+            #endif
             throw TestsAPIError.unauthorized("Authentication token required")
         }
+        
+        #if DEBUG
+        print("✅ TestsAPIService: Authentication token available for API call")
+        #endif
         
         // Build query parameters
         var queryParams: [String: String] = [
@@ -194,8 +202,16 @@ class TestsAPIService: ObservableObject {
         
         // Ensure we have a valid authentication token
         guard let token = await tokenManager.getValidToken() else {
+            #if DEBUG
+            print("🔒 TestsAPIService: No valid authentication token available")
+            print("  - Has stored tokens: \(tokenManager.hasStoredTokens())")
+            #endif
             throw TestsAPIError.unauthorized("Authentication token required")
         }
+        
+        #if DEBUG
+        print("✅ TestsAPIService: Authentication token available for API call")
+        #endif
         
         let url = buildURL(endpoint: "\(baseEndpoint)/\(testId)")
         
@@ -369,8 +385,16 @@ class TestsAPIService: ObservableObject {
         
         // Ensure we have a valid authentication token
         guard let token = await tokenManager.getValidToken() else {
+            #if DEBUG
+            print("🔒 TestsAPIService: No valid authentication token available")
+            print("  - Has stored tokens: \(tokenManager.hasStoredTokens())")
+            #endif
             throw TestsAPIError.unauthorized("Authentication token required")
         }
+        
+        #if DEBUG
+        print("✅ TestsAPIService: Authentication token available for API call")
+        #endif
         
         // First check current status to determine action
         let currentFavorites = try await getUserFavorites(offset: 0, limit: 50)
@@ -438,8 +462,16 @@ class TestsAPIService: ObservableObject {
         
         // Ensure we have a valid authentication token
         guard let token = await tokenManager.getValidToken() else {
+            #if DEBUG
+            print("🔒 TestsAPIService: No valid authentication token available")
+            print("  - Has stored tokens: \(tokenManager.hasStoredTokens())")
+            #endif
             throw TestsAPIError.unauthorized("Authentication token required")
         }
+        
+        #if DEBUG
+        print("✅ TestsAPIService: Authentication token available for API call")
+        #endif
         
         let queryParams: [String: String] = [
             "offset": String(offset),

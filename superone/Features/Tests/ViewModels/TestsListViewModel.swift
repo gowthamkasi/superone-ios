@@ -99,13 +99,19 @@ final class TestsListViewModel {
     // MARK: - Initialization
     
     init() {
+        #if DEBUG
+        print("🔗 TestsListViewModel: Initializing with real LabLoop API service")
+        print("  - TestsAPIService: \(type(of: testsAPIService))")
+        print("  - Initial tests count: \(tests.count)")
+        #endif
+        
         // Setup authentication state observer before loading data
         setupAuthenticationObserver()
         
-        // Load initial data
-        Task { @MainActor in
-            await loadTests()
-        }
+        // Don't auto-load data in init - let the view handle it when authenticated
+        #if DEBUG
+        print("📍 TestsListViewModel: Initialization complete - no auto-loading")
+        #endif
     }
     
     deinit {
@@ -156,12 +162,36 @@ final class TestsListViewModel {
                 // Check if task was cancelled
                 try Task.checkCancellation()
                 
+                #if DEBUG
+                print("🚀 TestsListViewModel: Making API call to get tests")
+                print("  - Offset: \(currentOffset), Limit: \(pageSize)")
+                print("  - Search: \(searchText.isEmpty ? "none" : searchText)")
+                print("  - Filters: \(String(describing: currentFilters))")
+                
+                // Debug authentication state before API call
+                let hasTokens = TokenManager.shared.hasStoredTokens()
+                let validToken = await TokenManager.shared.getValidToken()
+                print("🔑 Authentication status before API call:")
+                print("  - Has stored tokens: \(hasTokens)")
+                print("  - Valid token available: \(validToken != nil)")
+                if let token = validToken {
+                    let tokenPrefix = String(token.prefix(20))
+                    print("  - Token prefix: \(tokenPrefix)...")
+                }
+                #endif
+                
                 let response = try await testsAPIService.getTests(
                     offset: currentOffset,
                     limit: pageSize,
                     search: searchText.isEmpty ? nil : searchText,
                     filters: currentFilters
                 )
+                
+                #if DEBUG
+                print("✅ TestsListViewModel: Successfully received \(response.tests.count) tests")
+                print("  - Has more: \(response.pagination.hasMore)")
+                print("  - Next offset: \(response.pagination.nextOffset ?? -1)")
+                #endif
                 
                 // Check if task was cancelled before updating UI
                 try Task.checkCancellation()
@@ -195,20 +225,36 @@ final class TestsListViewModel {
                     return
                 }
                 
+                #if DEBUG
+                print("❌ TestsListViewModel: API error - \(error.localizedDescription)")
+                #endif
+                
                 await MainActor.run {
                     isLoading = false
                     
                     // Handle different error types
                     if let apiError = error as? TestsAPIError {
                         self.error = apiError
+                        
+                        // Handle authentication errors specially
+                        if case .unauthorized = apiError {
+                            #if DEBUG
+                            print("🔒 TestsListViewModel: Authentication error - user needs to sign in")
+                            #endif
+                            // Clear tests and show authentication required state
+                            tests = []
+                            // Post notification that user needs to authenticate
+                            NotificationCenter.default.post(name: .userDidSignOut, object: nil)
+                        }
                     } else {
                         self.error = TestsAPIError.fetchFailed(error.localizedDescription)
                     }
                     
+                    // Clear tests on any error to avoid showing mock data
+                    tests = []
+                    
                     // Only show error if we've exceeded max attempts or it's not retryable
                     if loadAttemptCount >= Self.maxRetryAttempts || !(self.error?.isRetryable ?? true) {
-                        tests = []
-                        
                         // Provide error haptic feedback
                         HapticFeedback.error()
                     }
@@ -517,27 +563,30 @@ extension TestsListViewModel {
     var shouldShowSuggestions: Bool {
         return !searchSuggestions.isEmpty && !searchText.isEmpty
     }
-}
-
-// MARK: - Preview Support
-
-#if DEBUG
-extension TestsListViewModel {
     
-    /// Create a mock instance for previews
-    static func mock() -> TestsListViewModel {
-        let viewModel = TestsListViewModel()
+    /// Clear all tests data and reset state
+    func clearTestsData() {
+        tests = []
+        error = nil
+        isLoading = false
+        isLoadingMore = false
+        hasMoreTests = true
+        currentOffset = 0
+        searchText = ""
+        selectedCategory = nil
         
-        // Add mock data
-        Task { @MainActor in
-            viewModel.tests = [
-                // Mock test data would go here
-            ]
-            viewModel.isLoading = false
-            viewModel.hasMoreTests = true
-        }
+        // Reset attempt tracking
+        loadAttemptCount = 0
+        lastLoadAttempt = nil
         
-        return viewModel
+        #if DEBUG
+        print("🧹 TestsListViewModel: Cleared all tests data")
+        #endif
     }
 }
-#endif
+
+// MARK: - Preview Support - Removed
+// Previous mock method has been removed to ensure clarity that
+// TestsListViewModel always uses real LabLoop API integration.
+// SwiftUI previews should use real data or minimal test data
+// through the actual API service initialization.

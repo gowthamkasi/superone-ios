@@ -37,9 +37,24 @@ final class TestDetailsViewModel {
         testService: TestServiceProtocol? = nil,
         favoriteService: FavoriteServiceProtocol? = nil
     ) {
-        // Use real services by default, allow injection for testing
+        // Always use real LabLoop API services for production
+        // Service injection is maintained only for unit testing purposes
         self.testService = testService ?? RealTestService()
         self.favoriteService = favoriteService ?? TestDetailsFavoriteService()
+        
+        // Production safety check - ensure we never use mock services in production
+        #if !DEBUG
+        assert(type(of: self.testService) == RealTestService.self, 
+               "Production builds must use RealTestService only")
+        assert(type(of: self.favoriteService) == TestDetailsFavoriteService.self, 
+               "Production builds must use TestDetailsFavoriteService only")
+        #endif
+        
+        #if DEBUG
+        print("🔗 TestDetailsViewModel: Using real LabLoop API services")
+        print("  - TestService: \(type(of: self.testService))")
+        print("  - FavoriteService: \(type(of: self.favoriteService))")
+        #endif
         
         // Setup authentication state observer
         setupAuthenticationObserver()
@@ -382,66 +397,10 @@ protocol FavoriteServiceProtocol: Sendable {
     func getAllFavorites() async throws -> [String]
 }
 
-// MARK: - Mock Implementations
-
-/// Mock test service for development and testing
-actor MockTestService: TestServiceProtocol {
-    
-    func getTestDetails(testId: String) async throws -> TestDetails {
-        // Simulate network delay
-        try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-        
-        return await MainActor.run {
-            switch testId {
-            case "cbc_001":
-                return TestDetails.sampleCBC()
-            case "lipid_001":
-                return TestDetails.sampleLipidProfile()
-            default:
-                return TestDetails.sampleCBC()
-            }
-        }
-    }
-    
-    func getRelatedTests(testId: String) async throws -> [TestDetails] {
-        // Simulate network delay
-        try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
-        
-        return await MainActor.run {
-            [
-                TestDetails.sampleLipidProfile(),
-                TestDetails.sampleCBC()
-            ]
-        }
-    }
-}
-
-/// Mock favorite service for development and testing
-actor MockFavoriteService: FavoriteServiceProtocol {
-    
-    private var favorites: Set<String> = []
-    
-    func isFavorite(testId: String) async throws -> Bool {
-        // Simulate storage delay
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-        return favorites.contains(testId)
-    }
-    
-    func addFavorite(testId: String) async throws {
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-        favorites.insert(testId)
-    }
-    
-    func removeFavorite(testId: String) async throws {
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-        favorites.remove(testId)
-    }
-    
-    func getAllFavorites() async throws -> [String] {
-        try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
-        return Array(favorites)
-    }
-}
+// MARK: - Mock Implementations - Removed
+// Previous mock services (MockTestService and MockFavoriteService) have been removed
+// to eliminate confusion and ensure real LabLoop API integration is always used.
+// All production code now uses RealTestService and TestDetailsFavoriteService by default.
 
 // MARK: - Real Implementations
 
@@ -455,9 +414,17 @@ actor RealTestService: TestServiceProtocol {
     }
     
     func getTestDetails(testId: String) async throws -> TestDetails {
+        #if DEBUG
+        print("🚀 RealTestService: Making API call to get test details for ID: \(testId)")
+        #endif
+        
         do {
             let response = try await testsAPIService.getTestDetails(testId: testId)
             let testDetailsData = response.testDetails
+            
+            #if DEBUG
+            print("✅ RealTestService: Successfully received test details for '\(testDetailsData.name)'")
+            #endif
             
             // Convert TestDetailsData to TestDetails in MainActor context
             return await MainActor.run {
@@ -465,8 +432,14 @@ actor RealTestService: TestServiceProtocol {
             }
             
         } catch let apiError as TestsAPIError {
+            #if DEBUG
+            print("❌ RealTestService: API error - \(apiError.localizedDescription)")
+            #endif
             throw TestDetailsError(description: apiError.errorDescription ?? "Failed to load test details")
         } catch {
+            #if DEBUG
+            print("❌ RealTestService: Unexpected error - \(error.localizedDescription)")
+            #endif
             throw TestDetailsError(description: error.localizedDescription)
         }
     }
@@ -570,23 +543,43 @@ actor TestDetailsFavoriteService: FavoriteServiceProtocol {
     }
     
     func addFavorite(testId: String) async throws {
+        #if DEBUG
+        print("🚀 TestDetailsFavoriteService: Making API call to add favorite for test ID: \(testId)")
+        #endif
+        
         do {
             let response = try await testsAPIService.toggleFavorite(testId: testId)
             if response.isFavorite {
                 cachedFavorites.insert(testId)
+                #if DEBUG
+                print("✅ TestDetailsFavoriteService: Successfully added test \(testId) to favorites")
+                #endif
             }
         } catch let apiError as TestsAPIError {
+            #if DEBUG
+            print("❌ TestDetailsFavoriteService: Failed to add favorite - \(apiError.localizedDescription)")
+            #endif
             throw TestDetailsError(description: apiError.errorDescription ?? "Failed to add favorite")
         }
     }
     
     func removeFavorite(testId: String) async throws {
+        #if DEBUG
+        print("🚀 TestDetailsFavoriteService: Making API call to remove favorite for test ID: \(testId)")
+        #endif
+        
         do {
             let response = try await testsAPIService.toggleFavorite(testId: testId)
             if !response.isFavorite {
                 cachedFavorites.remove(testId)
+                #if DEBUG
+                print("✅ TestDetailsFavoriteService: Successfully removed test \(testId) from favorites")
+                #endif
             }
         } catch let apiError as TestsAPIError {
+            #if DEBUG
+            print("❌ TestDetailsFavoriteService: Failed to remove favorite - \(apiError.localizedDescription)")
+            #endif
             throw TestDetailsError(description: apiError.errorDescription ?? "Failed to remove favorite")
         }
     }
