@@ -33,7 +33,7 @@ final class TestsListViewModel {
     var selectedCategory: TestCategory? = nil {
         didSet {
             if selectedCategory != oldValue {
-                Task { @MainActor in
+                Task {
                     await resetAndLoadTests()
                 }
             }
@@ -75,12 +75,12 @@ final class TestsListViewModel {
     private var lastLoadAttempt: Date?
     private var loadAttemptCount: Int = 0
     @ObservationIgnored nonisolated(unsafe) private var currentLoadTask: Task<Void, Never>?
-    private static let maxRetryAttempts: Int = 3
+    nonisolated private static let maxRetryAttempts: Int = 3
     
     // MARK: - Exponential Backoff Properties
-    private static let baseBackoffInterval: TimeInterval = 2.0 // Base 2 seconds
-    private static let maxBackoffInterval: TimeInterval = 30.0 // Maximum 30 seconds
-    private static let backoffMultiplier: Double = 2.0 // Double the wait time each retry
+    nonisolated private static let baseBackoffInterval: TimeInterval = 2.0 // Base 2 seconds
+    nonisolated private static let maxBackoffInterval: TimeInterval = 30.0 // Maximum 30 seconds
+    nonisolated private static let backoffMultiplier: Double = 2.0 // Double the wait time each retry
     
     /// Current test filters
     private var currentFilters: TestFilters? {
@@ -340,13 +340,13 @@ final class TestsListViewModel {
         // Cancel previous suggestions task
         suggestionsTask?.cancel()
         
-        suggestionsTask = Task { @MainActor in
+        suggestionsTask = Task {
             // Debounce for 300ms
             try? await Task.sleep(nanoseconds: 300_000_000)
             
             guard !Task.isCancelled else { return }
             
-            isLoadingSuggestions = true
+            await MainActor.run { isLoadingSuggestions = true }
             
             do {
                 let response = try await testsAPIService.getSearchSuggestions(
@@ -355,16 +355,16 @@ final class TestsListViewModel {
                 )
                 
                 if !Task.isCancelled {
-                    searchSuggestions = response.suggestions
+                    await MainActor.run { searchSuggestions = response.suggestions }
                 }
                 
             } catch {
                 if !Task.isCancelled {
-                    searchSuggestions = []
+                    await MainActor.run { searchSuggestions = [] }
                 }
             }
             
-            isLoadingSuggestions = false
+            await MainActor.run { isLoadingSuggestions = false }
         }
     }
     
@@ -382,7 +382,7 @@ final class TestsListViewModel {
         lastLoadAttempt = nil
         error = nil
         
-        Task { @MainActor in
+        Task {
             await loadTests()
         }
     }
@@ -417,7 +417,7 @@ final class TestsListViewModel {
         // Load more when we're near the end (last 5 items)
         if let index = tests.firstIndex(where: { $0.id == testId }),
            index >= tests.count - 5 {
-            Task { @MainActor in
+            Task {
                 await loadMoreTests()
             }
         }
@@ -430,7 +430,7 @@ final class TestsListViewModel {
         // Cancel previous search task
         searchTask?.cancel()
         
-        searchTask = Task { @MainActor in
+        searchTask = Task {
             // Debounce for 500ms
             try? await Task.sleep(nanoseconds: 500_000_000)
             
@@ -440,7 +440,7 @@ final class TestsListViewModel {
         }
         
         // Load suggestions immediately for better UX
-        Task { @MainActor in
+        Task {
             await loadSearchSuggestions(for: searchText)
         }
     }
@@ -458,8 +458,10 @@ final class TestsListViewModel {
         NotificationCenter.default
             .publisher(for: .userDidSignOut)
             .sink { [weak self] _ in
-                Task { @MainActor in
-                    self?.clearTestsData()
+                Task {
+                    await MainActor.run {
+                        self?.clearTestsData()
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -468,18 +470,20 @@ final class TestsListViewModel {
         NotificationCenter.default
             .publisher(for: .userDidSignIn)
             .sink { [weak self] _ in
-                Task { @MainActor in
-                    // Reset loop protection on successful sign in
-                    self?.loadAttemptCount = 0
-                    self?.lastLoadAttempt = nil
-                    // DON'T automatically trigger loadTests here - let the view handle it
+                Task {
+                    await MainActor.run {
+                        // Reset loop protection on successful sign in
+                        self?.loadAttemptCount = 0
+                        self?.lastLoadAttempt = nil
+                        // DON'T automatically trigger loadTests here - let the view handle it
+                    }
                 }
             }
             .store(in: &cancellables)
     }
     
     /// Calculate exponential backoff interval for retry attempts
-    private func calculateBackoffInterval(for attemptCount: Int) -> TimeInterval {
+    nonisolated private func calculateBackoffInterval(for attemptCount: Int) -> TimeInterval {
         let backoffTime = Self.baseBackoffInterval * pow(Self.backoffMultiplier, Double(attemptCount - 1))
         return min(backoffTime, Self.maxBackoffInterval)
     }

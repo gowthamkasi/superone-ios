@@ -186,7 +186,7 @@ import UIKit
     // MARK: - Private Helpers
     
     /// Enhanced JWT validation with signature verification and expiration checking
-    private func validateJWTFormat(_ token: String, tokenType: String) throws {
+    nonisolated private func validateJWTFormat(_ token: String, tokenType: String) throws {
         
         // Check for JSON wrapper (indicates corrupted storage)
         if token.hasPrefix("{") && token.contains("\"token\"") {
@@ -222,7 +222,7 @@ import UIKit
     }
     
     /// Decode JWT payload (middle part) for validation
-    private func decodeJWTPayload(_ payload: String) throws -> [String: Any] {
+    nonisolated private func decodeJWTPayload(_ payload: String) throws -> [String: Any] {
         // Add padding if needed for base64 decoding
         let paddedPayload = payload.paddingBase64String()
         
@@ -235,7 +235,7 @@ import UIKit
     }
     
     /// Validate JWT claims (expiration, issuer, etc.)
-    private func validateJWTClaims(_ payload: [String: Any], tokenType: String) throws {
+    nonisolated private func validateJWTClaims(_ payload: [String: Any], tokenType: String) throws {
         // Check expiration claim (exp)
         if let exp = payload["exp"] as? TimeInterval {
             let expirationDate = Date(timeIntervalSince1970: exp)
@@ -422,7 +422,7 @@ extension superone.NetworkService {
 
 private extension String {
     /// Add padding to base64 string if needed
-    func paddingBase64String() -> String {
+    nonisolated func paddingBase64String() -> String {
         let remainder = self.count % 4
         if remainder > 0 {
             return self + String(repeating: "=", count: 4 - remainder)

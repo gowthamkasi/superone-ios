@@ -38,14 +38,15 @@ struct TestsListView: View {
                         errorOverlay(error: error)
                     }
                 }
+                .navigationTitle("Health Tests")
+                .navigationBarTitleDisplayMode(.large)
+                .background(HealthColors.secondaryBackground.ignoresSafeArea())
+                .refreshable {
+                    await viewModel.refreshTests()
+                }
             }
-            .navigationTitle("Health Tests")
-            .navigationBarTitleDisplayMode(.large)
-            .background(HealthColors.secondaryBackground.ignoresSafeArea())
-            .refreshable {
-                await viewModel.refreshTests()
-            }
-            .onAppear {
+        }
+        .onAppear {
                 #if DEBUG
                 print("🏥 TestsListView: Checking authentication state")
                 print("  - AuthManager authenticated: \(authManager.isAuthenticated)")
@@ -89,7 +90,6 @@ struct TestsListView: View {
                     }
                 }
             }
-        }
     }
     
     // MARK: - Search and Filter Section
