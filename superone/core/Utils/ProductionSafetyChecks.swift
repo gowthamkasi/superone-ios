@@ -29,7 +29,9 @@ enum ProductionSafetyChecks {
             "Lipid Profile", "Thyroid Function Test",
             "sampleCBC", "sampleLipidProfile", "sampleComprehensive",
             "TestDetails.sample", "HealthPackage.sample",
-            "LabLoop Central Laboratory", "Zero Hospital"
+            "LabLoop Central Laboratory", "Zero Hospital",
+            "MedHome Diagnostics", "Today 6PM-8PM", "Service across Pune",
+            "Collection fee details will be loaded from API"
         ]
         
         // This is a compile-time assertion that would catch mock data references
@@ -126,6 +128,8 @@ private extension String {
             "sampleCBC", "sampleLipidProfile", "sampleComprehensive",
             "TestDetails.sample", "HealthPackage.sample",
             "LabLoop Central Laboratory", "Zero Hospital", "Home Health Collection",
+            "MedHome Diagnostics", "Today 6PM-8PM", "Service across Pune",
+            "Collection fee details will be loaded from API",
             "mock", "Mock", "MOCK",
             "test@example.com",
             "placeholder",

@@ -421,8 +421,8 @@ struct AppointmentsView: View {
     @ViewBuilder
     private var homeCollectionContent: some View {
         VStack(alignment: .leading, spacing: HealthSpacing.xl) {
-            // Home collection services
-            HomeCollectionSection(viewModel: viewModel)
+            // Home collection services - Real API integration pending
+            HomeCollectionPlaceholder()
             
             // Quick test booking
             QuickTestBookingSection()
@@ -1304,9 +1304,7 @@ struct EnhancedFacilityCard: View {
     }
 }
 
-struct HomeCollectionSection: View {
-    let viewModel: AppointmentsViewModel
-    
+struct HomeCollectionPlaceholder: View {
     var body: some View {
         VStack(alignment: .leading, spacing: HealthSpacing.md) {
             Text("🏠 Home Collection Services")
@@ -1314,101 +1312,41 @@ struct HomeCollectionSection: View {
                 .foregroundColor(HealthColors.primaryText)
             
             VStack(spacing: HealthSpacing.md) {
-                HomeCollectionCard(
-                    serviceName: "MedHome Diagnostics",
-                    rating: 4.7,
-                    availability: "Today 6PM-8PM",
-                    collectionFee: "Collection fee details will be loaded from API",
-                    coverage: "Service across Pune"
-                )
-            }
-        }
-    }
-}
-
-struct HomeCollectionCard: View {
-    let serviceName: String
-    let rating: Double
-    let availability: String
-    let collectionFee: String
-    let coverage: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: HealthSpacing.md) {
-            HStack {
-                VStack(alignment: .leading, spacing: HealthSpacing.xs) {
-                    Text(serviceName)
-                        .font(HealthTypography.bodyMedium)
-                        .foregroundColor(HealthColors.primaryText)
+                // TODO: Integrate with real Home Collection API
+                // Real home collection services will be loaded from API
+                VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                    Text("Home collection services are currently being set up.")
+                        .font(HealthTypography.body)
+                        .foregroundColor(HealthColors.secondaryText)
+                        .multilineTextAlignment(.leading)
                     
-                    HStack(spacing: HealthSpacing.xs) {
-                        Image(systemName: "star.fill")
-                            .foregroundColor(HealthColors.healthWarning)
-                            .font(.system(size: 12))
-                        
-                        Text(String(format: "%.1f", rating))
-                            .font(HealthTypography.captionMedium)
-                            .foregroundColor(HealthColors.primaryText)
-                        
-                        Text("• \(coverage)")
-                            .font(HealthTypography.captionRegular)
-                            .foregroundColor(HealthColors.secondaryText)
+                    Text("Please visit our lab facilities for now, or check back later for home collection options.")
+                        .font(HealthTypography.body)
+                        .foregroundColor(HealthColors.secondaryText)
+                        .multilineTextAlignment(.leading)
+                    
+                    Button("Find Lab Facilities") {
+                        // This will switch to walk-in labs
+                        // Implementation note: Add callback to parent view
                     }
-                }
-                
-                Spacer()
-            }
-            
-            VStack(alignment: .leading, spacing: HealthSpacing.sm) {
-                HStack {
-                    Label("Available: \(availability)", systemImage: "calendar")
-                        .font(HealthTypography.captionMedium)
-                        .foregroundColor(HealthColors.healthGood)
-                    
-                    Spacer()
-                }
-                
-                HStack {
-                    Label("Collection fee: \(collectionFee)", systemImage: "creditcard")
-                        .font(HealthTypography.captionMedium)
-                        .foregroundColor(HealthColors.primary)
-                    
-                    Spacer()
-                }
-                
-                HStack {
-                    Label("Same day reports", systemImage: "doc.text")
-                        .font(HealthTypography.captionMedium)
-                        .foregroundColor(HealthColors.primary)
-                    
-                    Spacer()
-                }
-            }
-            
-            HStack(spacing: HealthSpacing.md) {
-                Button("Schedule Collection") {}
                     .font(HealthTypography.bodyMedium)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, HealthSpacing.sm)
                     .background(HealthColors.primary)
                     .cornerRadius(HealthCornerRadius.button)
-                
-                Button("Call Service") {}
-                    .font(HealthTypography.bodyMedium)
-                    .foregroundColor(HealthColors.primary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, HealthSpacing.sm)
-                    .background(HealthColors.primary.opacity(0.1))
-                    .cornerRadius(HealthCornerRadius.button)
+                }
+                .padding(HealthSpacing.lg)
+                .background(HealthColors.secondaryBackground)
+                .cornerRadius(HealthCornerRadius.card)
+                .healthCardShadow()
             }
         }
-        .padding(HealthSpacing.lg)
-        .background(HealthColors.secondaryBackground)
-        .cornerRadius(HealthCornerRadius.card)
-        .healthCardShadow()
     }
 }
+
+// HomeCollectionCard removed - contained hardcoded mock data
+// Real home collection services will be implemented with API integration
 
 struct QuickTestBookingSection: View {
     var body: some View {
