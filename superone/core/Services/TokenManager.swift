@@ -12,7 +12,7 @@ import UIKit
 
 /// Simple, reactive JWT token manager following standard practices
 /// No complex expiration tracking - let server handle token validity
-class TokenManager {
+@preconcurrency final class TokenManager: @unchecked Sendable {
     
     // MARK: - Singleton
     static let shared = TokenManager()

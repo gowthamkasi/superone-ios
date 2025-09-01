@@ -564,25 +564,6 @@ extension TestsListViewModel {
         return !searchSuggestions.isEmpty && !searchText.isEmpty
     }
     
-    /// Clear all tests data and reset state
-    func clearTestsData() {
-        tests = []
-        error = nil
-        isLoading = false
-        isLoadingMore = false
-        hasMoreTests = true
-        currentOffset = 0
-        searchText = ""
-        selectedCategory = nil
-        
-        // Reset attempt tracking
-        loadAttemptCount = 0
-        lastLoadAttempt = nil
-        
-        #if DEBUG
-        print("🧹 TestsListViewModel: Cleared all tests data")
-        #endif
-    }
 }
 
 // MARK: - Preview Support - Removed

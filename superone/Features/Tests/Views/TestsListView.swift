@@ -45,26 +45,34 @@ struct TestsListView: View {
                 #if DEBUG
                 print("🏥 TestsListView: Checking authentication state")
                 print("  - Is authenticated: \(authContext.isAuthenticated)")
-                print("  - Has stored tokens: \(TokenManager.shared.hasStoredTokens())")
+                
+                // Use Task for accessing hasStoredTokens to avoid actor isolation issues
+                Task {
+                    let hasTokens = TokenManager.shared.hasStoredTokens()
+                    print("  - Has stored tokens: \(hasTokens)")
+                }
                 #endif
                 
                 // Check authentication state and load tests if authenticated
-                if authContext.isAuthenticated && TokenManager.shared.hasStoredTokens() {
-                    #if DEBUG
-                    print("✅ TestsListView: User is authenticated - loading tests")
-                    #endif
-                    // Only load if we don't have tests already
-                    if viewModel.tests.isEmpty && viewModel.error == nil {
-                        Task {
+                Task {
+                    let hasTokens = TokenManager.shared.hasStoredTokens()
+                    if authContext.isAuthenticated && hasTokens {
+                        #if DEBUG
+                        print("✅ TestsListView: User is authenticated - loading tests")
+                        #endif
+                        // Only load if we don't have tests already
+                        if viewModel.tests.isEmpty && viewModel.error == nil {
                             await viewModel.loadTests()
                         }
+                    } else {
+                        #if DEBUG
+                        print("🔒 TestsListView: User not authenticated - clearing data")
+                        #endif
+                        // Clear any existing data if not authenticated
+                        await MainActor.run {
+                            viewModel.clearTestsData()
+                        }
                     }
-                } else {
-                    #if DEBUG
-                    print("🔒 TestsListView: User not authenticated - clearing data")
-                    #endif
-                    // Clear any existing data if not authenticated
-                    viewModel.clearTestsData()
                 }
             }
         }
