@@ -18,7 +18,7 @@ class TokenManager {
     static let shared = TokenManager()
     
     // MARK: - Private Properties
-    private let keychain: KeychainServiceProtocol = KeychainHelper.shared
+    nonisolated private let keychain: KeychainServiceProtocol = KeychainHelper.shared
     
     // NetworkService access helper - use the service layer NetworkService, not the model
     @MainActor private var apiService: superone.NetworkService {
@@ -26,9 +26,9 @@ class TokenManager {
     }
     
     // Keychain keys
-    private struct Keys {
-        static let accessToken = "access_token"
-        static let refreshToken = "refresh_token"
+    nonisolated private struct Keys {
+        nonisolated static let accessToken = "access_token"
+        nonisolated static let refreshToken = "refresh_token"
     }
     
     private init() {}
@@ -50,12 +50,12 @@ class TokenManager {
     // MARK: - Token Retrieval
     
     /// Get current access token (may be expired - server will validate)
-    func getAccessToken() -> String? {
+    nonisolated func getAccessToken() -> String? {
         return try? keychain.retrieve(key: Keys.accessToken, withBiometrics: false)
     }
     
     /// Get valid access token - alias for getAccessToken for backward compatibility
-    func getValidToken() async -> String? {
+    nonisolated func getValidToken() async -> String? {
         return getAccessToken()
     }
     
@@ -132,14 +132,14 @@ class TokenManager {
     // MARK: - Token Management
     
     /// Check if we have valid tokens stored (doesn't validate expiration - server does that)
-    func hasStoredTokens() -> Bool {
+    nonisolated func hasStoredTokens() -> Bool {
         let hasAccessToken = (try? keychain.retrieve(key: Keys.accessToken, withBiometrics: false)) != nil
         let hasRefreshToken = (try? keychain.retrieve(key: Keys.refreshToken, withBiometrics: false)) != nil
         return hasAccessToken && hasRefreshToken
     }
     
     /// Clear all stored tokens
-    func clearTokens() async {
+    nonisolated func clearTokens() async {
         try? keychain.delete(key: Keys.accessToken)
         try? keychain.delete(key: Keys.refreshToken)
     }
@@ -162,12 +162,12 @@ class TokenManager {
         }
         
         // Validate each part has reasonable length
-        for (index, part) in parts.enumerated() {
-            let partName = ["header", "payload", "signature"][index]
+        for (_, part) in parts.enumerated() {
             if part.isEmpty {
                 throw TokenError.invalidTokenResponse
             }
             if part.count < 10 {
+                // Parts shorter than 10 characters are likely invalid but we'll be lenient
             }
         }
         

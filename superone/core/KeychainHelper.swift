@@ -8,7 +8,7 @@ import UIKit
 // MARK: - KeychainServiceProtocol
 
 /// Protocol defining keychain service operations
-protocol KeychainServiceProtocol {
+protocol KeychainServiceProtocol: Sendable {
     nonisolated func store(token: String, for key: String) throws
     nonisolated func retrieve(key: String, withBiometrics: Bool) throws -> String?
     nonisolated func delete(key: String) throws
@@ -24,7 +24,7 @@ protocol KeychainServiceProtocol {
 }
 
 /// Secure keychain storage for sensitive app data with enhanced capabilities
-class KeychainHelper: KeychainServiceProtocol {
+final class KeychainHelper: KeychainServiceProtocol, @unchecked Sendable {
     
     // MARK: - Error Types
     enum KeychainError: Error, @preconcurrency LocalizedError {
