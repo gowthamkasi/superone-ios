@@ -14,23 +14,37 @@ struct ProfileView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(AuthenticationManager.self) private var authManager
+    @Environment(AppFlowManager.self) private var flowManager
     
     var body: some View {
         NavigationView {
-            // CRITICAL AUTHENTICATION GUARD - Block all access without valid authentication
+            // CRITICAL AUTHENTICATION GUARD - Redirect to login immediately without intermediate screen
             if !authManager.isAuthenticated || !TokenManager.shared.hasStoredTokens() {
-                authenticationRequiredView
-                    .navigationTitle("Profile")
-                    .navigationBarTitleDisplayMode(.large)
-                    .background(HealthColors.background.ignoresSafeArea())
-                    .onAppear {
-                        // Force logout if tokens are invalid
+                // Show minimal loading state while redirecting to login
+                VStack {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: HealthColors.primary))
+                    Text("Redirecting to login...")
+                        .font(HealthTypography.captionRegular)
+                        .foregroundColor(HealthColors.secondaryText)
+                        .padding(.top, HealthSpacing.sm)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(HealthColors.background.ignoresSafeArea())
+                .navigationTitle("Profile")
+                .navigationBarTitleDisplayMode(.large)
+                .onAppear {
+                    // Immediate redirect to login screen via AppFlowManager
+                    Task { @MainActor in
+                        // Force logout if tokens are invalid to clear state
                         if !TokenManager.shared.hasStoredTokens() && authManager.isAuthenticated {
-                            Task { @MainActor in
-                                try? await authManager.signOut()
-                            }
+                            try? await authManager.signOut()
+                        } else {
+                            // Direct flow redirect to authentication screen
+                            flowManager.signOut()
                         }
                     }
+                }
             } else {
                 ScrollView {
                 VStack(spacing: HealthSpacing.xl) {
@@ -164,49 +178,6 @@ struct ProfileView: View {
         } // End of NavigationView
     }
     
-    // MARK: - Authentication Required View
-    
-    private var authenticationRequiredView: some View {
-        VStack(spacing: HealthSpacing.xl) {
-            Spacer()
-            
-            VStack(spacing: HealthSpacing.lg) {
-                Image(systemName: "person.badge.shield.checkmark.fill")
-                    .font(.system(size: 64, weight: .light))
-                    .foregroundColor(HealthColors.primary)
-                
-                Text("Secure Access Required")
-                    .healthTextStyle(.title2, color: HealthColors.primaryText)
-                
-                Text("Please sign in to access your profile, health data, and account settings.")
-                    .healthTextStyle(.body, color: HealthColors.secondaryText)
-                    .multilineTextAlignment(.center)
-                
-                VStack(spacing: HealthSpacing.md) {
-                    Button("Sign In") {
-                        // Force logout to clear invalid state and redirect to login
-                        Task { @MainActor in
-                            try? await authManager.signOut()
-                        }
-                    }
-                    .buttonStyle(HealthButtonStyle(style: .primary))
-                    
-                    Text("Your personal health information is protected")
-                        .healthTextStyle(.caption1, color: HealthColors.tertiaryText)
-                        .multilineTextAlignment(.center)
-                }
-            }
-            .padding(HealthSpacing.xl)
-            .background(HealthColors.primaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.xl))
-            .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
-            .padding(.horizontal, HealthSpacing.screenPadding)
-            
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(HealthColors.background)
-    }
     
     // MARK: - Profile Header Section
     

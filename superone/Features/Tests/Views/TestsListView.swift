@@ -8,16 +8,38 @@ struct TestsListView: View {
     @State private var showSuggestions = false
     @Environment(\.authenticationContext) private var authContext
     @Environment(AuthenticationManager.self) private var authManager
+    @Environment(AppFlowManager.self) private var flowManager
     
     // MARK: - Body
     var body: some View {
         NavigationView {
-            // CRITICAL AUTHENTICATION GUARD - Block all access without valid authentication
+            // CRITICAL AUTHENTICATION GUARD - Redirect to login immediately without intermediate screen
             if !authManager.isAuthenticated || !TokenManager.shared.hasStoredTokens() {
-                authenticationRequiredOverlay
-                    .navigationTitle("Health Tests")
-                    .navigationBarTitleDisplayMode(.large)
-                    .background(HealthColors.secondaryBackground.ignoresSafeArea())
+                // Show minimal loading state while redirecting to login
+                VStack {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: HealthColors.primary))
+                    Text("Redirecting to login...")
+                        .font(HealthTypography.captionRegular)
+                        .foregroundColor(HealthColors.secondaryText)
+                        .padding(.top, HealthSpacing.sm)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(HealthColors.secondaryBackground.ignoresSafeArea())
+                .navigationTitle("Health Tests")
+                .navigationBarTitleDisplayMode(.large)
+                .onAppear {
+                    // Immediate redirect to login screen via AppFlowManager
+                    Task { @MainActor in
+                        // Force logout if tokens are invalid to clear state
+                        if !TokenManager.shared.hasStoredTokens() && authManager.isAuthenticated {
+                            try? await authManager.signOut()
+                        } else {
+                            // Direct flow redirect to authentication screen
+                            flowManager.signOut()
+                        }
+                    }
+                }
             } else {
                 ZStack {
                     VStack(spacing: 0) {
@@ -305,49 +327,6 @@ struct TestsListView: View {
         .onTapGesture {
             showSuggestions = false
         }
-    }
-    
-    // MARK: - Authentication Required Overlay
-    private var authenticationRequiredOverlay: some View {
-        VStack(spacing: HealthSpacing.xl) {
-            Spacer()
-            
-            VStack(spacing: HealthSpacing.lg) {
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 64, weight: .light))
-                    .foregroundColor(HealthColors.primary)
-                
-                Text("Authentication Required")
-                    .healthTextStyle(.title2, color: HealthColors.primaryText)
-                
-                Text("Please sign in to access health tests, view your medical data, and book appointments securely.")
-                    .healthTextStyle(.body, color: HealthColors.secondaryText)
-                    .multilineTextAlignment(.center)
-                
-                VStack(spacing: HealthSpacing.md) {
-                    Button("Sign In") {
-                        // Force logout to clear invalid state and redirect to login
-                        Task { @MainActor in
-                            try? await authManager.signOut()
-                        }
-                    }
-                    .buttonStyle(HealthButtonStyle(style: .primary))
-                    
-                    Text("Secure access to your health data")
-                        .healthTextStyle(.caption1, color: HealthColors.tertiaryText)
-                        .multilineTextAlignment(.center)
-                }
-            }
-            .padding(HealthSpacing.xl)
-            .background(HealthColors.primaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.xl))
-            .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
-            .padding(.horizontal, HealthSpacing.screenPadding)
-            
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(HealthColors.secondaryBackground)
     }
     
     // MARK: - Error Overlay
