@@ -24,7 +24,7 @@ final class TestDetailsViewModel {
     // MARK: - Loop Protection Properties
     private var lastLoadAttempt: Date?
     private var loadAttemptCount: Int = 0
-    private var currentLoadTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var currentLoadTask: Task<Void, Never>?
     private static let maxRetryAttempts: Int = 3
     
     // MARK: - Exponential Backoff Properties
@@ -46,7 +46,7 @@ final class TestDetailsViewModel {
     }
     
     deinit {
-        // Cancel any ongoing load task
+        // Cancel any ongoing load task - handle concurrency properly
         currentLoadTask?.cancel()
         // Cancellables will be automatically cleaned up
     }
@@ -180,7 +180,7 @@ final class TestDetailsViewModel {
             errorMessage = nil
         }
         
-        currentLoadTask = Task {
+        let loadTask = Task {
             do {
                 // Check if task was cancelled
                 try Task.checkCancellation()
@@ -196,7 +196,6 @@ final class TestDetailsViewModel {
                     testDetailsState = TestDetailsState(sections: details.sections)
                     isSaved = favoriteStatus
                     isLoading = false
-                    currentLoadTask = nil
                     
                     // Reset attempt count on successful load
                     loadAttemptCount = 0
@@ -205,19 +204,22 @@ final class TestDetailsViewModel {
                     HapticFeedback.success()
                 }
                 
+                // Clear task reference outside MainActor context
+                currentLoadTask = nil
+                
             } catch {
                 // Don't handle cancellation as an error
                 if error is CancellationError {
                     await MainActor.run {
                         isLoading = false
-                        currentLoadTask = nil
                     }
+                    // Clear task reference outside MainActor context
+                    currentLoadTask = nil
                     return
                 }
                 
                 await MainActor.run {
                     isLoading = false
-                    currentLoadTask = nil
                     
                     // Handle different error types with user-friendly messages
                     if let testDetailsError = error as? TestDetailsError {
@@ -234,8 +236,14 @@ final class TestDetailsViewModel {
                         HapticFeedback.error()
                     }
                 }
+                
+                // Clear task reference outside MainActor context
+                currentLoadTask = nil
             }
         }
+        
+        // Set task reference outside MainActor context
+        currentLoadTask = loadTask
     }
     
     /// Legacy method for backward compatibility

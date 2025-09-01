@@ -6,7 +6,7 @@ struct TestsListView: View {
     // MARK: - Properties
     @State private var viewModel = TestsListViewModel()
     @State private var showSuggestions = false
-    @Environment(\.authenticationManager) private var authManager
+    @Environment(\.authenticationContext) private var authContext
     
     // MARK: - Body
     var body: some View {
@@ -26,12 +26,12 @@ struct TestsListView: View {
                 }
                 
                 // Authentication required overlay
-                if !authManager.isAuthenticated {
+                if !authContext.isAuthenticated {
                     authenticationRequiredOverlay
                 }
                 
                 // Error overlay
-                if let error = viewModel.error, authManager.isAuthenticated {
+                if let error = viewModel.error, authContext.isAuthenticated {
                     errorOverlay(error: error)
                 }
             }
@@ -43,7 +43,7 @@ struct TestsListView: View {
             }
             .onAppear {
                 // Check authentication state and load tests if authenticated
-                if authManager.isAuthenticated {
+                if authContext.isAuthenticated {
                     // Only load if we don't have tests already
                     if viewModel.tests.isEmpty {
                         Task {
@@ -130,7 +130,7 @@ struct TestsListView: View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.md) {
                 // Only show content if authenticated
-                if authManager.isAuthenticated {
+                if authContext.isAuthenticated {
                     if viewModel.shouldShowLoading {
                         loadingView
                     } else if viewModel.isEmpty {
@@ -301,7 +301,7 @@ struct TestsListView: View {
                 // Navigation to sign in would be handled by parent view or coordinator
                 // For now, we'll just clear the error to trigger a refresh
                 Task {
-                    if authManager.isAuthenticated {
+                    if authContext.isAuthenticated {
                         await viewModel.loadTests()
                     }
                 }

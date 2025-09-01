@@ -74,7 +74,7 @@ final class TestsListViewModel {
     // MARK: - Loop Protection Properties
     private var lastLoadAttempt: Date?
     private var loadAttemptCount: Int = 0
-    private var currentLoadTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var currentLoadTask: Task<Void, Never>?
     private static let maxRetryAttempts: Int = 3
     
     // MARK: - Exponential Backoff Properties
@@ -109,7 +109,7 @@ final class TestsListViewModel {
     }
     
     deinit {
-        // Cancel any ongoing load task
+        // Cancel any ongoing load task - handle concurrency properly
         currentLoadTask?.cancel()
         // Cancellables will be automatically cleaned up
     }
@@ -151,7 +151,7 @@ final class TestsListViewModel {
         currentOffset = 0
         hasMoreTests = true
         
-        currentLoadTask = Task {
+        let loadTask = Task {
             do {
                 // Check if task was cancelled
                 try Task.checkCancellation()
@@ -174,7 +174,6 @@ final class TestsListViewModel {
                     hasMoreTests = response.pagination.hasMore
                     currentOffset = response.pagination.nextOffset ?? currentOffset
                     isLoading = false
-                    currentLoadTask = nil
                     
                     if !tests.isEmpty {
                         // Reset attempt count on successful load
@@ -182,19 +181,22 @@ final class TestsListViewModel {
                     }
                 }
                 
+                // Clear task reference outside MainActor context
+                currentLoadTask = nil
+                
             } catch {
                 // Don't handle cancellation as an error
                 if error is CancellationError {
                     await MainActor.run {
                         isLoading = false
-                        currentLoadTask = nil
                     }
+                    // Clear task reference outside MainActor context
+                    currentLoadTask = nil
                     return
                 }
                 
                 await MainActor.run {
                     isLoading = false
-                    currentLoadTask = nil
                     
                     // Handle different error types
                     if let apiError = error as? TestsAPIError {
@@ -211,8 +213,14 @@ final class TestsListViewModel {
                         HapticFeedback.error()
                     }
                 }
+                
+                // Clear task reference outside MainActor context
+                currentLoadTask = nil
             }
         }
+        
+        // Set task reference outside MainActor context
+        currentLoadTask = loadTask
     }
     
     /// Load more tests (infinite scroll)
@@ -254,10 +262,10 @@ final class TestsListViewModel {
     /// - Parameter testId: Test identifier
     func toggleFavorite(for testId: String) async {
         do {
-            let response = try await testsAPIService.toggleFavorite(testId: testId)
+            _ = try await testsAPIService.toggleFavorite(testId: testId)
             
             // Update the test in the local list
-            if let index = tests.firstIndex(where: { $0.id == testId }) {
+            if tests.firstIndex(where: { $0.id == testId }) != nil {
                 // Note: We don't have isFavorite in TestItemData, so this is a placeholder
                 // In a real implementation, you'd need to add this field to the model
                 // or refresh the specific test data
