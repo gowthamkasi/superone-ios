@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import Combine
 
 /// Test details view model with Swift 6.0 concurrency compliance
 @MainActor
@@ -18,6 +19,18 @@ final class TestDetailsViewModel {
     private let testsAPIService = TestsAPIService.shared
     private let testService: TestServiceProtocol
     private let favoriteService: FavoriteServiceProtocol
+    private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Loop Protection Properties
+    private var lastLoadAttempt: Date?
+    private var loadAttemptCount: Int = 0
+    private var currentLoadTask: Task<Void, Never>?
+    private static let maxRetryAttempts: Int = 3
+    
+    // MARK: - Exponential Backoff Properties
+    private static let baseBackoffInterval: TimeInterval = 2.0 // Base 2 seconds
+    private static let maxBackoffInterval: TimeInterval = 30.0 // Maximum 30 seconds
+    private static let backoffMultiplier: Double = 2.0 // Double the wait time each retry
     
     // MARK: - Initialization
     init(
@@ -27,15 +40,51 @@ final class TestDetailsViewModel {
         // Use real services by default, allow injection for testing
         self.testService = testService ?? RealTestService()
         self.favoriteService = favoriteService ?? TestDetailsFavoriteService()
+        
+        // Setup authentication state observer
+        setupAuthenticationObserver()
+    }
+    
+    deinit {
+        // Cancel any ongoing load task
+        currentLoadTask?.cancel()
+        // Cancellables will be automatically cleaned up
     }
     
     // MARK: - Public Methods
     
-    /// Load test details by ID
+    /// Load test details by ID with loop protection and exponential backoff
     func loadTestDetails(testId: String) {
         Task {
-            await loadTestDetailsAsync(testId: testId)
+            await loadTestDetailsWithProtection(testId: testId)
         }
+    }
+    
+    /// Force retry test details loading (resets attempt count)
+    func retryLoadTestDetails(testId: String) {
+        // Manual retry requested - resetting attempt count
+        loadAttemptCount = 0
+        lastLoadAttempt = nil
+        errorMessage = nil
+        loadTestDetails(testId: testId)
+    }
+    
+    /// Clear all test details data (called during logout)
+    func clearTestDetailsData() {
+        // Cancel any ongoing load task
+        currentLoadTask?.cancel()
+        currentLoadTask = nil
+        
+        // Reset all state
+        testDetails = nil
+        testDetailsState = nil
+        isLoading = false
+        errorMessage = nil
+        isSaved = false
+        
+        // Reset loop protection
+        lastLoadAttempt = nil
+        loadAttemptCount = 0
     }
     
     /// Toggle section expansion state
@@ -95,31 +144,103 @@ final class TestDetailsViewModel {
     
     // MARK: - Private Methods
     
-    private func loadTestDetailsAsync(testId: String) async {
+    /// Load test details with loop protection and exponential backoff
+    private func loadTestDetailsWithProtection(testId: String) async {
+        // CRITICAL: Add loop protection to prevent infinite loading attempts
+        let now = Date()
+        
+        // Check if we're already loading
+        if isLoading {
+            return
+        }
+        
+        // Check exponential backoff interval between attempts
+        if let lastAttempt = lastLoadAttempt {
+            let backoffInterval = calculateBackoffInterval(for: loadAttemptCount)
+            let timeSinceLastAttempt = now.timeIntervalSince(lastAttempt)
+            if timeSinceLastAttempt < backoffInterval {
+                return
+            }
+        }
+        
+        // Check maximum retry attempts
+        if loadAttemptCount >= Self.maxRetryAttempts {
+            return
+        }
+        
+        // Cancel any existing load task
+        currentLoadTask?.cancel()
+        
+        // Update attempt tracking
+        lastLoadAttempt = now
+        loadAttemptCount += 1
+        
         await MainActor.run {
             isLoading = true
             errorMessage = nil
         }
         
-        do {
-            let details = try await testService.getTestDetails(testId: testId)
-            let favoriteStatus = try await favoriteService.isFavorite(testId: testId)
-            
-            await MainActor.run {
-                testDetails = details
-                testDetailsState = TestDetailsState(sections: details.sections)
-                isSaved = favoriteStatus
-            }
-            
-        } catch {
-            await MainActor.run {
-                errorMessage = "Failed to load test details: \(error.localizedDescription)"
+        currentLoadTask = Task {
+            do {
+                // Check if task was cancelled
+                try Task.checkCancellation()
+                
+                let details = try await testService.getTestDetails(testId: testId)
+                let favoriteStatus = try await favoriteService.isFavorite(testId: testId)
+                
+                // Check if task was cancelled before updating UI
+                try Task.checkCancellation()
+                
+                await MainActor.run {
+                    testDetails = details
+                    testDetailsState = TestDetailsState(sections: details.sections)
+                    isSaved = favoriteStatus
+                    isLoading = false
+                    currentLoadTask = nil
+                    
+                    // Reset attempt count on successful load
+                    loadAttemptCount = 0
+                    
+                    // Provide success haptic feedback
+                    HapticFeedback.success()
+                }
+                
+            } catch {
+                // Don't handle cancellation as an error
+                if error is CancellationError {
+                    await MainActor.run {
+                        isLoading = false
+                        currentLoadTask = nil
+                    }
+                    return
+                }
+                
+                await MainActor.run {
+                    isLoading = false
+                    currentLoadTask = nil
+                    
+                    // Handle different error types with user-friendly messages
+                    if let testDetailsError = error as? TestDetailsError {
+                        errorMessage = testDetailsError.description
+                    } else if let testsAPIError = error as? TestsAPIError {
+                        errorMessage = testsAPIError.userFriendlyMessage
+                    } else {
+                        errorMessage = "Failed to load test details: \(error.localizedDescription)"
+                    }
+                    
+                    // Only show error if we've exceeded max attempts
+                    if loadAttemptCount >= Self.maxRetryAttempts {
+                        // Provide error haptic feedback
+                        HapticFeedback.error()
+                    }
+                }
             }
         }
-        
-        await MainActor.run {
-            isLoading = false
-        }
+    }
+    
+    /// Legacy method for backward compatibility
+    private func loadTestDetailsAsync(testId: String) async {
+        await loadTestDetailsWithProtection(testId: testId)
     }
     
     private func toggleFavoriteAsync(test: TestDetails) async {
@@ -127,14 +248,29 @@ final class TestDetailsViewModel {
             let currentSavedState = await MainActor.run { isSaved }
             if currentSavedState {
                 try await favoriteService.removeFavorite(testId: test.id)
-                await MainActor.run { isSaved = false }
+                await MainActor.run { 
+                    isSaved = false
+                    HapticFeedback.success()
+                }
             } else {
                 try await favoriteService.addFavorite(testId: test.id)
-                await MainActor.run { isSaved = true }
+                await MainActor.run { 
+                    isSaved = true
+                    HapticFeedback.success()
+                }
             }
         } catch {
             await MainActor.run {
-                errorMessage = "Failed to update favorite status: \(error.localizedDescription)"
+                // Handle different error types with user-friendly messages
+                if let testDetailsError = error as? TestDetailsError {
+                    errorMessage = testDetailsError.description
+                } else if let testsAPIError = error as? TestsAPIError {
+                    errorMessage = testsAPIError.userFriendlyMessage
+                } else {
+                    errorMessage = "Failed to update favorite status: \(error.localizedDescription)"
+                }
+                
+                HapticFeedback.error()
             }
         }
     }
@@ -173,6 +309,52 @@ final class TestDetailsViewModel {
     /// Get test category color
     var categoryColor: Color {
         testDetails?.category.color ?? HealthColors.primary
+    }
+    
+    /// Clear error and reset attempt tracking
+    func clearError() {
+        errorMessage = nil
+        loadAttemptCount = 0
+        lastLoadAttempt = nil
+    }
+    
+    /// Whether the current error is retryable
+    var canRetry: Bool {
+        guard errorMessage != nil else { return false }
+        return loadAttemptCount < Self.maxRetryAttempts
+    }
+    
+    // MARK: - Private Helper Methods
+    
+    /// Setup authentication state observer
+    private func setupAuthenticationObserver() {
+        // Listen for sign out notifications
+        NotificationCenter.default
+            .publisher(for: .userDidSignOut)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.clearTestDetailsData()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Listen for sign in notifications
+        NotificationCenter.default
+            .publisher(for: .userDidSignIn)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    // Reset loop protection on successful sign in
+                    self?.loadAttemptCount = 0
+                    self?.lastLoadAttempt = nil
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    /// Calculate exponential backoff interval for retry attempts
+    private func calculateBackoffInterval(for attemptCount: Int) -> TimeInterval {
+        let backoffTime = Self.baseBackoffInterval * pow(Self.backoffMultiplier, Double(attemptCount - 1))
+        return min(backoffTime, Self.maxBackoffInterval)
     }
 }
 

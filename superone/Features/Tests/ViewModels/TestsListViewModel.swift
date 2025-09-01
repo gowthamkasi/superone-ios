@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 /// ViewModel managing tests list with offset-based pagination and infinite scroll
 @MainActor
@@ -68,6 +69,18 @@ final class TestsListViewModel {
     private let testsAPIService = TestsAPIService.shared
     private var currentOffset: Int = 0
     private let pageSize: Int = 20
+    private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Loop Protection Properties
+    private var lastLoadAttempt: Date?
+    private var loadAttemptCount: Int = 0
+    private var currentLoadTask: Task<Void, Never>?
+    private static let maxRetryAttempts: Int = 3
+    
+    // MARK: - Exponential Backoff Properties
+    private static let baseBackoffInterval: TimeInterval = 2.0 // Base 2 seconds
+    private static let maxBackoffInterval: TimeInterval = 30.0 // Maximum 30 seconds
+    private static let backoffMultiplier: Double = 2.0 // Double the wait time each retry
     
     /// Current test filters
     private var currentFilters: TestFilters? {
@@ -86,46 +99,120 @@ final class TestsListViewModel {
     // MARK: - Initialization
     
     init() {
+        // Setup authentication state observer before loading data
+        setupAuthenticationObserver()
+        
         // Load initial data
         Task { @MainActor in
             await loadTests()
         }
     }
     
+    deinit {
+        // Cancel any ongoing load task
+        currentLoadTask?.cancel()
+        // Cancellables will be automatically cleaned up
+    }
+    
     // MARK: - Public Methods
     
-    /// Load initial tests (reset pagination)
+    /// Load initial tests with loop protection and exponential backoff
     func loadTests() async {
-        guard !isLoading else { return }
+        // CRITICAL: Add loop protection to prevent infinite loading attempts
+        let now = Date()
         
+        // Check if we're already loading
+        if isLoading {
+            return
+        }
+        
+        // Check exponential backoff interval between attempts
+        if let lastAttempt = lastLoadAttempt {
+            let backoffInterval = calculateBackoffInterval(for: loadAttemptCount)
+            let timeSinceLastAttempt = now.timeIntervalSince(lastAttempt)
+            if timeSinceLastAttempt < backoffInterval {
+                return
+            }
+        }
+        
+        // Check maximum retry attempts
+        if loadAttemptCount >= Self.maxRetryAttempts {
+            return
+        }
+        
+        // Cancel any existing load task
+        currentLoadTask?.cancel()
+        
+        // Update attempt tracking
+        lastLoadAttempt = now
+        loadAttemptCount += 1
         isLoading = true
         error = nil
         currentOffset = 0
         hasMoreTests = true
         
-        do {
-            let response = try await testsAPIService.getTests(
-                offset: currentOffset,
-                limit: pageSize,
-                search: searchText.isEmpty ? nil : searchText,
-                filters: currentFilters
-            )
-            
-            tests = response.tests
-            availableFilters = response.availableFilters
-            appliedFilters = response.filtersApplied
-            hasMoreTests = response.pagination.hasMore
-            currentOffset = response.pagination.nextOffset ?? currentOffset
-            
-        } catch let apiError as TestsAPIError {
-            error = apiError
-            tests = []
-        } catch {
-            self.error = TestsAPIError.fetchFailed(error.localizedDescription)
-            tests = []
+        currentLoadTask = Task {
+            do {
+                // Check if task was cancelled
+                try Task.checkCancellation()
+                
+                let response = try await testsAPIService.getTests(
+                    offset: currentOffset,
+                    limit: pageSize,
+                    search: searchText.isEmpty ? nil : searchText,
+                    filters: currentFilters
+                )
+                
+                // Check if task was cancelled before updating UI
+                try Task.checkCancellation()
+                
+                // Update the tests on main actor
+                await MainActor.run {
+                    tests = response.tests
+                    availableFilters = response.availableFilters
+                    appliedFilters = response.filtersApplied
+                    hasMoreTests = response.pagination.hasMore
+                    currentOffset = response.pagination.nextOffset ?? currentOffset
+                    isLoading = false
+                    currentLoadTask = nil
+                    
+                    if !tests.isEmpty {
+                        // Reset attempt count on successful load
+                        loadAttemptCount = 0
+                    }
+                }
+                
+            } catch {
+                // Don't handle cancellation as an error
+                if error is CancellationError {
+                    await MainActor.run {
+                        isLoading = false
+                        currentLoadTask = nil
+                    }
+                    return
+                }
+                
+                await MainActor.run {
+                    isLoading = false
+                    currentLoadTask = nil
+                    
+                    // Handle different error types
+                    if let apiError = error as? TestsAPIError {
+                        self.error = apiError
+                    } else {
+                        self.error = TestsAPIError.fetchFailed(error.localizedDescription)
+                    }
+                    
+                    // Only show error if we've exceeded max attempts or it's not retryable
+                    if loadAttemptCount >= Self.maxRetryAttempts || !(self.error?.isRetryable ?? true) {
+                        tests = []
+                        
+                        // Provide error haptic feedback
+                        HapticFeedback.error()
+                    }
+                }
+            }
         }
-        
-        isLoading = false
     }
     
     /// Load more tests (infinite scroll)
@@ -174,12 +261,17 @@ final class TestsListViewModel {
                 // Note: We don't have isFavorite in TestItemData, so this is a placeholder
                 // In a real implementation, you'd need to add this field to the model
                 // or refresh the specific test data
+                
+                // Provide haptic feedback for successful favorite toggle
+                HapticFeedback.success()
             }
             
         } catch let apiError as TestsAPIError {
             self.error = apiError
+            HapticFeedback.error()
         } catch {
             self.error = TestsAPIError.favoriteUpdateFailed(error.localizedDescription)
+            HapticFeedback.error()
         }
     }
     
@@ -222,9 +314,47 @@ final class TestsListViewModel {
         }
     }
     
-    /// Clear error
+    /// Clear error and reset attempt tracking
     func clearError() {
         error = nil
+        loadAttemptCount = 0
+        lastLoadAttempt = nil
+    }
+    
+    /// Force retry tests loading (resets attempt count)
+    func retryLoadTests() {
+        // Manual retry requested - resetting attempt count
+        loadAttemptCount = 0
+        lastLoadAttempt = nil
+        error = nil
+        
+        Task { @MainActor in
+            await loadTests()
+        }
+    }
+    
+    /// Clear all tests data (called during logout)
+    func clearTestsData() {
+        // Cancel any ongoing load task
+        currentLoadTask?.cancel()
+        currentLoadTask = nil
+        
+        // Reset all state
+        tests = []
+        isLoading = false
+        isLoadingMore = false
+        hasMoreTests = true
+        error = nil
+        searchText = ""
+        selectedCategory = nil
+        searchSuggestions = []
+        isLoadingSuggestions = false
+        availableFilters = nil
+        appliedFilters = nil
+        
+        // Reset loop protection
+        lastLoadAttempt = nil
+        loadAttemptCount = 0
     }
     
     /// Check if we should load more tests (for infinite scroll)
@@ -266,6 +396,38 @@ final class TestsListViewModel {
         currentOffset = 0
         hasMoreTests = true
         await loadTests()
+    }
+    
+    /// Setup authentication state observer
+    private func setupAuthenticationObserver() {
+        // Listen for sign out notifications
+        NotificationCenter.default
+            .publisher(for: .userDidSignOut)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.clearTestsData()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Listen for sign in notifications to reload tests
+        NotificationCenter.default
+            .publisher(for: .userDidSignIn)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    // Reset loop protection on successful sign in
+                    self?.loadAttemptCount = 0
+                    self?.lastLoadAttempt = nil
+                    // DON'T automatically trigger loadTests here - let the view handle it
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    /// Calculate exponential backoff interval for retry attempts
+    private func calculateBackoffInterval(for attemptCount: Int) -> TimeInterval {
+        let backoffTime = Self.baseBackoffInterval * pow(Self.backoffMultiplier, Double(attemptCount - 1))
+        return min(backoffTime, Self.maxBackoffInterval)
     }
 }
 
@@ -311,36 +473,18 @@ extension TestsListViewModel {
     /// User-friendly error message
     var errorMessage: String {
         guard let error = error else { return "" }
-        
-        switch error {
-        case .fetchFailed(let message):
-            return "Failed to load tests: \(message)"
-        case .searchFailed(let message):
-            return "Search failed: \(message)"
-        case .networkError(let networkError):
-            return "Network error: \(networkError.localizedDescription)"
-        default:
-            return error.errorDescription ?? "An unknown error occurred"
-        }
+        return error.userFriendlyMessage
     }
     
     /// Whether the error is recoverable
     var canRetry: Bool {
         guard let error = error else { return false }
-        
-        switch error {
-        case .fetchFailed, .searchFailed, .networkError:
-            return true
-        default:
-            return false
-        }
+        return error.isRetryable && loadAttemptCount < Self.maxRetryAttempts
     }
     
     /// Retry the failed operation
     func retry() {
-        Task { @MainActor in
-            await loadTests()
-        }
+        retryLoadTests()
     }
 }
 

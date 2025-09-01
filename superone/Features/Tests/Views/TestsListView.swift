@@ -6,6 +6,7 @@ struct TestsListView: View {
     // MARK: - Properties
     @State private var viewModel = TestsListViewModel()
     @State private var showSuggestions = false
+    @Environment(\.authenticationManager) private var authManager
     
     // MARK: - Body
     var body: some View {
@@ -24,8 +25,13 @@ struct TestsListView: View {
                     searchSuggestionsOverlay
                 }
                 
+                // Authentication required overlay
+                if !authManager.isAuthenticated {
+                    authenticationRequiredOverlay
+                }
+                
                 // Error overlay
-                if let error = viewModel.error {
+                if let error = viewModel.error, authManager.isAuthenticated {
                     errorOverlay(error: error)
                 }
             }
@@ -34,6 +40,20 @@ struct TestsListView: View {
             .background(HealthColors.secondaryBackground.ignoresSafeArea())
             .refreshable {
                 await viewModel.refreshTests()
+            }
+            .onAppear {
+                // Check authentication state and load tests if authenticated
+                if authManager.isAuthenticated {
+                    // Only load if we don't have tests already
+                    if viewModel.tests.isEmpty {
+                        Task {
+                            await viewModel.loadTests()
+                        }
+                    }
+                } else {
+                    // Clear any existing data if not authenticated
+                    viewModel.clearTestsData()
+                }
             }
         }
     }
@@ -109,26 +129,44 @@ struct TestsListView: View {
     private var testsList: some View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.md) {
-                if viewModel.shouldShowLoading {
-                    loadingView
-                } else if viewModel.isEmpty {
-                    emptyStateView
+                // Only show content if authenticated
+                if authManager.isAuthenticated {
+                    if viewModel.shouldShowLoading {
+                        loadingView
+                    } else if viewModel.isEmpty {
+                        emptyStateView
+                    } else {
+                        ForEach(viewModel.tests, id: \.id) { test in
+                            NavigationLink(destination: TestDetailsView(testId: test.id)) {
+                                TestListCard(test: test)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .onAppear {
+                                // Trigger infinite scroll when item appears
+                                viewModel.checkForLoadMore(testId: test.id)
+                            }
+                        }
+                        
+                        // Load more indicator
+                        if viewModel.shouldShowLoadMore {
+                            loadMoreView
+                        }
+                    }
                 } else {
-                    ForEach(viewModel.tests, id: \.id) { test in
-                        NavigationLink(destination: TestDetailsView(testId: test.id)) {
-                            TestListCard(test: test)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .onAppear {
-                            // Trigger infinite scroll when item appears
-                            viewModel.checkForLoadMore(testId: test.id)
-                        }
+                    // Show placeholder content for unauthenticated state
+                    VStack(spacing: HealthSpacing.lg) {
+                        Image(systemName: "testtube.2")
+                            .font(.system(size: 48))
+                            .foregroundColor(HealthColors.secondaryText)
+                        
+                        Text("Discover Health Tests")
+                            .healthTextStyle(.title3, color: HealthColors.primaryText)
+                        
+                        Text("Sign in to explore hundreds of health tests and packages tailored for your wellness journey.")
+                            .healthTextStyle(.body, color: HealthColors.secondaryText)
+                            .multilineTextAlignment(.center)
                     }
-                    
-                    // Load more indicator
-                    if viewModel.shouldShowLoadMore {
-                        loadMoreView
-                    }
+                    .padding(.top, HealthSpacing.xxxxl)
                 }
             }
             .padding(.horizontal, HealthSpacing.screenPadding)
@@ -245,25 +283,66 @@ struct TestsListView: View {
         }
     }
     
+    // MARK: - Authentication Required Overlay
+    private var authenticationRequiredOverlay: some View {
+        VStack(spacing: HealthSpacing.lg) {
+            Image(systemName: "person.crop.circle.badge.exclamationmark.fill")
+                .font(.system(size: 48))
+                .foregroundColor(HealthColors.primary)
+            
+            Text("Sign In Required")
+                .healthTextStyle(.title3, color: HealthColors.primaryText)
+            
+            Text("Please sign in to view available health tests and packages.")
+                .healthTextStyle(.body, color: HealthColors.secondaryText)
+                .multilineTextAlignment(.center)
+            
+            Button("Sign In") {
+                // Navigation to sign in would be handled by parent view or coordinator
+                // For now, we'll just clear the error to trigger a refresh
+                Task {
+                    if authManager.isAuthenticated {
+                        await viewModel.loadTests()
+                    }
+                }
+            }
+            .buttonStyle(HealthButtonStyle(style: .primary))
+        }
+        .padding(HealthSpacing.xl)
+        .background(HealthColors.primaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: HealthCornerRadius.lg))
+        .shadow(color: .black.opacity(0.1), radius: 12, x: 0, y: 8)
+        .padding(.horizontal, HealthSpacing.screenPadding)
+    }
+    
     // MARK: - Error Overlay
     private func errorOverlay(error: TestsAPIError) -> some View {
         VStack(spacing: HealthSpacing.lg) {
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: errorIcon(for: error))
                 .font(.system(size: 48))
-                .foregroundColor(HealthColors.error)
+                .foregroundColor(errorColor(for: error))
             
-            Text("Something went wrong")
+            Text(errorTitle(for: error))
                 .healthTextStyle(.title3, color: HealthColors.primaryText)
             
             Text(viewModel.errorMessage)
                 .healthTextStyle(.body, color: HealthColors.secondaryText)
                 .multilineTextAlignment(.center)
             
-            if viewModel.canRetry {
-                Button("Try Again") {
-                    viewModel.retry()
+            HStack(spacing: HealthSpacing.md) {
+                // Clear error button
+                Button("Dismiss") {
+                    viewModel.clearError()
                 }
-                .buttonStyle(HealthButtonStyle(style: .primary))
+                .buttonStyle(HealthButtonStyle(style: .secondary))
+                
+                // Retry button (if error is retryable)
+                if viewModel.canRetry {
+                    Button("Try Again") {
+                        viewModel.retry()
+                    }
+                    .buttonStyle(HealthButtonStyle(style: .primary))
+                }
             }
         }
         .padding(HealthSpacing.xl)
@@ -283,6 +362,55 @@ struct TestsListView: View {
             return "doc.text.fill"
         case .category:
             return "tag.fill"
+        }
+    }
+    
+    // MARK: - Error Helper Methods
+    
+    private func errorIcon(for error: TestsAPIError) -> String {
+        switch error {
+        case .unauthorized, .forbidden:
+            return "person.crop.circle.badge.exclamationmark.fill"
+        case .networkError:
+            return "wifi.exclamationmark"
+        case .serverError:
+            return "server.rack"
+        case .testNotFound, .packageNotFound:
+            return "magnifyingglass"
+        default:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+    
+    private func errorColor(for error: TestsAPIError) -> Color {
+        switch error {
+        case .unauthorized, .forbidden:
+            return HealthColors.primary
+        case .networkError:
+            return .orange
+        case .serverError:
+            return HealthColors.error
+        case .testNotFound, .packageNotFound:
+            return HealthColors.secondaryText
+        default:
+            return HealthColors.error
+        }
+    }
+    
+    private func errorTitle(for error: TestsAPIError) -> String {
+        switch error {
+        case .unauthorized:
+            return "Authentication Required"
+        case .forbidden:
+            return "Access Denied"
+        case .networkError:
+            return "Connection Problem"
+        case .serverError:
+            return "Server Error"
+        case .testNotFound, .packageNotFound:
+            return "Not Found"
+        default:
+            return "Something Went Wrong"
         }
     }
 }

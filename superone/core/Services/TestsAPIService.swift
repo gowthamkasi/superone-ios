@@ -7,11 +7,16 @@
 //
 
 @preconcurrency import Foundation
+import UIKit
+import Combine
+import os.log
+@preconcurrency import Alamofire
 
 // Data models are defined in TestsAPIModels.swift to ensure proper actor isolation
 
-/// Service for interacting with Tests and Health Packages APIs
-final class TestsAPIService {
+/// Service for interacting with Tests and Health Packages APIs with proper authentication
+@MainActor
+class TestsAPIService: ObservableObject {
     
     // MARK: - Singleton
     
@@ -19,14 +24,19 @@ final class TestsAPIService {
     
     // MARK: - Properties
     
-    private let networkService = NetworkService.shared
+    private let networkService: NetworkService
+    private let tokenManager = TokenManager.shared
+    private let logger = Logger(subsystem: "com.superone.health", category: "TestsAPI")
+    
     private let baseEndpoint = "/mobile/tests"
     private let packagesEndpoint = "/mobile/packages"
     private let favoritesEndpoint = "/mobile/favorites/tests"
     
     // MARK: - Initialization
     
-    private init() {}
+    init(networkService: NetworkService = NetworkService.shared) {
+        self.networkService = networkService
+    }
     
     // MARK: - Tests API Methods
     
@@ -37,12 +47,18 @@ final class TestsAPIService {
     ///   - search: Search query for tests
     ///   - filters: Test filters for category, price, etc.
     /// - Returns: Tests list response with pagination
+    /// - Throws: TestsAPIError for various error conditions
     nonisolated func getTests(
         offset: Int = 0,
         limit: Int = 20,
         search: String? = nil,
         filters: TestFilters? = nil
     ) async throws -> TestsListResponse {
+        
+        // Ensure we have a valid authentication token
+        guard let token = await tokenManager.getValidToken() else {
+            throw TestsAPIError.unauthorized("Authentication token required")
+        }
         
         // Build query parameters
         var queryParams: [String: String] = [
@@ -98,7 +114,11 @@ final class TestsAPIService {
         let url = buildURL(endpoint: baseEndpoint, queryParams: queryParams)
         
         do {
-            // Make network request
+            print("🔍 TestsAPIService: Starting tests list request")
+            print("🔍 Request URL: \(url)")
+            print("🔍 Query params: \(queryParams)")
+            
+            // Make network request with authentication
             let response: BaseResponse<TestsListData> = try await networkService.get(
                 url,
                 responseType: BaseResponse<TestsListData>.self,
@@ -111,6 +131,10 @@ final class TestsAPIService {
             try response.validate()
             let data = try response.getData()
             
+            print("✅ TestsAPIService: Successfully loaded tests")
+            print("🔍 Tests count: \(data.tests.count)")
+            print("🔍 Has more: \(data.pagination.hasMore)")
+            
             return TestsListResponse(
                 tests: data.tests,
                 pagination: data.pagination,
@@ -119,6 +143,45 @@ final class TestsAPIService {
             )
             
         } catch {
+            print("❌ TestsAPIService: Error occurred during tests fetch")
+            
+            // Handle specific network errors
+            if let afError = error.asAFError {
+                switch afError {
+                case .sessionTaskFailed(let sessionError):
+                    if let urlError = sessionError as? URLError {
+                        switch urlError.code {
+                        case .notConnectedToInternet:
+                            throw TestsAPIError.networkError("No internet connection available")
+                        case .timedOut:
+                            throw TestsAPIError.networkError("Request timed out")
+                        default:
+                            throw TestsAPIError.networkError("Network error: \(urlError.localizedDescription)")
+                        }
+                    }
+                case .responseValidationFailed(reason: .unacceptableStatusCode(code: let statusCode)):
+                    switch statusCode {
+                    case 401:
+                        await tokenManager.clearTokens()
+                        throw TestsAPIError.unauthorized("Authentication required")
+                    case 403:
+                        throw TestsAPIError.forbidden("Access to tests not permitted")
+                    case 500...599:
+                        throw TestsAPIError.serverError("Server error occurred")
+                    default:
+                        throw TestsAPIError.unknownError("HTTP \(statusCode): Failed to fetch tests")
+                    }
+                default:
+                    throw TestsAPIError.networkError("Network error: \(afError.localizedDescription)")
+                }
+            }
+            
+            // Re-throw TestsAPIError as-is
+            if error is TestsAPIError {
+                throw error
+            }
+            
+            // Handle unknown errors
             throw TestsAPIError.fetchFailed(error.localizedDescription)
         }
     }
@@ -126,10 +189,21 @@ final class TestsAPIService {
     /// Get detailed information for a specific test
     /// - Parameter testId: Unique test identifier
     /// - Returns: Comprehensive test details
+    /// - Throws: TestsAPIError for various error conditions
     nonisolated func getTestDetails(testId: String) async throws -> TestDetailsResponse {
+        
+        // Ensure we have a valid authentication token
+        guard let token = await tokenManager.getValidToken() else {
+            throw TestsAPIError.unauthorized("Authentication token required")
+        }
+        
         let url = buildURL(endpoint: "\(baseEndpoint)/\(testId)")
         
         do {
+            print("🔍 TestsAPIService: Starting test details request")
+            print("🔍 Test ID: \(testId)")
+            print("🔍 Request URL: \(url)")
+            
             let response: BaseResponse<TestDetailsData> = try await networkService.get(
                 url,
                 responseType: BaseResponse<TestDetailsData>.self,
@@ -141,9 +215,36 @@ final class TestsAPIService {
             try response.validate()
             let data = try response.getData()
             
+            print("✅ TestsAPIService: Successfully loaded test details")
+            print("🔍 Test name: \(data.name)")
+            
             return TestDetailsResponse(testDetails: data)
             
         } catch {
+            print("❌ TestsAPIService: Error occurred during test details fetch")
+            
+            // Handle specific network errors
+            if let afError = error.asAFError {
+                switch afError {
+                case .responseValidationFailed(reason: .unacceptableStatusCode(code: let statusCode)):
+                    switch statusCode {
+                    case 401:
+                        await tokenManager.clearTokens()
+                        throw TestsAPIError.unauthorized("Authentication required")
+                    case 403:
+                        throw TestsAPIError.forbidden("Access to test details not permitted")
+                    case 404:
+                        throw TestsAPIError.testNotFound(testId)
+                    case 500...599:
+                        throw TestsAPIError.serverError("Server error occurred")
+                    default:
+                        throw TestsAPIError.unknownError("HTTP \(statusCode): Failed to fetch test details")
+                    }
+                default:
+                    throw TestsAPIError.networkError("Network error: \(afError.localizedDescription)")
+                }
+            }
+            
             throw TestsAPIError.testNotFound(testId)
         }
     }
@@ -263,13 +364,23 @@ final class TestsAPIService {
     /// Toggle favorite status for a test
     /// - Parameter testId: Test identifier
     /// - Returns: Updated favorite status
+    /// - Throws: TestsAPIError for various error conditions
     nonisolated func toggleFavorite(testId: String) async throws -> FavoriteStatusResponse {
+        
+        // Ensure we have a valid authentication token
+        guard let token = await tokenManager.getValidToken() else {
+            throw TestsAPIError.unauthorized("Authentication token required")
+        }
+        
         // First check current status to determine action
         let currentFavorites = try await getUserFavorites(offset: 0, limit: 50)
         let isFavorite = currentFavorites.favorites.contains { $0.id == testId }
         
         let url = buildURL(endpoint: "\(baseEndpoint)/\(testId)/favorite")
+        
         do {
+            print("🔍 TestsAPIService: \(isFavorite ? "Removing" : "Adding") favorite for test \(testId)")
+            
             let response: BaseResponse<FavoriteStatusData> = isFavorite 
                 ? try await networkService.delete(url, responseType: BaseResponse<FavoriteStatusData>.self, headers: nil)
                 : try await networkService.post(url, body: Optional<String>.none, responseType: BaseResponse<FavoriteStatusData>.self, headers: nil)
@@ -277,12 +388,39 @@ final class TestsAPIService {
             try response.validate()
             let data = try response.getData()
             
+            print("✅ TestsAPIService: Successfully updated favorite status")
+            print("🔍 Test \(testId) is now favorite: \(data.isFavorite)")
+            
             return FavoriteStatusResponse(
                 testId: data.testId,
                 isFavorite: data.isFavorite
             )
             
         } catch {
+            print("❌ TestsAPIService: Error occurred during favorite update")
+            
+            // Handle specific network errors
+            if let afError = error.asAFError {
+                switch afError {
+                case .responseValidationFailed(reason: .unacceptableStatusCode(code: let statusCode)):
+                    switch statusCode {
+                    case 401:
+                        await tokenManager.clearTokens()
+                        throw TestsAPIError.unauthorized("Authentication required")
+                    case 403:
+                        throw TestsAPIError.forbidden("Favorite update not permitted")
+                    case 404:
+                        throw TestsAPIError.testNotFound(testId)
+                    case 500...599:
+                        throw TestsAPIError.serverError("Server error occurred")
+                    default:
+                        throw TestsAPIError.unknownError("HTTP \(statusCode): Failed to update favorite")
+                    }
+                default:
+                    throw TestsAPIError.networkError("Network error: \(afError.localizedDescription)")
+                }
+            }
+            
             throw TestsAPIError.favoriteUpdateFailed(error.localizedDescription)
         }
     }
@@ -292,10 +430,16 @@ final class TestsAPIService {
     ///   - offset: Number of records to skip
     ///   - limit: Maximum records to return
     /// - Returns: User's favorite tests
+    /// - Throws: TestsAPIError for various error conditions
     nonisolated func getUserFavorites(
         offset: Int = 0,
         limit: Int = 20
     ) async throws -> FavoritesListResponse {
+        
+        // Ensure we have a valid authentication token
+        guard let token = await tokenManager.getValidToken() else {
+            throw TestsAPIError.unauthorized("Authentication token required")
+        }
         
         let queryParams: [String: String] = [
             "offset": String(offset),
@@ -305,6 +449,9 @@ final class TestsAPIService {
         let url = buildURL(endpoint: favoritesEndpoint, queryParams: queryParams)
         
         do {
+            print("🔍 TestsAPIService: Starting favorites list request")
+            print("🔍 Request URL: \(url)")
+            
             let response: BaseResponse<FavoritesListData> = try await networkService.get(
                 url,
                 responseType: BaseResponse<FavoritesListData>.self,
@@ -316,12 +463,37 @@ final class TestsAPIService {
             try response.validate()
             let data = try response.getData()
             
+            print("✅ TestsAPIService: Successfully loaded favorites")
+            print("🔍 Favorites count: \(data.favorites.count)")
+            
             return FavoritesListResponse(
                 favorites: data.favorites,
                 pagination: data.pagination
             )
             
         } catch {
+            print("❌ TestsAPIService: Error occurred during favorites fetch")
+            
+            // Handle specific network errors
+            if let afError = error.asAFError {
+                switch afError {
+                case .responseValidationFailed(reason: .unacceptableStatusCode(code: let statusCode)):
+                    switch statusCode {
+                    case 401:
+                        await tokenManager.clearTokens()
+                        throw TestsAPIError.unauthorized("Authentication required")
+                    case 403:
+                        throw TestsAPIError.forbidden("Access to favorites not permitted")
+                    case 500...599:
+                        throw TestsAPIError.serverError("Server error occurred")
+                    default:
+                        throw TestsAPIError.unknownError("HTTP \(statusCode): Failed to fetch favorites")
+                    }
+                default:
+                    throw TestsAPIError.networkError("Network error: \(afError.localizedDescription)")
+                }
+            }
+            
             throw TestsAPIError.fetchFailed(error.localizedDescription)
         }
     }
@@ -536,14 +708,18 @@ struct SearchSuggestionsResponse: Sendable {
 // MARK: - Error Handling
 
 /// Custom errors for Tests API operations
-enum TestsAPIError: LocalizedError, Sendable {
+enum TestsAPIError: @preconcurrency LocalizedError, Equatable, Sendable {
     case fetchFailed(String)
     case testNotFound(String)
     case packageNotFound(String)
     case favoriteUpdateFailed(String)
     case searchFailed(String)
     case invalidRequest(String)
-    case networkError(Error)
+    case networkError(String)
+    case unauthorized(String)
+    case forbidden(String)
+    case serverError(String)
+    case unknownError(String)
     
     nonisolated var errorDescription: String? {
         switch self {
@@ -559,8 +735,16 @@ enum TestsAPIError: LocalizedError, Sendable {
             return "Search failed: \(message)"
         case .invalidRequest(let message):
             return "Invalid request: \(message)"
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
+        case .networkError(let message):
+            return "Network error: \(message)"
+        case .unauthorized(let message):
+            return "Authentication Error: \(message)"
+        case .forbidden(let message):
+            return "Permission Error: \(message)"
+        case .serverError(let message):
+            return "Server Error: \(message)"
+        case .unknownError(let message):
+            return "Unknown Error: \(message)"
         }
     }
     
@@ -576,6 +760,85 @@ enum TestsAPIError: LocalizedError, Sendable {
             return "Please check your input and try again."
         case .networkError:
             return "Please check your internet connection and try again."
+        case .unauthorized:
+            return "Please log in again"
+        case .forbidden:
+            return "You don't have permission to perform this action"
+        case .serverError:
+            return "Please try again later"
+        case .unknownError:
+            return "Please try again or contact support if the problem persists"
+        }
+    }
+    
+    /// User-friendly error message for UI display
+    var userFriendlyMessage: String {
+        switch self {
+        case .fetchFailed:
+            return "Unable to load tests. Please check your connection and try again."
+        case .testNotFound:
+            return "The requested test could not be found."
+        case .packageNotFound:
+            return "The requested health package could not be found."
+        case .favoriteUpdateFailed:
+            return "Unable to update favorites. Please try again."
+        case .searchFailed:
+            return "Search failed. Please try again."
+        case .invalidRequest(let message):
+            return message
+        case .networkError:
+            return "Unable to connect. Please check your internet connection."
+        case .unauthorized:
+            return "Please log in to access tests"
+        case .forbidden:
+            return "You don't have permission to access this feature"
+        case .serverError:
+            return "Server is temporarily unavailable. Please try again later"
+        case .unknownError:
+            return "Something went wrong. Please try again"
+        }
+    }
+    
+    /// Determine if the error is recoverable by retrying
+    var isRetryable: Bool {
+        switch self {
+        case .networkError, .serverError, .unknownError, .fetchFailed, .searchFailed:
+            return true
+        case .testNotFound, .packageNotFound, .unauthorized, .forbidden, .invalidRequest, .favoriteUpdateFailed:
+            return false
+        }
+    }
+}
+
+// MARK: - TestsAPIError Equatable Support
+
+extension TestsAPIError {
+    static func == (lhs: TestsAPIError, rhs: TestsAPIError) -> Bool {
+        switch (lhs, rhs) {
+        case (.fetchFailed(let lhsMessage), .fetchFailed(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.testNotFound(let lhsId), .testNotFound(let rhsId)):
+            return lhsId == rhsId
+        case (.packageNotFound(let lhsId), .packageNotFound(let rhsId)):
+            return lhsId == rhsId
+        case (.favoriteUpdateFailed(let lhsMessage), .favoriteUpdateFailed(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.searchFailed(let lhsMessage), .searchFailed(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.invalidRequest(let lhsMessage), .invalidRequest(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.networkError(let lhsMessage), .networkError(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.unauthorized(let lhsMessage), .unauthorized(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.forbidden(let lhsMessage), .forbidden(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.serverError(let lhsMessage), .serverError(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.unknownError(let lhsMessage), .unknownError(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        default:
+            return false
         }
     }
 }

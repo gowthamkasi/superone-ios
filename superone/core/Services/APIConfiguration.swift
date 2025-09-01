@@ -144,6 +144,14 @@ struct APIConfiguration {
             static let facilityDetails = "/mobile/facilities" // + "/{id}"
             static let timeslots = "/mobile/timeslots" // + "/{facilityId}"
             
+            // Tests and Health Packages
+            static let tests = "/mobile/tests"
+            static let testDetails = "/mobile/tests" // + "/{testId}"
+            static let packages = "/mobile/packages"
+            static let packageDetails = "/mobile/packages" // + "/{packageId}"
+            static let favorites = "/mobile/favorites/tests"
+            static let searchSuggestions = "/mobile/tests/search/suggestions"
+            
             // Appointment Management
             static let appointments = "/mobile/appointments"
             static let bookAppointment = "/mobile/appointments"
