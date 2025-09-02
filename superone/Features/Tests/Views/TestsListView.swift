@@ -10,8 +10,17 @@ struct TestsListView: View {
     @Environment(AuthenticationManager.self) private var authManager
     @Environment(AppFlowManager.self) private var flowManager
     
+    init() {
+        #if DEBUG
+        print("🏗️ TestsListView.init() called - TestsListView is being created")
+        #endif
+    }
+    
     // MARK: - Body
     var body: some View {
+        #if DEBUG
+        let _ = print("🎨 TestsListView.body computed - View is rendering")
+        #endif
         NavigationView {
             ZStack {
                 VStack(spacing: 0) {
@@ -28,8 +37,8 @@ struct TestsListView: View {
                 }
                 
                 // Error overlay
-                if let error = viewModel.error {
-                    errorOverlay(error: error)
+                if viewModel.showError {
+                    errorOverlay()
                 }
             }
             .navigationTitle("Health Tests")
@@ -40,8 +49,21 @@ struct TestsListView: View {
             }
         }
         .onAppear {
+            #if DEBUG
+            print("👀 TestsListView.onAppear called - Tests tab is now visible")
+            print("📊 Current ViewModel state:")
+            print("  - tests.count: \(viewModel.tests.count)")
+            print("  - isLoadingTests: \(viewModel.isLoadingTests)")
+            print("  - searchText: '\(viewModel.searchText)'")
+            print("🚀 About to call viewModel.loadTestsIfNeeded()")
+            #endif
+            
             // Lazy load tests only when Tests tab is accessed - following Labs pattern
             viewModel.loadTestsIfNeeded()
+            
+            #if DEBUG
+            print("✅ viewModel.loadTestsIfNeeded() call completed")
+            #endif
         }
     }
     
@@ -299,16 +321,16 @@ struct TestsListView: View {
     }
     
     // MARK: - Error Overlay
-    private func errorOverlay(error: TestsAPIError) -> some View {
+    private func errorOverlay() -> some View {
         VStack(spacing: HealthSpacing.lg) {
-            Image(systemName: errorIcon(for: error))
+            Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 48))
-                .foregroundColor(errorColor(for: error))
+                .foregroundColor(HealthColors.error)
             
-            Text(errorTitle(for: error))
+            Text("Something Went Wrong")
                 .healthTextStyle(.title3, color: HealthColors.primaryText)
             
-            Text(viewModel.errorMessage)
+            Text(viewModel.errorMessage ?? "An error occurred")
                 .healthTextStyle(.body, color: HealthColors.secondaryText)
                 .multilineTextAlignment(.center)
             
@@ -348,54 +370,7 @@ struct TestsListView: View {
         }
     }
     
-    // MARK: - Error Helper Methods
-    
-    private func errorIcon(for error: TestsAPIError) -> String {
-        switch error {
-        case .unauthorized, .forbidden:
-            return "person.crop.circle.badge.exclamationmark.fill"
-        case .networkError:
-            return "wifi.exclamationmark"
-        case .serverError:
-            return "server.rack"
-        case .testNotFound, .packageNotFound:
-            return "magnifyingglass"
-        default:
-            return "exclamationmark.triangle.fill"
-        }
-    }
-    
-    private func errorColor(for error: TestsAPIError) -> Color {
-        switch error {
-        case .unauthorized, .forbidden:
-            return HealthColors.primary
-        case .networkError:
-            return .orange
-        case .serverError:
-            return HealthColors.error
-        case .testNotFound, .packageNotFound:
-            return HealthColors.secondaryText
-        default:
-            return HealthColors.error
-        }
-    }
-    
-    private func errorTitle(for error: TestsAPIError) -> String {
-        switch error {
-        case .unauthorized:
-            return "Authentication Required"
-        case .forbidden:
-            return "Access Denied"
-        case .networkError:
-            return "Connection Problem"
-        case .serverError:
-            return "Server Error"
-        case .testNotFound, .packageNotFound:
-            return "Not Found"
-        default:
-            return "Something Went Wrong"
-        }
-    }
+    // MARK: - Error Helper Methods - Simplified following Labs pattern
 }
 
 // MARK: - Category Filter Chip

@@ -38,17 +38,14 @@ final class TestsListViewModel {
         }
     }
     
-    /// Current loading state - maintains UI contract
-    private(set) var isLoading: Bool = false
-    
-    /// Whether we're loading more tests (infinite scroll) - maintains UI contract
+    /// Loading states - copying EXACT Labs pattern
+    private(set) var isLoadingTests: Bool = false
     private(set) var isLoadingMore: Bool = false
-    
-    /// Whether there are more tests to load - maintains UI contract
     private(set) var hasMoreTests: Bool = true
     
-    /// Current error if any - maintains UI contract
-    private(set) var error: TestsAPIError?
+    /// Error handling - copying EXACT Labs pattern  
+    var errorMessage: String?
+    var showError: Bool = false
     
     /// Available filters from the API - maintains UI contract
     private(set) var availableFilters: AvailableFiltersData?
@@ -99,74 +96,70 @@ final class TestsListViewModel {
     
     // MARK: - Public Methods (Preserving UI contracts)
     
-    /// Load tests if needed - following Labs page pattern
+    /// Load tests if needed - EXACT copy of Labs loadLabFacilitiesIfNeeded()
     func loadTestsIfNeeded() {
-        // Skip if already loaded or currently loading - same as Labs
-        guard tests.isEmpty && !isLoading else { return }
-        
-        loadTests()  // Direct call - no Task wrapper like Labs page
-    }
-    
-    /// Load initial tests - following exact Labs pattern
-    func loadTests() {
-        guard !isLoading else { return }
-        
-        isLoading = true  // Set loading IMMEDIATELY on main actor like Labs
-        error = nil
-        currentOffset = 0
-        hasMoreTests = true
-        
         #if DEBUG
-        print("🚀 TestsListViewModel: Making API call to get tests")
-        print("  - Offset: \(currentOffset), Limit: \(pageSize)")
-        print("  - Search: \(searchText.isEmpty ? "none" : searchText)")
-        print("  - Category: \(selectedCategory?.rawValue ?? "none")")
+        print("🔥 TestsListViewModel.loadTestsIfNeeded() called")
+        print("  - tests.isEmpty: \(tests.isEmpty)")
+        print("  - isLoadingTests: \(isLoadingTests)")
+        print("  - tests.count: \(tests.count)")
         #endif
         
-        Task {  // Task wrapper ONLY around API call like Labs
+        // Skip if already loaded or currently loading
+        guard tests.isEmpty && !isLoadingTests else { 
+            #if DEBUG
+            print("  - GUARD FAILED: Not calling loadTests()")
+            #endif
+            return 
+        }
+        
+        #if DEBUG
+        print("  - GUARD PASSED: Calling loadTests()")
+        #endif
+        loadTests()
+    }
+    
+    /// Load tests - EXACT copy of Labs loadLabFacilities()
+    func loadTests() {
+        #if DEBUG
+        print("🚀 TestsListViewModel.loadTests() called - Setting isLoadingTests = true")
+        #endif
+        
+        isLoadingTests = true
+        
+        Task {
+            #if DEBUG
+            print("📡 Making API call to testsAPIService.searchTests()")
+            #endif
+            
             do {
+                // Load tests from API
                 let response = try await testsAPIService.searchTests(
                     query: searchText.isEmpty ? nil : searchText,
                     category: selectedCategory?.rawValue,
-                    offset: currentOffset,
+                    offset: 0,
                     limit: pageSize
                 )
                 
-                #if DEBUG
-                print("✅ TestsListViewModel: Successfully received \(response.tests.count) tests")
-                print("  - Has more: \(response.hasMore)")
-                print("  - Next offset: \(response.nextOffset)")
-                #endif
-                
-                // Update UI properties from Task
+                // Keep tests empty if API returns empty - no fallback mock data
                 tests = response.tests
                 hasMoreTests = response.hasMore
                 currentOffset = response.nextOffset
-                isLoading = false
                 
+                isLoadingTests = false
             } catch {
-                #if DEBUG
-                print("❌ TestsListViewModel: API error - \(error.localizedDescription)")
-                #endif
+                errorMessage = "Failed to load tests: \(error.localizedDescription)"
+                showError = true
                 
-                // Handle different error types - simplified but maintain UI contract
-                if let apiError = error as? TestsAPIError {
-                    self.error = apiError
-                } else {
-                    self.error = TestsAPIError.networkError(error)
-                }
-                
-                // Clear tests on error and reset loading state
-                tests = []
-                isLoading = false
-                HapticFeedback.error()
+                // Keep tests empty on API failure - no fallback mock data
+                isLoadingTests = false
             }
         }
     }
     
     /// Load more tests (infinite scroll) - maintains UI contract
     func loadMoreTests() async {
-        guard !isLoadingMore && hasMoreTests && !isLoading else { return }
+        guard !isLoadingMore && hasMoreTests && !isLoadingTests else { return }
         
         isLoadingMore = true
         
@@ -183,10 +176,9 @@ final class TestsListViewModel {
             hasMoreTests = response.hasMore
             currentOffset = response.nextOffset
             
-        } catch let apiError as TestsAPIError {
-            self.error = apiError
         } catch {
-            self.error = TestsAPIError.networkError(error)
+            errorMessage = "Failed to load more tests: \(error.localizedDescription)"
+            showError = true
         }
         
         isLoadingMore = false
@@ -239,7 +231,8 @@ final class TestsListViewModel {
     
     /// Clear error - maintains UI contract
     func clearError() {
-        error = nil
+        errorMessage = nil
+        showError = false
     }
     
     /// Force retry tests loading - maintains UI contract
@@ -303,7 +296,8 @@ final class TestsListViewModel {
                     await MainActor.run {
                         // Reset on successful sign in - let view handle loading
                         self?.tests = []
-                        self?.error = nil
+                        self?.errorMessage = nil
+                        self?.showError = false
                     }
                 }
             }
@@ -313,10 +307,11 @@ final class TestsListViewModel {
     /// Clear all tests data (called during logout) - maintains UI contract
     private func clearTestsData() {
         tests = []
-        isLoading = false
+        isLoadingTests = false
         isLoadingMore = false
         hasMoreTests = true
-        error = nil
+        errorMessage = nil
+        showError = false
         searchText = ""
         selectedCategory = nil
         searchSuggestions = []
@@ -338,12 +333,12 @@ extension TestsListViewModel {
     
     /// Whether the list is empty and not loading - maintains UI contract
     var isEmpty: Bool {
-        return tests.isEmpty && !isLoading
+        return tests.isEmpty && !isLoadingTests
     }
     
     /// Whether to show loading indicator - maintains UI contract
     var shouldShowLoading: Bool {
-        return isLoading && tests.isEmpty
+        return isLoadingTests && tests.isEmpty
     }
     
     /// Whether to show load more indicator - maintains UI contract
@@ -366,16 +361,10 @@ extension TestsListViewModel {
 
 extension TestsListViewModel {
     
-    /// User-friendly error message - maintains UI contract
-    var errorMessage: String {
-        guard let error = error else { return "" }
-        return error.userFriendlyMessage
-    }
-    
     /// Whether the error is recoverable - maintains UI contract
     var canRetry: Bool {
-        guard let error = error else { return false }
-        return error.isRetryable
+        guard let errorMsg = errorMessage, !errorMsg.isEmpty else { return false }
+        return true // Most errors in this simplified pattern are retryable
     }
 }
 

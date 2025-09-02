@@ -40,6 +40,14 @@ final class TestsAPIService {
         limit: Int = 20
     ) async throws -> TestsResponse {
         
+        #if DEBUG
+        print("🌐 TestsAPIService.searchTests() called with:")
+        print("  - query: \(query ?? "nil")")
+        print("  - category: \(category ?? "nil")")
+        print("  - offset: \(offset)")
+        print("  - limit: \(limit)")
+        #endif
+        
         // Build query parameters - simplified approach like Labs
         var queryParams: [String: String] = [
             "offset": String(offset),
@@ -64,6 +72,11 @@ final class TestsAPIService {
             for: "/mobile/tests",
             queryParameters: queryParams
         )
+        
+        #if DEBUG
+        print("🔗 Built URL: \(url)")
+        print("🔗 About to call makeLabLoopRequest...")
+        #endif
         
         do {
             // Make request to LabLoop API - same pattern as Labs
@@ -157,10 +170,55 @@ final class TestsAPIService {
     
     /// Make authenticated request to LabLoop API - following Labs pattern
     private func makeLabLoopRequest<T: Codable>(url: String) async throws -> T {
+        #if DEBUG
+        print("🌍 makeLabLoopRequest called with URL: \(url)")
+        #endif
         
-        // For now, throw error to get the UI working with proper error handling
-        // Later this will be connected to actual LabLoop API
-        throw TestsAPIError.networkError(URLError(.networkConnectionLost))
+        let urlRequest = URLRequest(url: URL(string: url)!)
+        
+        #if DEBUG
+        print("📲 Creating Alamofire request...")
+        #endif
+        
+        return try await withCheckedThrowingContinuation { @Sendable continuation in
+            AF.request(urlRequest)
+                .validate()
+                .responseData { @Sendable response in
+                    switch response.result {
+                    case .success(let data):
+                        do {
+                            nonisolated(unsafe) let decoder = JSONDecoder()
+                            decoder.dateDecodingStrategy = .iso8601
+                            nonisolated(unsafe) let decodedResponse = try decoder.decode(T.self, from: data)
+                            continuation.resume(returning: decodedResponse)
+                        } catch {
+                            continuation.resume(throwing: TestsAPIError.serverError("Failed to decode response"))
+                        }
+                    case .failure(let error):
+                        // Map Alamofire errors to custom errors
+                        let mappedError: TestsAPIError
+                        if let statusCode = response.response?.statusCode {
+                            switch statusCode {
+                            case 401:
+                                mappedError = TestsAPIError.unauthorized("Authentication required")
+                            case 403:
+                                mappedError = TestsAPIError.forbidden("Access denied")
+                            case 404:
+                                mappedError = TestsAPIError.testNotFound("Tests not found")
+                            case 400:
+                                mappedError = TestsAPIError.searchFailed("Invalid request parameters")
+                            case 500...599:
+                                mappedError = TestsAPIError.serverError("Server error occurred")
+                            default:
+                                mappedError = TestsAPIError.networkError(error)
+                            }
+                        } else {
+                            mappedError = TestsAPIError.networkError(error)
+                        }
+                        continuation.resume(throwing: mappedError)
+                    }
+                }
+        }
     }
 }
 
