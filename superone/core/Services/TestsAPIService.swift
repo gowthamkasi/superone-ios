@@ -89,8 +89,9 @@ final class TestsAPIService {
             
             // Use tests directly from API response (already in correct format)
             let tests = response.data.tests
-            let hasMore = response.pagination?.hasMore ?? false
-            let nextOffset = hasMore ? offset + limit : offset
+            let totalCount = response.pagination?.totalCount ?? 0
+            let hasMore = (offset + tests.count) < totalCount
+            let nextOffset = hasMore ? offset + tests.count : offset
             
             return TestsResponse(
                 tests: tests,

@@ -35,16 +35,12 @@ struct LabLoopErrorAction: Codable, Sendable {
     let label: String
 }
 
-/// LabLoop API pagination
+/// LabLoop API pagination - Simplified for infinite scrolling
 struct LabLoopPagination: Codable, Sendable {
-    let page: Int
-    let limit: Int
-    let total: Int
-    let hasMore: Bool
+    let totalCount: Int
     
     nonisolated enum CodingKeys: String, CodingKey {
-        case page, limit, total
-        case hasMore = "has_more"
+        case totalCount = "total_count"
     }
 }
 
