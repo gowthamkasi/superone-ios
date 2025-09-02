@@ -225,8 +225,37 @@ struct AppointmentsView: View {
     // MARK: - Tests View
     
     private var testsView: some View {
-        // Use the dedicated TestsListView with full API integration
-        TestsListView()
+        ScrollView {
+            LazyVStack(spacing: HealthSpacing.lg) {
+                // Search bar
+                UnifiedSearchBar(
+                    searchText: $viewModel.testsSearchText,
+                    placeholder: "Search tests or results...",
+                    hasActiveFilters: false, // Tests tab doesn't currently have active filter tracking
+                    onFilterTap: {
+                        viewModel.showTestsFilterSheet = true
+                    }
+                )
+                
+                // Radio button selection for test type
+                RadioButtonSelector(
+                    selectedType: viewModel.selectedTestType,
+                    onSelectionChange: { type in
+                        viewModel.selectTestType(type)
+                    }
+                )
+                
+                // Content based on selected test type
+                if viewModel.selectedTestType == .healthPackages {
+                    healthPackagesContent
+                } else {
+                    individualTestsContent
+                }
+            }
+            .padding(.horizontal, HealthSpacing.screenPadding)
+            .padding(.top, HealthSpacing.lg)
+            .padding(.bottom, HealthSpacing.xl)
+        }
     }
     
     // MARK: - Health Packages Content

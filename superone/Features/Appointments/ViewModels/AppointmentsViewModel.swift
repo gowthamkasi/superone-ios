@@ -169,6 +169,7 @@ final class AppointmentsViewModel {
     
     private let appointmentAPIService = AppointmentAPIService.shared
     private let labFacilityAPIService = LabFacilityAPIService.shared
+    private let testsAPIService = TestsAPIService.shared
     private var cancellables = Set<AnyCancellable>()
     private var currentUserId: String? = nil
     
@@ -804,14 +805,53 @@ final class AppointmentsViewModel {
     
     /// Load individual tests from LabLoop API
     func loadIndividualTests() {
-        // TODO: Replace with actual LabLoop API call
-        // individualTests = try await testsAPIService.fetchIndividualTests()
-        individualTests = [] // No hardcoded test data - use real API data
+        isLoadingIndividualTests = true
+        
+        Task {
+            do {
+                // Load individual tests from API using our TestsAPIService
+                let response = try await testsAPIService.searchTests(
+                    query: testsSearchText.isEmpty ? nil : testsSearchText,
+                    category: nil,
+                    offset: 0,
+                    limit: 20
+                )
+                
+                // Convert TestItemData to IndividualTest for UI compatibility
+                individualTests = response.tests.map { testItem in
+                    IndividualTest(
+                        id: testItem.id,
+                        name: testItem.name,
+                        icon: testItem.icon,
+                        description: testItem.description,
+                        price: Int(testItem.price.replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: ",", with: "")) ?? 0,
+                        sampleType: testItem.sampleType.displayName,
+                        category: testItem.category.rawValue,
+                        fastingRequired: testItem.fasting.required != .none
+                    )
+                }
+                
+                isLoadingIndividualTests = false
+            } catch {
+                errorMessage = "Failed to load tests: \(error.localizedDescription)"
+                showError = true
+                individualTests = [] // Clear tests on error
+                isLoadingIndividualTests = false
+            }
+        }
     }
     
     /// Select test type (health packages or individual tests)
     func selectTestType(_ type: TestSelectionType) {
         selectedTestType = type
+        
+        // Load data when test type changes
+        switch type {
+        case .individualTests:
+            loadIndividualTests()
+        case .healthPackages:
+            loadTestPackages()
+        }
     }
     
     /// Select lab service type (walk-in or home collection)
