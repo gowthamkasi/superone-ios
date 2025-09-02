@@ -33,9 +33,7 @@ final class TestsListViewModel {
     var selectedCategory: TestCategory? = nil {
         didSet {
             if selectedCategory != oldValue {
-                Task {
-                    await loadTestsIfNeeded()
-                }
+                loadTestsIfNeeded()  // Direct call - no Task wrapper like Labs
             }
         }
     }
@@ -106,64 +104,63 @@ final class TestsListViewModel {
         // Skip if already loaded or currently loading - same as Labs
         guard tests.isEmpty && !isLoading else { return }
         
-        Task {
-            await loadTests()
-        }
+        loadTests()  // Direct call - no Task wrapper like Labs page
     }
     
-    /// Load initial tests - simplified approach following Labs pattern
-    func loadTests() async {
+    /// Load initial tests - following exact Labs pattern
+    func loadTests() {
         guard !isLoading else { return }
         
-        isLoading = true
+        isLoading = true  // Set loading IMMEDIATELY on main actor like Labs
         error = nil
         currentOffset = 0
         hasMoreTests = true
         
-        do {
-            #if DEBUG
-            print("🚀 TestsListViewModel: Making API call to get tests")
-            print("  - Offset: \(currentOffset), Limit: \(pageSize)")
-            print("  - Search: \(searchText.isEmpty ? "none" : searchText)")
-            print("  - Category: \(selectedCategory?.rawValue ?? "none")")
-            #endif
-            
-            let response = try await testsAPIService.searchTests(
-                query: searchText.isEmpty ? nil : searchText,
-                category: selectedCategory?.rawValue,
-                offset: currentOffset,
-                limit: pageSize
-            )
-            
-            #if DEBUG
-            print("✅ TestsListViewModel: Successfully received \(response.tests.count) tests")
-            print("  - Has more: \(response.hasMore)")
-            print("  - Next offset: \(response.nextOffset)")
-            #endif
-            
-            // Update UI directly (we're already on MainActor)
-            tests = response.tests
-            hasMoreTests = response.hasMore
-            currentOffset = response.nextOffset
-            isLoading = false
-            
-        } catch {
-            #if DEBUG
-            print("❌ TestsListViewModel: API error - \(error.localizedDescription)")
-            #endif
-            
-            isLoading = false
-            
-            // Handle different error types - simplified but maintain UI contract
-            if let apiError = error as? TestsAPIError {
-                self.error = apiError
-            } else {
-                self.error = TestsAPIError.networkError(error)
+        #if DEBUG
+        print("🚀 TestsListViewModel: Making API call to get tests")
+        print("  - Offset: \(currentOffset), Limit: \(pageSize)")
+        print("  - Search: \(searchText.isEmpty ? "none" : searchText)")
+        print("  - Category: \(selectedCategory?.rawValue ?? "none")")
+        #endif
+        
+        Task {  // Task wrapper ONLY around API call like Labs
+            do {
+                let response = try await testsAPIService.searchTests(
+                    query: searchText.isEmpty ? nil : searchText,
+                    category: selectedCategory?.rawValue,
+                    offset: currentOffset,
+                    limit: pageSize
+                )
+                
+                #if DEBUG
+                print("✅ TestsListViewModel: Successfully received \(response.tests.count) tests")
+                print("  - Has more: \(response.hasMore)")
+                print("  - Next offset: \(response.nextOffset)")
+                #endif
+                
+                // Update UI properties from Task
+                tests = response.tests
+                hasMoreTests = response.hasMore
+                currentOffset = response.nextOffset
+                isLoading = false
+                
+            } catch {
+                #if DEBUG
+                print("❌ TestsListViewModel: API error - \(error.localizedDescription)")
+                #endif
+                
+                // Handle different error types - simplified but maintain UI contract
+                if let apiError = error as? TestsAPIError {
+                    self.error = apiError
+                } else {
+                    self.error = TestsAPIError.networkError(error)
+                }
+                
+                // Clear tests on error and reset loading state
+                tests = []
+                isLoading = false
+                HapticFeedback.error()
             }
-            
-            // Clear tests on error
-            tests = []
-            HapticFeedback.error()
         }
     }
     
@@ -196,10 +193,10 @@ final class TestsListViewModel {
     }
     
     /// Refresh tests (pull to refresh) - maintains UI contract
-    func refreshTests() async {
+    func refreshTests() {
         currentOffset = 0
         hasMoreTests = true
-        await loadTests()
+        loadTests()  // Remove await - direct call like Labs
     }
     
     /// Load search suggestions - maintains UI contract
@@ -247,9 +244,7 @@ final class TestsListViewModel {
     
     /// Force retry tests loading - maintains UI contract
     func retry() {
-        Task {
-            await loadTests()
-        }
+        loadTests()  // Direct call - no Task wrapper like Labs
     }
     
     /// Check if we should load more tests (for infinite scroll) - maintains UI contract
@@ -277,7 +272,7 @@ final class TestsListViewModel {
             
             guard !Task.isCancelled else { return }
             
-            await loadTests()
+            loadTests()  // Remove await - direct call like Labs
         }
         
         // Load suggestions immediately for better UX

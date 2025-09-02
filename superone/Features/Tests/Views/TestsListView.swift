@@ -36,7 +36,7 @@ struct TestsListView: View {
             .navigationBarTitleDisplayMode(.large)
             .background(HealthColors.secondaryBackground.ignoresSafeArea())
             .refreshable {
-                await viewModel.refreshTests()
+                viewModel.refreshTests()  // Remove await - direct call like Labs
             }
         }
         .onAppear {

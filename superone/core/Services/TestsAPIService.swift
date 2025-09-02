@@ -143,6 +143,16 @@ final class TestsAPIService {
         throw TestsAPIError.networkError(URLError(.networkConnectionLost))
     }
     
+    /// Get user favorites (stub for maintaining compatibility)
+    func getUserFavorites(offset: Int = 0, limit: Int = 20) async throws -> FavoritesListResponse {
+        throw TestsAPIError.networkError(URLError(.networkConnectionLost))
+    }
+    
+    /// Get test details (stub for maintaining compatibility)  
+    func getTestDetails(testId: String) async throws -> TestDetailsResponse {
+        throw TestsAPIError.testNotFound(testId)
+    }
+    
     // MARK: - Private Helper Methods
     
     /// Make authenticated request to LabLoop API - following Labs pattern
@@ -264,4 +274,15 @@ struct PackageDetailsResponse: Sendable {
 struct FavoriteStatusResponse: Sendable {
     let testId: String
     let isFavorite: Bool
+}
+
+/// Favorites list response model (for compatibility)
+struct FavoritesListResponse: Sendable {
+    let favorites: [FavoriteTestData]
+    let pagination: OffsetPagination
+}
+
+/// Test details response model (for compatibility)
+struct TestDetailsResponse: Sendable {
+    let testDetails: TestDetailsData
 }
