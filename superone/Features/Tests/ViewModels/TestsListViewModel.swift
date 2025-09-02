@@ -124,61 +124,21 @@ final class TestsListViewModel {
     
     /// Load initial tests with loop protection and exponential backoff
     func loadTests() async {
-        // CRITICAL: Add loop protection to prevent infinite loading attempts
-        let now = Date()
+        // Simplified to match working LabReports pattern
+        guard !isLoading else { return }
         
-        // Check if we're already loading
-        if isLoading {
-            return
-        }
-        
-        // Check exponential backoff interval between attempts
-        if let lastAttempt = lastLoadAttempt {
-            let backoffInterval = calculateBackoffInterval(for: loadAttemptCount)
-            let timeSinceLastAttempt = now.timeIntervalSince(lastAttempt)
-            if timeSinceLastAttempt < backoffInterval {
-                return
-            }
-        }
-        
-        // Check maximum retry attempts
-        if loadAttemptCount >= Self.maxRetryAttempts {
-            return
-        }
-        
-        // Cancel any existing load task
-        currentLoadTask?.cancel()
-        
-        // Update attempt tracking
-        lastLoadAttempt = now
-        loadAttemptCount += 1
         isLoading = true
         error = nil
         currentOffset = 0
         hasMoreTests = true
         
-        let loadTask = Task {
-            do {
-                // Check if task was cancelled
-                try Task.checkCancellation()
-                
-                #if DEBUG
-                print("🚀 TestsListViewModel: Making API call to get tests")
-                print("  - Offset: \(currentOffset), Limit: \(pageSize)")
-                print("  - Search: \(searchText.isEmpty ? "none" : searchText)")
-                print("  - Filters: \(String(describing: currentFilters))")
-                
-                // Debug authentication state before API call
-                let hasTokens = TokenManager.shared.hasStoredTokens()
-                let validToken = await TokenManager.shared.getValidToken()
-                print("🔑 Authentication status before API call:")
-                print("  - Has stored tokens: \(hasTokens)")
-                print("  - Valid token available: \(validToken != nil)")
-                if let token = validToken {
-                    let tokenPrefix = String(token.prefix(20))
-                    print("  - Token prefix: \(tokenPrefix)...")
-                }
-                #endif
+        do {
+            #if DEBUG
+            print("🚀 TestsListViewModel: Making API call to get tests")
+            print("  - Offset: \(currentOffset), Limit: \(pageSize)")
+            print("  - Search: \(searchText.isEmpty ? "none" : searchText)")
+            print("  - Filters: \(String(describing: currentFilters))")
+            #endif
                 
                 let response = try await testsAPIService.getTests(
                     offset: currentOffset,
@@ -193,80 +153,32 @@ final class TestsListViewModel {
                 print("  - Next offset: \(response.pagination.nextOffset ?? -1)")
                 #endif
                 
-                // Check if task was cancelled before updating UI
-                try Task.checkCancellation()
-                
-                // Update the tests on main actor
-                await MainActor.run {
-                    tests = response.tests
-                    availableFilters = response.availableFilters
-                    appliedFilters = response.filtersApplied
-                    hasMoreTests = response.pagination.hasMore
-                    currentOffset = response.pagination.nextOffset ?? currentOffset
-                    isLoading = false
-                    
-                    if !tests.isEmpty {
-                        // Reset attempt count on successful load
-                        loadAttemptCount = 0
-                    }
-                }
-                
-                // Clear task reference outside MainActor context
-                currentLoadTask = nil
+            // Update UI directly (we're already on MainActor)
+            tests = response.tests
+            availableFilters = response.availableFilters
+            appliedFilters = response.filtersApplied
+            hasMoreTests = response.pagination.hasMore
+            currentOffset = response.pagination.nextOffset ?? currentOffset
+            isLoading = false
                 
             } catch {
-                // Don't handle cancellation as an error
-                if error is CancellationError {
-                    await MainActor.run {
-                        isLoading = false
-                    }
-                    // Clear task reference outside MainActor context
-                    currentLoadTask = nil
-                    return
-                }
-                
-                #if DEBUG
-                print("❌ TestsListViewModel: API error - \(error.localizedDescription)")
-                #endif
-                
-                await MainActor.run {
-                    isLoading = false
-                    
-                    // Handle different error types
-                    if let apiError = error as? TestsAPIError {
-                        self.error = apiError
-                        
-                        // Handle authentication errors specially
-                        if case .unauthorized = apiError {
-                            #if DEBUG
-                            print("🔒 TestsListViewModel: Authentication error - user needs to sign in")
-                            #endif
-                            // Clear tests and show authentication required state
-                            tests = []
-                            // Post notification that user needs to authenticate
-                            NotificationCenter.default.post(name: .userDidSignOut, object: nil)
-                        }
-                    } else {
-                        self.error = TestsAPIError.fetchFailed(error.localizedDescription)
-                    }
-                    
-                    // Clear tests on any error to avoid showing mock data
-                    tests = []
-                    
-                    // Only show error if we've exceeded max attempts or it's not retryable
-                    if loadAttemptCount >= Self.maxRetryAttempts || !(self.error?.isRetryable ?? true) {
-                        // Provide error haptic feedback
-                        HapticFeedback.error()
-                    }
-                }
-                
-                // Clear task reference outside MainActor context
-                currentLoadTask = nil
+            #if DEBUG
+            print("❌ TestsListViewModel: API error - \(error.localizedDescription)")
+            #endif
+            
+            isLoading = false
+            
+            // Handle different error types
+            if let apiError = error as? TestsAPIError {
+                self.error = apiError
+            } else {
+                self.error = TestsAPIError.fetchFailed(error.localizedDescription)
             }
+            
+            // Clear tests on error
+            tests = []
+            HapticFeedback.error()
         }
-        
-        // Set task reference outside MainActor context
-        currentLoadTask = loadTask
     }
     
     /// Load more tests (infinite scroll)

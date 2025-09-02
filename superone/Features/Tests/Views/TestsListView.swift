@@ -69,49 +69,10 @@ struct TestsListView: View {
             }
         }
         .onAppear {
-                #if DEBUG
-                print("🏥 TestsListView: Checking authentication state")
-                print("  - AuthManager authenticated: \(authManager.isAuthenticated)")
-                print("  - AuthContext authenticated: \(authContext.isAuthenticated)")
-                
-                // Use Task for accessing hasStoredTokens to avoid actor isolation issues
-                Task {
-                    let hasTokens = TokenManager.shared.hasStoredTokens()
-                    print("  - Has stored tokens: \(hasTokens)")
-                }
-                #endif
-                
-                // CRITICAL: Only load data if authentication is valid
-                Task {
-                    let hasTokens = TokenManager.shared.hasStoredTokens()
-                    let isAuthenticated = authManager.isAuthenticated
-                    
-                    if isAuthenticated && hasTokens {
-                        #if DEBUG
-                        print("✅ TestsListView: User is authenticated - loading tests")
-                        #endif
-                        // Only load if we don't have tests already
-                        if viewModel.tests.isEmpty && viewModel.error == nil {
-                            await viewModel.loadTests()
-                        }
-                    } else {
-                        #if DEBUG
-                        print("🔒 TestsListView: User not authenticated - clearing data and blocking access")
-                        #endif
-                        // CRITICAL: Clear any existing data if not authenticated
-                        await MainActor.run {
-                            viewModel.clearTestsData()
-                        }
-                        
-                        // CRITICAL: Force logout if tokens are invalid
-                        if !hasTokens && isAuthenticated {
-                            Task { @MainActor in
-                                try? await authManager.signOut()
-                            }
-                        }
-                    }
-                }
+            Task {
+                await viewModel.loadTests()
             }
+        }
     }
     
     // MARK: - Search and Filter Section

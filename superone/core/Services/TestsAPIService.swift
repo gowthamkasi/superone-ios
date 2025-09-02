@@ -118,19 +118,19 @@ class TestsAPIService: ObservableObject {
             }
         }
         
-        // Build URL with query parameters
-        let url = buildURL(endpoint: baseEndpoint, queryParams: queryParams)
-        
         do {
             print("🔍 TestsAPIService: Starting tests list request")
-            print("🔍 Request URL: \(url)")
+            print("🔍 Endpoint: \(baseEndpoint)")
             print("🔍 Query params: \(queryParams)")
             
-            // Make network request with authentication
+            // Convert query params to parameters that NetworkService can handle
+            let parameters: [String: Sendable] = queryParams.mapValues { $0 as Sendable }
+            
+            // Make network request with authentication - let NetworkService handle URL building
             let response: BaseResponse<TestsListData> = try await networkService.get(
-                url,
+                baseEndpoint,
                 responseType: BaseResponse<TestsListData>.self,
-                parameters: nil,
+                parameters: parameters,
                 headers: nil,
                 useCache: true
             )
@@ -213,15 +213,15 @@ class TestsAPIService: ObservableObject {
         print("✅ TestsAPIService: Authentication token available for API call")
         #endif
         
-        let url = buildURL(endpoint: "\(baseEndpoint)/\(testId)")
+        let endpoint = "\(baseEndpoint)/\(testId)"
         
         do {
             print("🔍 TestsAPIService: Starting test details request")
             print("🔍 Test ID: \(testId)")
-            print("🔍 Request URL: \(url)")
+            print("🔍 Endpoint: \(endpoint)")
             
             let response: BaseResponse<TestDetailsData> = try await networkService.get(
-                url,
+                endpoint,
                 responseType: BaseResponse<TestDetailsData>.self,
                 parameters: nil,
                 headers: nil,
@@ -326,13 +326,14 @@ class TestsAPIService: ObservableObject {
             }
         }
         
-        let url = buildURL(endpoint: packagesEndpoint, queryParams: queryParams)
-        
         do {
+            // Convert query params to parameters that NetworkService can handle
+            let parameters: [String: Sendable] = queryParams.mapValues { $0 as Sendable }
+            
             let response: BaseResponse<PackagesListData> = try await networkService.get(
-                url,
+                packagesEndpoint,
                 responseType: BaseResponse<PackagesListData>.self,
-                parameters: nil,
+                parameters: parameters,
                 headers: nil,
                 useCache: true
             )
@@ -356,11 +357,11 @@ class TestsAPIService: ObservableObject {
     /// - Parameter packageId: Unique package identifier
     /// - Returns: Comprehensive package details
     nonisolated func getPackageDetails(packageId: String) async throws -> PackageDetailsResponse {
-        let url = buildURL(endpoint: "\(packagesEndpoint)/\(packageId)")
+        let endpoint = "\(packagesEndpoint)/\(packageId)"
         
         do {
             let response: BaseResponse<PackageDetailsData> = try await networkService.get(
-                url,
+                endpoint,
                 responseType: BaseResponse<PackageDetailsData>.self,
                 parameters: nil,
                 headers: nil,
@@ -400,14 +401,14 @@ class TestsAPIService: ObservableObject {
         let currentFavorites = try await getUserFavorites(offset: 0, limit: 50)
         let isFavorite = currentFavorites.favorites.contains { $0.id == testId }
         
-        let url = buildURL(endpoint: "\(baseEndpoint)/\(testId)/favorite")
+        let endpoint = "\(baseEndpoint)/\(testId)/favorite"
         
         do {
             print("🔍 TestsAPIService: \(isFavorite ? "Removing" : "Adding") favorite for test \(testId)")
             
             let response: BaseResponse<FavoriteStatusData> = isFavorite 
-                ? try await networkService.delete(url, responseType: BaseResponse<FavoriteStatusData>.self, headers: nil)
-                : try await networkService.post(url, body: Optional<String>.none, responseType: BaseResponse<FavoriteStatusData>.self, headers: nil)
+                ? try await networkService.delete(endpoint, responseType: BaseResponse<FavoriteStatusData>.self, headers: nil)
+                : try await networkService.post(endpoint, body: Optional<String>.none, responseType: BaseResponse<FavoriteStatusData>.self, headers: nil)
             
             try response.validate()
             let data = try response.getData()
@@ -478,16 +479,17 @@ class TestsAPIService: ObservableObject {
             "limit": String(limit)
         ]
         
-        let url = buildURL(endpoint: favoritesEndpoint, queryParams: queryParams)
+        // Convert query params to parameters that NetworkService can handle
+        let parameters: [String: Sendable] = queryParams.mapValues { $0 as Sendable }
         
         do {
             print("🔍 TestsAPIService: Starting favorites list request")
-            print("🔍 Request URL: \(url)")
+            print("🔍 Endpoint: \(favoritesEndpoint)")
             
             let response: BaseResponse<FavoritesListData> = try await networkService.get(
-                url,
+                favoritesEndpoint,
                 responseType: BaseResponse<FavoritesListData>.self,
-                parameters: nil,
+                parameters: parameters,
                 headers: nil,
                 useCache: true
             )
@@ -549,13 +551,15 @@ class TestsAPIService: ObservableObject {
             "limit": String(limit)
         ]
         
-        let url = buildURL(endpoint: "\(baseEndpoint)/search/suggestions", queryParams: queryParams)
+        let endpoint = "\(baseEndpoint)/search/suggestions"
+        // Convert query params to parameters that NetworkService can handle
+        let parameters: [String: Sendable] = queryParams.mapValues { $0 as Sendable }
         
         do {
             let response: BaseResponse<SearchSuggestionsData> = try await networkService.get(
-                url,
+                endpoint,
                 responseType: BaseResponse<SearchSuggestionsData>.self,
-                parameters: nil,
+                parameters: parameters,
                 headers: nil,
                 useCache: false
             )
@@ -575,26 +579,7 @@ class TestsAPIService: ObservableObject {
     
     // MARK: - Private Helper Methods
     
-    /// Build URL with base path and query parameters
-    nonisolated private func buildURL(endpoint: String, queryParams: [String: String] = [:]) -> String {
-        var url = endpoint
-        
-        if !queryParams.isEmpty {
-            let queryString = queryParams
-                .compactMap { key, value in
-                    guard let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                          let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-                        return nil
-                    }
-                    return "\(encodedKey)=\(encodedValue)"
-                }
-                .joined(separator: "&")
-            
-            url += "?\(queryString)"
-        }
-        
-        return url
-    }
+    // buildURL method removed - NetworkService now handles all URL construction
 }
 
 // MARK: - Filter Models

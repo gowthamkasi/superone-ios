@@ -24,6 +24,39 @@ nonisolated struct BaseResponse<T: Codable>: Codable, Sendable where T: Sendable
         case timestamp
         case meta
     }
+    
+    /// Validate the response success status
+    nonisolated func validate() throws {
+        if !success {
+            throw APIError.invalidResponse(message ?? "Unknown error")
+        }
+    }
+    
+    /// Get data from response, throwing error if validation fails
+    nonisolated func getData() throws -> T {
+        try validate()
+        
+        guard let data = data else {
+            throw APIError.noData(message ?? "No data returned from server")
+        }
+        
+        return data
+    }
+}
+
+/// General API error for BaseResponse validation
+enum APIError: LocalizedError, Sendable {
+    case invalidResponse(String)
+    case noData(String)
+    
+    nonisolated var errorDescription: String? {
+        switch self {
+        case .invalidResponse(let message):
+            return "Invalid API response: \(message)"
+        case .noData(let message):
+            return "No data in response: \(message)"
+        }
+    }
 }
 
 /// Response metadata
@@ -731,38 +764,4 @@ extension BaseResponse {
 }
 
 // MARK: - Response Validation
-
-extension BaseResponse {
-    
-    /// Validate response and throw error if invalid
-    nonisolated func validate() throws {
-        if !success {
-            throw ErrorResponse(
-                error: message ?? "Unknown error occurred",
-                message: message ?? "Unknown error occurred",
-                code: nil,
-                details: nil,
-                timestamp: timestamp,
-                requestId: nil
-            )
-        }
-    }
-    
-    /// Get data or throw error
-    nonisolated func getData() throws -> T {
-        try validate()
-        
-        guard let data = data else {
-            throw ErrorResponse(
-                error: "No data received",
-                message: "No data received",
-                code: "NO_DATA",
-                details: nil,
-                timestamp: timestamp,
-                requestId: nil
-            )
-        }
-        
-        return data
-    }
-}
+// Extension removed - methods are now part of BaseResponse struct definition

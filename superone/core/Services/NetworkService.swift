@@ -654,7 +654,8 @@ class NetworkService: ObservableObject {
     }
     
     private func getAuthToken() async -> String? {
-        return KeychainHelper.shared.getAuthToken()
+        // Use TokenManager like the working LabReports implementation
+        return await TokenManager.shared.getValidToken()
     }
     
     // MARK: - Request Cancellation
