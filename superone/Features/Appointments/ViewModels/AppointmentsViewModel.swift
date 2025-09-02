@@ -180,9 +180,10 @@ final class AppointmentsViewModel {
         setupLocationServices()
         loadAppointments()
         // Remove automatic loadLabFacilities() - will be loaded lazily when needed
-        loadTests()
-        loadTestPackages()
-        loadIndividualTests()
+        // Remove automatic Tests loading - will be loaded lazily when needed (like Labs)
+        // loadTests()
+        // loadTestPackages()
+        // loadIndividualTests()
     }
     
     // MARK: - User Setup
@@ -796,11 +797,27 @@ final class AppointmentsViewModel {
     
     // MARK: - Health Packages and Individual Tests Management
     
+    /// Load test packages from LabLoop API only when needed (lazy loading)
+    func loadTestPackagesIfNeeded() {
+        // Skip if already loaded or currently loading
+        guard testPackages.isEmpty && !isLoadingPackages else { return }
+        
+        loadTestPackages()
+    }
+    
     /// Load test packages from LabLoop API
     func loadTestPackages() {
         // TODO: Replace with actual LabLoop API call
         // testPackages = try await testsAPIService.fetchHealthPackages()
         testPackages = [] // No hardcoded test data - use real API data
+    }
+    
+    /// Load individual tests from LabLoop API only when needed (lazy loading)
+    func loadIndividualTestsIfNeeded() {
+        // Skip if already loaded or currently loading
+        guard individualTests.isEmpty && !isLoadingIndividualTests else { return }
+        
+        loadIndividualTests()
     }
     
     /// Load individual tests from LabLoop API
@@ -848,9 +865,9 @@ final class AppointmentsViewModel {
         // Load data when test type changes
         switch type {
         case .individualTests:
-            loadIndividualTests()
+            loadIndividualTestsIfNeeded()
         case .healthPackages:
-            loadTestPackages()
+            loadTestPackagesIfNeeded()
         }
     }
     

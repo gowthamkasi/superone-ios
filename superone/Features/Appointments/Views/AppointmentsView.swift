@@ -256,6 +256,15 @@ struct AppointmentsView: View {
             .padding(.top, HealthSpacing.lg)
             .padding(.bottom, HealthSpacing.xl)
         }
+        .onAppear {
+            // Lazy load tests data only when Tests tab is accessed
+            switch viewModel.selectedTestType {
+            case .individualTests:
+                viewModel.loadIndividualTestsIfNeeded()
+            case .healthPackages:
+                viewModel.loadTestPackagesIfNeeded()
+            }
+        }
     }
     
     // MARK: - Health Packages Content
