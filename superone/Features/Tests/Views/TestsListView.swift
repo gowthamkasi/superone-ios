@@ -13,65 +13,35 @@ struct TestsListView: View {
     // MARK: - Body
     var body: some View {
         NavigationView {
-            // CRITICAL AUTHENTICATION GUARD - Redirect to login immediately without intermediate screen
-            if !authManager.isAuthenticated || !TokenManager.shared.hasStoredTokens() {
-                // Show minimal loading state while redirecting to login
-                VStack {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: HealthColors.primary))
-                    Text("Redirecting to login...")
-                        .font(HealthTypography.captionRegular)
-                        .foregroundColor(HealthColors.secondaryText)
-                        .padding(.top, HealthSpacing.sm)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(HealthColors.secondaryBackground.ignoresSafeArea())
-                .navigationTitle("Health Tests")
-                .navigationBarTitleDisplayMode(.large)
-                .onAppear {
-                    // Immediate redirect to login screen via AppFlowManager
-                    Task { @MainActor in
-                        // Force logout if tokens are invalid to clear state
-                        if !TokenManager.shared.hasStoredTokens() && authManager.isAuthenticated {
-                            try? await authManager.signOut()
-                        } else {
-                            // Direct flow redirect to authentication screen
-                            flowManager.signOut()
-                        }
-                    }
-                }
-            } else {
-                ZStack {
-                    VStack(spacing: 0) {
-                        // Search and filter section
-                        searchAndFilterSection
-                        
-                        // Tests list
-                        testsList
-                    }
+            ZStack {
+                VStack(spacing: 0) {
+                    // Search and filter section
+                    searchAndFilterSection
                     
-                    // Search suggestions overlay
-                    if showSuggestions && viewModel.shouldShowSuggestions {
-                        searchSuggestionsOverlay
-                    }
-                    
-                    // Error overlay
-                    if let error = viewModel.error {
-                        errorOverlay(error: error)
-                    }
+                    // Tests list
+                    testsList
                 }
-                .navigationTitle("Health Tests")
-                .navigationBarTitleDisplayMode(.large)
-                .background(HealthColors.secondaryBackground.ignoresSafeArea())
-                .refreshable {
-                    await viewModel.refreshTests()
+                
+                // Search suggestions overlay
+                if showSuggestions && viewModel.shouldShowSuggestions {
+                    searchSuggestionsOverlay
                 }
+                
+                // Error overlay
+                if let error = viewModel.error {
+                    errorOverlay(error: error)
+                }
+            }
+            .navigationTitle("Health Tests")
+            .navigationBarTitleDisplayMode(.large)
+            .background(HealthColors.secondaryBackground.ignoresSafeArea())
+            .refreshable {
+                await viewModel.refreshTests()
             }
         }
         .onAppear {
-            Task {
-                await viewModel.loadTests()
-            }
+            // Lazy load tests only when Tests tab is accessed - following Labs pattern
+            viewModel.loadTestsIfNeeded()
         }
     }
     
