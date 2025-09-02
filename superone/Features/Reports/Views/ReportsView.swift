@@ -25,10 +25,8 @@ struct ReportsView: View {
                     
                     // Chronological history
                     if viewModel.isLoadingHistory && viewModel.groupedReports.isEmpty {
-                        VStack(spacing: HealthSpacing.lg) {
-                            ForEach(0..<4, id: \.self) { _ in
-                                ReportCardSkeleton()
-                            }
+                        SkeletonList(count: 6, staggerDelay: 0.12) { index in
+                            ReportCardSkeleton()
                         }
                     } else if viewModel.groupedReports.isEmpty {
                         EmptyHistoryView()
@@ -1042,42 +1040,6 @@ struct EmptyHistoryView: View {
 
 // MARK: - Skeleton Views
 
-struct ReportCardSkeleton: View {
-    @State private var isAnimating = false
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: HealthSpacing.md) {
-            HStack {
-                VStack(alignment: .leading, spacing: HealthSpacing.xs) {
-                    SkeletonRectangle(width: 180, height: 16)
-                    SkeletonRectangle(width: 140, height: 14)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: HealthSpacing.xs) {
-                    SkeletonRectangle(width: 80, height: 24)
-                    SkeletonRectangle(width: 60, height: 16)
-                }
-            }
-            
-            SkeletonRectangle(width: nil, height: 40)
-            
-            SkeletonRectangle(width: nil, height: 32)
-            
-            HStack(spacing: HealthSpacing.sm) {
-                SkeletonRectangle(width: 100, height: 20)
-                SkeletonRectangle(width: 60, height: 20)
-                SkeletonRectangle(width: 80, height: 20)
-                Spacer()
-            }
-        }
-        .padding(HealthSpacing.lg)
-        .background(HealthColors.secondaryBackground)
-        .cornerRadius(HealthCornerRadius.card)
-        .healthCardShadow()
-    }
-}
 
 // SkeletonRectangle is already defined in Features/Appointments/Views/AppointmentsView.swift
 

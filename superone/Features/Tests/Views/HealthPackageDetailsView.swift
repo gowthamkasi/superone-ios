@@ -48,26 +48,32 @@ struct HealthPackageDetailsView: View {
             headerSection
             
             // Main content sections
-            VStack(spacing: HealthSpacing.lg) {
-                // Package overview card
-                if let package = viewModel.packageDetails {
-                    packageOverviewCard(package: package)
-                        .padding(.horizontal, HealthSpacing.screenPadding)
+            if viewModel.isLoading {
+                packageDetailsSkeletonContent
+                    .padding(.horizontal, HealthSpacing.screenPadding)
+                    .padding(.top, HealthSpacing.xs)
+            } else {
+                VStack(spacing: HealthSpacing.lg) {
+                    // Package overview card
+                    if let package = viewModel.packageDetails {
+                        packageOverviewCard(package: package)
+                            .padding(.horizontal, HealthSpacing.screenPadding)
+                    }
+                    
+                    // Tests included section
+                    if let package = viewModel.packageDetails {
+                        testsIncludedSection(package: package)
+                            .padding(.horizontal, HealthSpacing.screenPadding)
+                    }
+                    
+                    // Information sections
+                    if let state = viewModel.packageDetailsState {
+                        informationSections(state: state)
+                            .padding(.horizontal, HealthSpacing.screenPadding)
+                    }
                 }
-                
-                // Tests included section
-                if let package = viewModel.packageDetails {
-                    testsIncludedSection(package: package)
-                        .padding(.horizontal, HealthSpacing.screenPadding)
-                }
-                
-                // Information sections
-                if let state = viewModel.packageDetailsState {
-                    informationSections(state: state)
-                        .padding(.horizontal, HealthSpacing.screenPadding)
-                }
+                .padding(.top, HealthSpacing.xs)
             }
-            .padding(.top, HealthSpacing.xs)
         }
     }
     
@@ -384,6 +390,41 @@ struct HealthPackageDetailsView: View {
     private func loadPackageDetails() async {
         await MainActor.run {
             viewModel.loadPackageDetails(packageId: packageId)
+        }
+    }
+    
+    // MARK: - Skeleton Loading Content
+    
+    private var packageDetailsSkeletonContent: some View {
+        VStack(spacing: HealthSpacing.lg) {
+            // Package overview skeleton
+            CardSkeleton(showImage: true, imageSize: CGSize(width: 80, height: 80), contentLines: 4)
+            
+            // Tests included section skeleton
+            VStack(alignment: .leading, spacing: HealthSpacing.md) {
+                // Section header
+                HStack {
+                    HealthSkeletonView(
+                        width: 140,
+                        height: 20
+                    )
+                    Spacer()
+                }
+                
+                // Test categories grid
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: HealthSpacing.md) {
+                    ForEach(0..<6, id: \.self) { _ in
+                        GridItemSkeleton(showTitle: true, showSubtitle: false)
+                    }
+                }
+            }
+            .padding(HealthSpacing.cardPadding)
+            .background(HealthColors.secondaryBackground)
+            .cornerRadius(HealthCornerRadius.card)
+            .healthCardShadow()
+            
+            // Information sections skeleton
+            DetailsSkeleton(sectionCount: 3, itemsPerSection: 4)
         }
     }
 }

@@ -150,27 +150,38 @@ struct TestsListView: View {
             // Category filter
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: HealthSpacing.sm) {
-                    // All categories button
-                    CategoryFilterChip(
-                        title: "All",
-                        isSelected: viewModel.selectedCategory == nil,
-                        action: { 
-                            viewModel.selectedCategory = nil
-                            showSuggestions = false
+                    if viewModel.shouldShowLoading {
+                        // Show skeleton filter chips while loading
+                        ForEach(0..<5, id: \.self) { _ in
+                            HealthSkeletonView(
+                                width: .random(in: 60...100),
+                                height: 32,
+                                cornerRadius: HealthCornerRadius.round
+                            )
                         }
-                    )
-                    
-                    // Individual category buttons
-                    ForEach(TestCategory.allCases, id: \.self) { category in
+                    } else {
+                        // All categories button
                         CategoryFilterChip(
-                            title: category.displayName,
-                            isSelected: viewModel.selectedCategory == category,
-                            count: viewModel.categoryCount(for: category),
+                            title: "All",
+                            isSelected: viewModel.selectedCategory == nil,
                             action: { 
-                                viewModel.selectedCategory = category
+                                viewModel.selectedCategory = nil
                                 showSuggestions = false
                             }
                         )
+                        
+                        // Individual category buttons
+                        ForEach(TestCategory.allCases, id: \.self) { category in
+                            CategoryFilterChip(
+                                title: category.displayName,
+                                isSelected: viewModel.selectedCategory == category,
+                                count: viewModel.categoryCount(for: category),
+                                action: { 
+                                    viewModel.selectedCategory = category
+                                    showSuggestions = false
+                                }
+                            )
+                        }
                     }
                 }
                 .padding(.horizontal, HealthSpacing.screenPadding)
@@ -225,28 +236,31 @@ struct TestsListView: View {
     
     // MARK: - Loading View
     private var loadingView: some View {
-        VStack(spacing: HealthSpacing.lg) {
-            ProgressView()
-                .scaleEffect(1.2)
-                .tint(HealthColors.primary)
-            
-            Text("Loading tests...")
-                .healthTextStyle(.body, color: HealthColors.secondaryText)
+        SkeletonList(count: 6, staggerDelay: 0.1) { index in
+            TestCardSkeleton()
         }
-        .padding(.top, HealthSpacing.xxxxl)
+        .padding(.top, HealthSpacing.md)
     }
     
     // MARK: - Load More View
     private var loadMoreView: some View {
-        HStack(spacing: HealthSpacing.sm) {
-            ProgressView()
-                .scaleEffect(0.8)
-                .tint(HealthColors.primary)
+        VStack(spacing: HealthSpacing.md) {
+            // Load more indicator
+            HStack(spacing: HealthSpacing.sm) {
+                ProgressView()
+                    .scaleEffect(0.8)
+                    .tint(HealthColors.primary)
+                
+                Text("Loading more tests...")
+                    .healthTextStyle(.caption1, color: HealthColors.secondaryText)
+            }
+            .padding(HealthSpacing.md)
             
-            Text("Loading more tests...")
-                .healthTextStyle(.caption1, color: HealthColors.secondaryText)
+            // Show additional skeleton cards while loading more
+            ForEach(0..<3, id: \.self) { _ in
+                TestCardSkeleton()
+            }
         }
-        .padding(HealthSpacing.lg)
     }
     
     // MARK: - Empty State
@@ -279,14 +293,38 @@ struct TestsListView: View {
             // Suggestions list
             VStack(alignment: .leading, spacing: 0) {
                 if viewModel.isLoadingSuggestions {
-                    HStack {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                        Text("Loading suggestions...")
-                            .healthTextStyle(.caption1, color: HealthColors.secondaryText)
-                        Spacer()
+                    VStack(spacing: HealthSpacing.xs) {
+                        ForEach(0..<4, id: \.self) { index in
+                            HStack(spacing: HealthSpacing.md) {
+                                // Icon skeleton
+                                HealthSkeletonView(
+                                    width: 20,
+                                    height: 20,
+                                    cornerRadius: HealthCornerRadius.xs
+                                )
+                                
+                                // Text content
+                                VStack(alignment: .leading, spacing: HealthSpacing.xs) {
+                                    HealthSkeletonView(
+                                        width: .random(in: 100...180),
+                                        height: 16
+                                    )
+                                    HealthSkeletonView(
+                                        width: .random(in: 60...120),
+                                        height: 12
+                                    )
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding(HealthSpacing.md)
+                            
+                            if index < 3 {
+                                Divider()
+                                    .padding(.leading, HealthSpacing.md)
+                            }
+                        }
                     }
-                    .padding(HealthSpacing.md)
                 } else {
                     ForEach(viewModel.searchSuggestions, id: \.text) { suggestion in
                         Button {

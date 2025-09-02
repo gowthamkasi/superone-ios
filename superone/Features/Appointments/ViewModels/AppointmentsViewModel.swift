@@ -40,6 +40,8 @@ final class AppointmentsViewModel {
     var selectedTestType: TestSelectionType = .individualTests
     var testPackages: [TestPackage] = []
     var individualTests: [IndividualTest] = []
+    var isLoadingPackages: Bool = false
+    var isLoadingIndividualTests: Bool = false
     
     /// Labs page enhancement - radio button selection
     var selectedLabServiceType: LabServiceType = .walkIn

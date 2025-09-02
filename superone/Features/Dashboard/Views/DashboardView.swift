@@ -20,62 +20,68 @@ struct DashboardView: View {
             ScrollView {
                 // Replace LazyVStack with VStack for better performance with small datasets
                 VStack(alignment: .leading, spacing: HealthSpacing.sectionSpacing) {
-                    // Header Section
-                    DashboardHeaderView(
-                        locationManager: locationManager,
-                        notificationCount: viewModel.notificationCount,
-                        onNotificationTap: {
-                            viewModel.presentNotificationSheet()
-                        },
-                        onLocationChange: {
-                            // Handle location change - could show location picker sheet
-                            print("Location change tapped from dashboard")
+                    if viewModel.isLoading {
+                        // Skeleton loading for dashboard components
+                        dashboardSkeletonContent
+                            .padding(.horizontal, HealthSpacing.screenPadding)
+                    } else {
+                        // Header Section
+                        DashboardHeaderView(
+                            locationManager: locationManager,
+                            notificationCount: viewModel.notificationCount,
+                            onNotificationTap: {
+                                viewModel.presentNotificationSheet()
+                            },
+                            onLocationChange: {
+                                // Handle location change - could show location picker sheet
+                                print("Location change tapped from dashboard")
+                            }
+                        )
+                        .padding(.horizontal, HealthSpacing.screenPadding)
+                        
+                        // Lab Booking Hero Card - PRIMARY CTA for booking tests
+                        LabBookingHeroCard {
+                            // Navigate to main booking flow
+                            viewModel.handleQuickAction(.bookTest)
                         }
-                    )
-                    .padding(.horizontal, HealthSpacing.screenPadding)
-                    
-                    // Lab Booking Hero Card - PRIMARY CTA for booking tests
-                    LabBookingHeroCard {
-                        // Navigate to main booking flow
-                        viewModel.handleQuickAction(.bookTest)
+                        .padding(.horizontal, HealthSpacing.screenPadding)
+                        
+                        // Service Options - Horizontal layout with circular buttons
+                        ServiceOptionsGrid(
+                            onOnlineBookingTap: {
+                                viewModel.handleQuickAction(.bookTest)
+                            },
+                            onHomeCollectionTap: {
+                                // TODO: Implement home collection flow
+                                viewModel.handleQuickAction(.bookTest)
+                            },
+                            onTestPackagesTap: {
+                                viewModel.navigateToAllPackages()
+                            },
+                            onQuickTestsTap: {
+                                // TODO: Implement quick tests flow
+                                viewModel.handleQuickAction(.bookTest)
+                            }
+                        )
+                        
+                        // Quick Actions - Grid layout with detailed cards
+                        QuickActionsBar(
+                            onBookNow: {
+                                viewModel.handleQuickAction(.bookTest)
+                            },
+                            onFindLabs: {
+                                viewModel.handleQuickAction(.findLabs)
+                            },
+                            onViewPackages: {
+                                viewModel.navigateToAllPackages()
+                            },
+                            onTrackSample: {
+                                // TODO: Implement sample tracking
+                                viewModel.handleQuickAction(.viewReports)
+                            }
+                        )
+                        .padding(.horizontal, HealthSpacing.screenPadding)
                     }
-                    .padding(.horizontal, HealthSpacing.screenPadding)
-                    
-                    // Service Options - Horizontal layout with circular buttons
-                    ServiceOptionsGrid(
-                        onOnlineBookingTap: {
-                            viewModel.handleQuickAction(.bookTest)
-                        },
-                        onHomeCollectionTap: {
-                            // TODO: Implement home collection flow
-                            viewModel.handleQuickAction(.bookTest)
-                        },
-                        onTestPackagesTap: {
-                            viewModel.navigateToAllPackages()
-                        },
-                        onQuickTestsTap: {
-                            // TODO: Implement quick tests flow
-                            viewModel.handleQuickAction(.bookTest)
-                        }
-                    )
-                    
-                    // Quick Actions - Grid layout with detailed cards
-                    QuickActionsBar(
-                        onBookNow: {
-                            viewModel.handleQuickAction(.bookTest)
-                        },
-                        onFindLabs: {
-                            viewModel.handleQuickAction(.findLabs)
-                        },
-                        onViewPackages: {
-                            viewModel.navigateToAllPackages()
-                        },
-                        onTrackSample: {
-                            // TODO: Implement sample tracking
-                            viewModel.handleQuickAction(.viewReports)
-                        }
-                    )
-                    .padding(.horizontal, HealthSpacing.screenPadding)
                     
                      
                     
@@ -95,14 +101,6 @@ struct DashboardView: View {
                 handleScrollPositionChange(from: oldValue, to: newValue)
             }
             .background(HealthColors.background.ignoresSafeArea())
-            .overlay(
-                // Loading overlay
-                Group {
-                    if viewModel.isLoading {
-                        LoadingOverlay(message: "Loading dashboard...", isVisible: true)
-                    }
-                }
-            )
             .alert("Error", isPresented: Binding<Bool>(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }
@@ -136,6 +134,69 @@ struct DashboardView: View {
                     // Refresh notification count when sheet is dismissed
                     viewModel.refreshNotificationCount()
                 }
+        }
+    }
+    
+    // MARK: - Skeleton Loading Content
+    
+    private var dashboardSkeletonContent: some View {
+        VStack(alignment: .leading, spacing: HealthSpacing.sectionSpacing) {
+            // Header skeleton
+            HeaderSkeleton(showAvatar: false, showActions: true)
+            
+            // Hero card skeleton
+            CardSkeleton(showImage: true, imageSize: CGSize(width: 80, height: 60), contentLines: 3)
+            
+            // Service options skeleton - circular buttons in grid
+            VStack(spacing: HealthSpacing.md) {
+                HStack {
+                    HealthSkeletonView(
+                        width: 80,
+                        height: 20
+                    )
+                    Spacer()
+                }
+                
+                HStack(spacing: HealthSpacing.lg) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        VStack(spacing: HealthSpacing.sm) {
+                            // Circular service button
+                            HealthSkeletonView(
+                                width: 60,
+                                height: 60,
+                                cornerRadius: 30
+                            )
+                            
+                            // Service label
+                            HealthSkeletonView(
+                                width: .random(in: 50...80),
+                                height: 12
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(HealthSpacing.cardPadding)
+            .background(HealthColors.secondaryBackground)
+            .cornerRadius(HealthCornerRadius.card)
+            .healthCardShadow()
+            
+            // Quick actions skeleton - card grid
+            VStack(spacing: HealthSpacing.md) {
+                HStack {
+                    HealthSkeletonView(
+                        width: 120,
+                        height: 20
+                    )
+                    Spacer()
+                }
+                
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: HealthSpacing.md) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        CardSkeleton(contentLines: 2)
+                    }
+                }
+            }
         }
     }
     

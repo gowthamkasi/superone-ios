@@ -229,12 +229,9 @@ struct ProfileView: View {
                         }
                     } else if viewModel.isLoadingProfile {
                         VStack(alignment: .leading, spacing: HealthSpacing.xs) {
-                            SkeletonView()
-                                .frame(width: 120, height: 20)
-                            SkeletonView()
-                                .frame(width: 180, height: 16)
-                            SkeletonView()
-                                .frame(width: 80, height: 14)
+                            HealthSkeletonView(width: 120, height: 20)
+                            HealthSkeletonView(width: 180, height: 16) 
+                            HealthSkeletonView(width: 80, height: 14)
                         }
                     } else {
                         VStack(alignment: .leading, spacing: HealthSpacing.xs) {
@@ -678,39 +675,6 @@ struct ProfileRow<Trailing: View>: View {
     }
 }
 
-struct SkeletonView: View {
-    @State private var isAnimating = false
-    
-    var body: some View {
-        Rectangle()
-            .fill(HealthColors.secondaryText.opacity(0.3))
-            .cornerRadius(4)
-            .overlay(
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.clear,
-                                HealthColors.background.opacity(0.6),
-                                Color.clear
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(4)
-                    .offset(x: isAnimating ? 200 : -200)
-                    .animation(
-                        Animation.easeInOut(duration: 1.2).repeatForever(autoreverses: false),
-                        value: isAnimating
-                    )
-            )
-            .onAppear {
-                isAnimating = true
-            }
-            .clipped()
-    }
-}
 
 // MARK: - Preview
 

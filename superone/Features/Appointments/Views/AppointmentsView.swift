@@ -177,7 +177,7 @@ struct AppointmentsView: View {
         ScrollView {
             LazyVStack(spacing: HealthSpacing.lg) {
                 if viewModel.isLoadingAppointments && viewModel.upcomingAppointments.isEmpty {
-                    ForEach(0..<3, id: \.self) { _ in
+                    SkeletonList(count: 5, staggerDelay: 0.12) { index in
                         AppointmentCardSkeleton()
                     }
                 } else if viewModel.upcomingAppointments.isEmpty {
@@ -262,17 +262,37 @@ struct AppointmentsView: View {
     
     @ViewBuilder
     private var healthPackagesContent: some View {
-        VStack(alignment: .leading, spacing: HealthSpacing.xl) {
-            ForEach(viewModel.testPackages) { package in
-                TestPackageCard(
-                    package: package,
-                    onBook: {
-                        // Handle package booking
-                    },
-                    onViewDetails: {
-                        // Navigation handled by NavigationLink in card
-                    }
-                )
+        if viewModel.isLoadingPackages && viewModel.testPackages.isEmpty {
+            SkeletonList(count: 4, staggerDelay: 0.1) { index in
+                CardSkeleton(showImage: true, imageSize: CGSize(width: 80, height: 60), contentLines: 3)
+            }
+        } else if viewModel.testPackages.isEmpty {
+            VStack(spacing: HealthSpacing.lg) {
+                Image(systemName: "doc.text.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(HealthColors.secondaryText)
+                Text("No health packages available")
+                    .font(HealthTypography.headingSmall)
+                    .foregroundColor(HealthColors.primaryText)
+                Text("Check back later for available packages")
+                    .font(HealthTypography.body)
+                    .foregroundColor(HealthColors.secondaryText)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.top, HealthSpacing.xxxxl)
+        } else {
+            VStack(alignment: .leading, spacing: HealthSpacing.xl) {
+                ForEach(viewModel.testPackages) { package in
+                    TestPackageCard(
+                        package: package,
+                        onBook: {
+                            // Handle package booking
+                        },
+                        onViewDetails: {
+                            // Navigation handled by NavigationLink in card
+                        }
+                    )
+                }
             }
         }
     }
@@ -281,17 +301,37 @@ struct AppointmentsView: View {
     
     @ViewBuilder
     private var individualTestsContent: some View {
-        VStack(alignment: .leading, spacing: HealthSpacing.xl) {
-            ForEach(viewModel.individualTests) { test in
-                IndividualTestCard(
-                    test: test,
-                    onBook: {
-                        // Handle individual test booking
-                    },
-                    onViewDetails: {
-                        // Navigation handled by NavigationLink in card
-                    }
-                )
+        if viewModel.isLoadingIndividualTests && viewModel.individualTests.isEmpty {
+            SkeletonList(count: 5, staggerDelay: 0.1) { index in
+                TestCardSkeleton()
+            }
+        } else if viewModel.individualTests.isEmpty {
+            VStack(spacing: HealthSpacing.lg) {
+                Image(systemName: "testtube.2")
+                    .font(.system(size: 48))
+                    .foregroundColor(HealthColors.secondaryText)
+                Text("No individual tests available")
+                    .font(HealthTypography.headingSmall)
+                    .foregroundColor(HealthColors.primaryText)
+                Text("Check back later for available tests")
+                    .font(HealthTypography.body)
+                    .foregroundColor(HealthColors.secondaryText)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.top, HealthSpacing.xxxxl)
+        } else {
+            VStack(alignment: .leading, spacing: HealthSpacing.xl) {
+                ForEach(viewModel.individualTests) { test in
+                    IndividualTestCard(
+                        test: test,
+                        onBook: {
+                            // Handle individual test booking
+                        },
+                        onViewDetails: {
+                            // Navigation handled by NavigationLink in card
+                        }
+                    )
+                }
             }
         }
     }
@@ -341,10 +381,8 @@ struct AppointmentsView: View {
     @ViewBuilder
     private var walkInLabsContent: some View {
         if viewModel.isLoadingFacilities && viewModel.filteredFacilities.isEmpty {
-            VStack(spacing: HealthSpacing.lg) {
-                ForEach(0..<4, id: \.self) { _ in
-                    FacilityCardSkeleton()
-                }
+            SkeletonList(count: 6, staggerDelay: 0.1) { index in
+                LabFacilitySkeleton()
             }
         } else if viewModel.filteredFacilities.isEmpty {
             EmptyFacilitiesView()
@@ -1084,35 +1122,6 @@ enum TrendStatus {
     }
 }
 
-struct TestCardSkeleton: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: HealthSpacing.md) {
-            HStack {
-                VStack(alignment: .leading, spacing: HealthSpacing.xs) {
-                    SkeletonRectangle(width: 180, height: 16)
-                    SkeletonRectangle(width: 140, height: 14)
-                }
-                
-                Spacer()
-                
-                SkeletonRectangle(width: 80, height: 24)
-            }
-            
-            SkeletonRectangle(width: 160, height: 14)
-            
-            HStack(spacing: HealthSpacing.sm) {
-                SkeletonRectangle(width: 80, height: 20)
-                SkeletonRectangle(width: 60, height: 20)
-                Spacer()
-            }
-        }
-        .padding(HealthSpacing.lg)
-        .background(HealthColors.secondaryBackground)
-        .cornerRadius(HealthCornerRadius.card)
-        .healthCardShadow()
-    }
-}
-
 // MARK: - Labs Tab Components
 
 
@@ -1758,115 +1767,6 @@ struct EmptyFacilitiesView: View {
 
 // MARK: - Skeleton Views
 
-struct AppointmentCardSkeleton: View {
-    @State private var isAnimating = false
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: HealthSpacing.md) {
-            HStack {
-                VStack(alignment: .leading, spacing: HealthSpacing.xs) {
-                    SkeletonRectangle(width: 150, height: 16)
-                    SkeletonRectangle(width: 200, height: 14)
-                }
-                
-                Spacer()
-                
-                SkeletonRectangle(width: 60, height: 24)
-            }
-            
-            HStack {
-                SkeletonRectangle(width: 80, height: 16)
-                Spacer()
-                SkeletonRectangle(width: 60, height: 16)
-            }
-            
-            HStack {
-                SkeletonRectangle(width: 100, height: 14)
-                Spacer()
-                SkeletonRectangle(width: 50, height: 14)
-            }
-        }
-        .padding(HealthSpacing.lg)
-        .background(HealthColors.secondaryBackground)
-        .cornerRadius(HealthCornerRadius.card)
-        .healthCardShadow()
-    }
-}
-
-struct FacilityCardSkeleton: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: HealthSpacing.md) {
-            HStack {
-                VStack(alignment: .leading, spacing: HealthSpacing.xs) {
-                    SkeletonRectangle(width: 160, height: 16)
-                    SkeletonRectangle(width: 220, height: 14)
-                }
-                
-                Spacer()
-                
-                SkeletonRectangle(width: 40, height: 14)
-            }
-            
-            HStack {
-                SkeletonRectangle(width: 80, height: 14)
-                Spacer()
-                SkeletonRectangle(width: 70, height: 14)
-            }
-            
-            HStack(spacing: HealthSpacing.xs) {
-                SkeletonRectangle(width: 70, height: 20)
-                SkeletonRectangle(width: 60, height: 20)
-                SkeletonRectangle(width: 80, height: 20)
-            }
-            
-            HStack(spacing: HealthSpacing.md) {
-                SkeletonRectangle(width: nil, height: 36)
-                SkeletonRectangle(width: nil, height: 36)
-            }
-        }
-        .padding(HealthSpacing.lg)
-        .background(HealthColors.secondaryBackground)
-        .cornerRadius(HealthCornerRadius.card)
-        .healthCardShadow()
-    }
-}
-
-struct SkeletonRectangle: View {
-    let width: CGFloat?
-    let height: CGFloat
-    @State private var isAnimating = false
-    
-    var body: some View {
-        Rectangle()
-            .fill(HealthColors.secondaryText.opacity(0.3))
-            .frame(width: width, height: height)
-            .cornerRadius(4)
-            .overlay(
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.clear,
-                                HealthColors.background.opacity(0.6),
-                                Color.clear
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(4)
-                    .offset(x: isAnimating ? 200 : -200)
-                    .animation(
-                        Animation.easeInOut(duration: 1.2).repeatForever(autoreverses: false),
-                        value: isAnimating
-                    )
-            )
-            .onAppear {
-                isAnimating = true
-            }
-            .clipped()
-    }
-}
 
 // MARK: - Enhanced Tests Page Components
 
