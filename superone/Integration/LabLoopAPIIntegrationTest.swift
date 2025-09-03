@@ -257,10 +257,10 @@ class LabLoopAPIIntegrationTest: ObservableObject {
         // Test 3: Facility search with location (mock coordinates)
         await runTest(name: "Facility Search with Location") {
             let facilities = try await self.labFacilityService.searchFacilities(
-                location: (lat: 37.7749, lng: -122.4194), // San Francisco coordinates
+                location: (lat: 40.7128, lng: -74.0060), // Generic coordinates
                 radius: 25.0
             )
-            return "✅ Location-based search (SF) returned \(facilities.count) facilities within 25km"
+            return "✅ Location-based search returned \(facilities.count) facilities within 25km"
         }
         
         // Test 4: Facility search with filters
@@ -354,7 +354,7 @@ class LabLoopAPIIntegrationTest: ObservableObject {
         
         // Test user appointments retrieval with test user ID
         await runTest(name: "User Appointments") {
-            let testUserId = "6751234567890123456789ab" // Mock ObjectId
+            let testUserId = "507f1f77bcf86cd799439011" // Generic ObjectId
             let appointments = try await self.appointmentService.getUserAppointments(userId: testUserId)
             return "✅ Retrieved \(appointments.count) appointments for test user"
         }
@@ -364,8 +364,8 @@ class LabLoopAPIIntegrationTest: ObservableObject {
             // Create valid patient info for validation test
             let patientInfo = PatientBookingInfo(
                 name: "Test User",
-                phone: "+1234567890",
-                email: "test@example.com",
+                phone: "+1555000000",
+                email: "user@test.local",
                 dateOfBirth: Calendar.current.date(byAdding: .year, value: -30, to: Date()) ?? Date(),
                 gender: .male
             )

@@ -419,10 +419,3 @@ struct NotificationCardIntegrationGuide: View {
 
 // MARK: - Preview
 
-#Preview("Usage Examples") {
-    NotificationCardUsageExamples()
-}
-
-#Preview("Integration Guide") {
-    NotificationCardIntegrationGuide()
-}

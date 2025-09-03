@@ -525,17 +525,17 @@ struct AuthenticationTestingView: View {
         // Load default values for testing
         switch endpoint.name {
         case "register":
-            testParameters["email"] = .string("test@example.com")
+            testParameters["email"] = .string("test@test.local")
             testParameters["password"] = .string("TestPass123!")
             testParameters["name"] = .string("Test User")
             testParameters["gender"] = .string("male")
             
         case "login":
-            testParameters["email"] = .string("test@example.com")
+            testParameters["email"] = .string("test@test.local")
             testParameters["password"] = .string("TestPass123!")
             
         case "forgotPassword":
-            testParameters["email"] = .string("test@example.com")
+            testParameters["email"] = .string("test@test.local")
             
         case "logout":
             testParameters["currentDeviceOnly"] = .boolean(true)

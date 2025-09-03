@@ -30,7 +30,7 @@ enum ProductionSafetyChecks {
             "sampleCBC", "sampleLipidProfile", "sampleComprehensive",
             "TestDetails.sample", "HealthPackage.sample",
             "LabLoop Central Laboratory", "Zero Hospital",
-            "MedHome Diagnostics", "Today 6PM-8PM", "Service across Pune",
+            "Sample Diagnostics", "Today 6PM-8PM", "Service across Sample City",
             "Collection fee details will be loaded from API"
         ]
         
@@ -128,10 +128,10 @@ private extension String {
             "sampleCBC", "sampleLipidProfile", "sampleComprehensive",
             "TestDetails.sample", "HealthPackage.sample",
             "LabLoop Central Laboratory", "Zero Hospital", "Home Health Collection",
-            "MedHome Diagnostics", "Today 6PM-8PM", "Service across Pune",
+            "Sample Diagnostics", "Today 6PM-8PM", "Service across Sample City",
             "Collection fee details will be loaded from API",
             "mock", "Mock", "MOCK",
-            "test@example.com",
+            "test@test.local",
             "placeholder",
             "dummy"
         ]

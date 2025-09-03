@@ -503,8 +503,8 @@ struct TestParameters {
     // Facility Search Parameters
     var searchQuery: String = ""
     var useLocation: Bool = false
-    var latitude: Double = 37.7749  // San Francisco
-    var longitude: Double = -122.4194
+    var latitude: Double = 40.7128  // Generic coordinates
+    var longitude: Double = -74.0060
     var searchRadius: Double = 10.0
     var applyFilters: Bool = false
     var facilityTypes: [String] = ["lab", "collection_center"]
@@ -516,12 +516,12 @@ struct TestParameters {
     var selectedDate: Date = Date()
     
     // User Appointment Parameters
-    var testUserId: String = "6751234567890123456789ab" // Mock ObjectId
+    var testUserId: String = "507f1f77bcf86cd799439011" // Generic ObjectId
     
     // Booking Validation Parameters
-    var patientName: String = "Test Patient"
-    var patientPhone: String = "+1234567890"
-    var patientEmail: String = "test@example.com"
+    var patientName: String = "Sample Patient"
+    var patientPhone: String = "+1555000000"
+    var patientEmail: String = "patient@test.local"
     var patientDOB: Date = Calendar.current.date(byAdding: .year, value: -30, to: Date()) ?? Date()
     var patientGender: Gender = .male
 }

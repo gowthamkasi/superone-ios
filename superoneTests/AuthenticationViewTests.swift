@@ -42,7 +42,7 @@ final class AuthenticationViewTests: XCTestCase {
         XCTAssertFalse(loginForm.isPasswordValid)
         
         // Test with valid email but empty password
-        loginForm.email = "test@example.com"
+        loginForm.email = "user@test.local"
         XCTAssertTrue(loginForm.isEmailValid)
         XCTAssertFalse(loginForm.isPasswordValid)
         XCTAssertFalse(loginForm.isFormValid)
@@ -53,7 +53,7 @@ final class AuthenticationViewTests: XCTestCase {
         XCTAssertFalse(loginForm.isFormValid)
         
         // Test with valid email and password
-        loginForm.email = "test@example.com"
+        loginForm.email = "user@test.local"
         loginForm.password = "password123"
         XCTAssertTrue(loginForm.isEmailValid)
         XCTAssertTrue(loginForm.isPasswordValid)
@@ -67,8 +67,8 @@ final class AuthenticationViewTests: XCTestCase {
         XCTAssertFalse(registrationForm.isFormValid)
         
         // Test with valid basic info
-        registrationForm.name = "John Doe"
-        registrationForm.email = "john@example.com"
+        registrationForm.name = "Sample User"
+        registrationForm.email = "user@test.local"
         registrationForm.password = "password123"
         registrationForm.confirmPassword = "password123"
         registrationForm.acceptedTerms = true
@@ -90,10 +90,10 @@ final class AuthenticationViewTests: XCTestCase {
     
     func testValidationHelper() {
         // Test email validation
-        XCTAssertTrue(ValidationHelper.isValidEmail("test@example.com"))
+        XCTAssertTrue(ValidationHelper.isValidEmail("user@test.local"))
         XCTAssertTrue(ValidationHelper.isValidEmail("user.name+tag@domain.co.uk"))
         XCTAssertFalse(ValidationHelper.isValidEmail("invalid-email"))
-        XCTAssertFalse(ValidationHelper.isValidEmail("@example.com"))
+        XCTAssertFalse(ValidationHelper.isValidEmail("@test.local"))
         XCTAssertFalse(ValidationHelper.isValidEmail("test@"))
         
         // Test password validation
@@ -104,7 +104,7 @@ final class AuthenticationViewTests: XCTestCase {
         XCTAssertFalse(ValidationHelper.isValidPassword("password"))
         
         // Test name validation
-        XCTAssertTrue(ValidationHelper.isValidName("John Doe"))
+        XCTAssertTrue(ValidationHelper.isValidName("Sample User"))
         XCTAssertTrue(ValidationHelper.isValidName("Jane"))
         XCTAssertFalse(ValidationHelper.isValidName("A"))
         XCTAssertFalse(ValidationHelper.isValidName(""))
@@ -165,7 +165,7 @@ final class AuthenticationViewTests: XCTestCase {
         XCTAssertEqual(viewModel.validationStates.email, .invalid("Email address is required"))
         XCTAssertEqual(viewModel.validationStates.password, .invalid("Password is required"))
         
-        viewModel.loginForm.email = "test@example.com"
+        viewModel.loginForm.email = "user@test.local"
         viewModel.loginForm.password = "password123"
         viewModel.validateLoginForm()
         
@@ -200,7 +200,7 @@ final class AuthenticationViewTests: XCTestCase {
     func testSuccessfulLogin() async {
         let expectation = XCTestExpectation(description: "Login success")
         
-        viewModel.loginForm.email = "test@example.com"
+        viewModel.loginForm.email = "user@test.local"
         viewModel.loginForm.password = "password123"
         
         viewModel.$authenticationState
@@ -227,7 +227,7 @@ final class AuthenticationViewTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Login failure")
         
         mockNetworkService.shouldFailLogin = true
-        viewModel.loginForm.email = "error@example.com"
+        viewModel.loginForm.email = "error@test.local"
         viewModel.loginForm.password = "wrongpassword"
         
         viewModel.$authenticationState
@@ -319,7 +319,7 @@ final class AuthenticationViewTests: XCTestCase {
     }
     
     func testPasswordReset() async {
-        viewModel.loginForm.email = "test@example.com"
+        viewModel.loginForm.email = "user@test.local"
         
         let expectation = XCTestExpectation(description: "Password reset")
         
@@ -339,7 +339,7 @@ final class AuthenticationViewTests: XCTestCase {
     
     func testLogout() async {
         // First login
-        viewModel.loginForm.email = "test@example.com"
+        viewModel.loginForm.email = "user@test.local"
         viewModel.loginForm.password = "password123"
         await viewModel.login()
         
@@ -367,7 +367,7 @@ final class AuthenticationViewTests: XCTestCase {
     
     func testNetworkErrorMapping() async {
         mockNetworkService.networkError = .unauthorized
-        viewModel.loginForm.email = "test@example.com"
+        viewModel.loginForm.email = "user@test.local"
         viewModel.loginForm.password = "wrongpassword"
         
         await viewModel.login()
@@ -383,7 +383,7 @@ final class AuthenticationViewTests: XCTestCase {
     
     func testFormReset() {
         // Set some form data
-        viewModel.loginForm.email = "test@example.com"
+        viewModel.loginForm.email = "user@test.local"
         viewModel.loginForm.password = "password123"
         viewModel.registrationForm.name = "John Doe"
         viewModel.authenticationState = .error(.invalidCredentials)
@@ -468,7 +468,7 @@ class MockNetworkService: NetworkServiceProtocol {
         if endpoint.path.contains("/login") || endpoint.path.contains("/register") {
             let mockUser = User(
                 id: "test-user-id",
-                email: "test@example.com",
+                email: "user@test.local",
                 name: "Test User",
                 profileImageURL: nil,
                 phoneNumber: nil,
@@ -507,7 +507,7 @@ class MockNetworkService: NetworkServiceProtocol {
     }
     
     func authenticate(email: String, password: String) async throws -> AuthResponse {
-        if shouldFailLogin || email == "error@example.com" {
+        if shouldFailLogin || email == "error@test.local" {
             throw NetworkError.unauthorized
         }
         

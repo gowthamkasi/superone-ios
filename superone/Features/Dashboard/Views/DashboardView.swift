@@ -409,18 +409,6 @@ struct LabReportActivityItem: View {
 }
 
 // MARK: - Preview
-#Preview {
-    DashboardView()
-        .environmentObject(AppState())
-}
-
-#Preview("Loading State") {
-    DashboardView()
-        .environmentObject(AppState())
-        .onAppear {
-            // Simulate loading state for preview
-        }
-}
 
 // MARK: - Array Extension for Chunking
 extension Array {

@@ -36,7 +36,7 @@ final class NetworkServiceTests: XCTestCase {
     
     func testAuthenticate_Success() async throws {
         // Given
-        let email = "test@example.com"
+        let email = "user@test.local"
         let password = "password123"
         let expectedToken = "test-access-token"
         let expectedRefreshToken = "test-refresh-token"
@@ -45,7 +45,7 @@ final class NetworkServiceTests: XCTestCase {
         let mockUser = User(
             id: "user123",
             email: email,
-            name: "Test User",
+            name: "Test Sample User",
             profileImageURL: nil,
             phoneNumber: nil,
             dateOfBirth: nil,
@@ -88,7 +88,7 @@ final class NetworkServiceTests: XCTestCase {
     
     func testAuthenticate_InvalidCredentials() async throws {
         // Given
-        let email = "invalid@example.com"
+        let email = "invalid@test.local"
         let password = "wrongpassword"
         
         // Mock failed auth response
@@ -117,8 +117,8 @@ final class NetworkServiceTests: XCTestCase {
         
         let mockUser = User(
             id: "user123",
-            email: "test@example.com",
-            name: "Test User",
+            email: "user@test.local",
+            name: "Test Sample User",
             profileImageURL: nil,
             phoneNumber: nil,
             dateOfBirth: nil,
@@ -349,7 +349,7 @@ final class NetworkServiceTests: XCTestCase {
     
     func testDownloadFile_Success() async throws {
         // Given
-        let testURL = URL(string: "https://example.com/test-file.pdf")!
+        let testURL = URL(string: "https://test.local/test-file.pdf")!
         let expectedData = "Test file content".data(using: .utf8)!
         
         // Mock successful download response
@@ -366,7 +366,7 @@ final class NetworkServiceTests: XCTestCase {
         // Given
         await setNetworkAvailable(false)
         
-        let testURL = URL(string: "https://example.com/test-file.pdf")!
+        let testURL = URL(string: "https://test.local/test-file.pdf")!
         
         // When & Then
         do {
@@ -564,7 +564,7 @@ extension NetworkServiceTests {
     
     func testIntegration_FullAuthenticationFlow() async throws {
         // Given
-        let email = "integration@example.com"
+        let email = "integration@test.local"
         let password = "password123"
         
         // Setup mock responses for full flow

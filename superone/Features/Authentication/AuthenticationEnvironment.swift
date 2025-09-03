@@ -420,7 +420,7 @@ extension AuthenticationContext {
     static let authenticatedPreview = AuthenticationContext.authenticated(
         user: User(
             id: "preview_user",
-            email: "user@example.com",
+            email: "user@test.local",
             name: "Preview User",
             profileImageURL: nil,
             phoneNumber: nil,

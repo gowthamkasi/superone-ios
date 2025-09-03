@@ -1060,23 +1060,12 @@ struct HealthTrendsPreview: View {
                 .foregroundColor(HealthColors.primaryText)
             
             VStack(spacing: HealthSpacing.sm) {
-                HealthTrendRow(
-                    title: "Cholesterol: Improving",
-                    subtitle: "Down 25 mg/dL since February",
-                    status: .improving
-                )
-                
-                HealthTrendRow(
-                    title: "Blood Sugar: Stable",
-                    subtitle: "Consistent good control",
-                    status: .stable
-                )
-                
-                HealthTrendRow(
-                    title: "Vitamin D: Needs Attention",
-                    subtitle: "Below optimal range",
-                    status: .needsAttention
-                )
+                // Health trends will be loaded from API - no hardcoded data
+                Text("No health trends available")
+                    .font(HealthTypography.body)
+                    .foregroundColor(HealthColors.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, HealthSpacing.lg)
             }
             
             Button("View Detailed Analysis") {}
@@ -1413,18 +1402,12 @@ struct RecentlyViewedSection: View {
                 .foregroundColor(HealthColors.primaryText)
             
             VStack(spacing: HealthSpacing.sm) {
-                // For demo, show placeholder recently viewed
-                RecentlyViewedRow(
-                    facilityName: "LabLoop Central Laboratory",
-                    timeViewed: "Viewed 2 hours ago",
-                    rating: "⭐ 4.8"
-                )
-                
-                RecentlyViewedRow(
-                    facilityName: "Downtown Collection Center",
-                    timeViewed: "Viewed yesterday",
-                    rating: "⭐ 4.5"
-                )
+                // Recently viewed facilities will be loaded from API - no hardcoded data
+                Text("No recently viewed facilities")
+                    .font(HealthTypography.body)
+                    .foregroundColor(HealthColors.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, HealthSpacing.lg)
             }
         }
         .padding(HealthSpacing.lg)
@@ -2066,12 +2049,3 @@ struct IndividualTestCard: View {
 
 // MARK: - Preview
 
-#Preview("Appointments View") {
-    AppointmentsView()
-        .environmentObject(AppState())
-}
-
-#Preview("Appointments View - Empty") {
-    AppointmentsView()
-        .environmentObject(AppState())
-}

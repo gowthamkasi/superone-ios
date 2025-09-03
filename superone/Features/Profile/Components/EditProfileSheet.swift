@@ -334,13 +334,13 @@ struct DatePickerSheet: View {
     EditProfileSheet(
         profile: User(
             id: "preview-user-id",
-            email: "preview@example.com",
+            email: "preview@test.local",
             name: "Sample User",
             firstName: "Sample",
             lastName: "User",
             profileImageURL: nil,
-            phoneNumber: "+1234567890",
-            mobileNumber: "+1234567890", // Added mobile number for preview
+            phoneNumber: "+1555000000",
+            mobileNumber: "+1555000000", // Added mobile number for preview
             dateOfBirth: Calendar.current.date(byAdding: .year, value: -25, to: Date()),
             gender: .male,
             height: 175.0,

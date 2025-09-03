@@ -682,32 +682,3 @@ struct ExportOptionButton: View {
 
 // MARK: - Preview
 
-#Preview("Report Detail - Completed") {
-    ReportDetailView(
-        report: LabReportDocument(
-            fileName: "Blood Work - Complete Panel.pdf",
-            fileSize: 2_400_000,
-            mimeType: "application/pdf",
-            processingStatus: .completed,
-            documentType: .bloodWork,
-            healthCategory: .hematology,
-            extractedText: "Complete Blood Count results showing normal values for most parameters...",
-            ocrConfidence: 0.95
-        )
-    )
-}
-
-#Preview("Report Detail - Processing") {
-    ReportDetailView(
-        report: LabReportDocument(
-            fileName: "Lipid Panel Processing.pdf",
-            fileSize: 1_800_000,
-            mimeType: "application/pdf",
-            processingStatus: .processing,
-            documentType: .lipidPanel,
-            healthCategory: .cardiovascular,
-            extractedText: nil,
-            ocrConfidence: nil
-        )
-    )
-}

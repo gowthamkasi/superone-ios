@@ -75,8 +75,8 @@ final class OnboardingViewTests: XCTestCase {
     }
     
     func testProfileUpdate() {
-        let firstName = "John"
-        let lastName = "Doe"
+        let firstName = "Sample"
+        let lastName = "User"
         let dateOfBirth = Date()
         let biologicalSex = BiologicalSex.male
         let height = 180.0
@@ -127,8 +127,8 @@ final class OnboardingViewTests: XCTestCase {
         XCTAssertFalse(viewModel.canProceedFromCurrentStep)
         
         viewModel.updateProfile(
-            firstName: "John",
-            lastName: "Doe",
+            firstName: "Sample",
+            lastName: "User",
             dateOfBirth: Date(),
             biologicalSex: .male
         )
@@ -176,8 +176,8 @@ final class OnboardingViewTests: XCTestCase {
     func testCompleteOnboarding() async {
         // Set up complete profile
         viewModel.updateProfile(
-            firstName: "John",
-            lastName: "Doe",
+            firstName: "Sample",
+            lastName: "User",
             dateOfBirth: Date(),
             biologicalSex: .male
         )
@@ -192,7 +192,7 @@ final class OnboardingViewTests: XCTestCase {
     
     func testResetOnboarding() {
         // Set up some state
-        viewModel.updateProfile(firstName: "John", lastName: "Doe")
+        viewModel.updateProfile(firstName: "Sample", lastName: "User")
         viewModel.toggleHealthGoal(.weightManagement)
         viewModel.goToStep(.profileSetup)
         
@@ -226,10 +226,10 @@ final class OnboardingViewTests: XCTestCase {
         // Empty names
         XCTAssertTrue(profile.fullName.isEmpty)
         
-        profile.firstName = "John"
-        profile.lastName = "Doe"
+        profile.firstName = "Sample"
+        profile.lastName = "User"
         
-        XCTAssertEqual(profile.fullName, "John Doe")
+        XCTAssertEqual(profile.fullName, "Sample User")
     }
     
     func testOnboardingProfileCompletion() {
@@ -239,8 +239,8 @@ final class OnboardingViewTests: XCTestCase {
         XCTAssertFalse(profile.isProfileComplete)
         
         // Add required fields
-        profile.firstName = "John"
-        profile.lastName = "Doe"
+        profile.firstName = "Sample"
+        profile.lastName = "User"
         profile.dateOfBirth = Date()
         profile.biologicalSex = .male
         profile.selectedGoals.insert(.generalWellness)
@@ -368,8 +368,8 @@ final class OnboardingViewTests: XCTestCase {
             
             // Simulate typical onboarding flow
             viewModel.updateProfile(
-                firstName: "John",
-                lastName: "Doe",
+                firstName: "Sample",
+                lastName: "User",
                 dateOfBirth: Date(),
                 biologicalSex: .male,
                 height: 180.0,
@@ -393,8 +393,8 @@ extension OnboardingViewTests {
     
     func createCompleteProfile() -> OnboardingProfile {
         var profile = OnboardingProfile()
-        profile.firstName = "John"
-        profile.lastName = "Doe"
+        profile.firstName = "Sample"
+        profile.lastName = "User"
         profile.dateOfBirth = Calendar.current.date(byAdding: .year, value: -30, to: Date())
         profile.biologicalSex = .male
         profile.height = 180.0
@@ -405,7 +405,7 @@ extension OnboardingViewTests {
     
     func createIncompleteProfile() -> OnboardingProfile {
         var profile = OnboardingProfile()
-        profile.firstName = "John"
+        profile.firstName = "Sample"
         // Missing required fields
         return profile
     }

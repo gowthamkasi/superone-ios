@@ -648,7 +648,7 @@ extension LocationManager {
     /// Create mock location manager for SwiftUI previews
     static func mock(
         state: LocationState = .success,
-        location: String = "Mumbai, Maharashtra, IN",
+        location: String = "Sample City, Sample State, US",
         authStatus: CLAuthorizationStatus = .authorizedWhenInUse
     ) -> LocationManager {
         let manager = LocationManager()
@@ -656,8 +656,8 @@ extension LocationManager {
         manager.currentLocationText = location
         manager.authorizationStatus = authStatus
         
-        // Mock coordinate for Mumbai
-        if let mockLocation = CLLocation(latitude: 19.0760, longitude: 72.8777) as CLLocation? {
+        // Mock coordinate for generic location
+        if let mockLocation = CLLocation(latitude: 40.7128, longitude: -74.0060) as CLLocation? {
             manager.currentLocation = mockLocation
         }
         

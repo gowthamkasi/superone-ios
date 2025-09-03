@@ -62,10 +62,3 @@ struct ContentView: View {
 
 
 
-#Preview {
-    ContentView()
-        .environmentObject(AppState())
-        .environment(AuthenticationManager())
-        .environment(OnboardingViewModel())
-        .environmentObject(HealthDataStore())
-}

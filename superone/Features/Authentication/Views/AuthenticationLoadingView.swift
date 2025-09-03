@@ -424,7 +424,7 @@ struct InlineLoadingIndicator: View {
     AuthenticationLoadingView(
         state: .success(User(
             id: "1",
-            email: "test@example.com",
+            email: "test@test.local",
             name: "Test User",
             profileImageURL: nil,
             phoneNumber: nil,

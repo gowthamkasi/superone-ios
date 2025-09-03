@@ -317,7 +317,7 @@ final class KeychainServiceTests: XCTestCase {
         // Store multiple tokens
         try KeychainHelper.storeAuthToken("auth_token")
         try KeychainHelper.storeRefreshToken("refresh_token")
-        try KeychainHelper.storeUserCredentials(email: "test@example.com", password: "password")
+        try KeychainHelper.storeUserCredentials(email: "user@test.local", password: "password")
         
         // Verify tokens exist
         XCTAssertTrue(KeychainHelper.exists(key: AppConfig.KeychainKeys.authToken))

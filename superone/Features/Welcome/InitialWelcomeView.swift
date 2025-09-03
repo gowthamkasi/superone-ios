@@ -260,7 +260,7 @@ struct InitialWelcomeView: View {
             let manager = AppFlowManager.shared
             // Simulate reinstall scenario
             UserDefaults.standard.set(true, forKey: "has_ever_had_account")
-            UserDefaults.standard.set("user@example.com", forKey: "last_known_user_email")
+            UserDefaults.standard.set("user@test.local", forKey: "last_known_user_email")
             return manager
         }())
 }

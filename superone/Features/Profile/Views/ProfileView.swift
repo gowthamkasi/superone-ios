@@ -678,14 +678,3 @@ struct ProfileRow<Trailing: View>: View {
 
 // MARK: - Preview
 
-#Preview("Profile View") {
-    ProfileView()
-        .environmentObject(AppState())
-        .environmentObject(ThemeManager())
-}
-
-#Preview("Profile View - Loading") {
-    ProfileView()
-        .environmentObject(AppState())
-        .environmentObject(ThemeManager())
-}

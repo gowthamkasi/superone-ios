@@ -431,8 +431,8 @@ final class AppointmentsViewModel {
                 // Create patient information (in a real app, this would come from user profile)
                 let patientInfo = PatientBookingInfo(
                     name: "Current User", // Replace with actual user name
-                    phone: "+1234567890", // Replace with actual user phone
-                    email: "user@example.com", // Replace with actual user email
+                    phone: "+1555000000", // Replace with actual user phone
+                    email: "user@test.local", // Replace with actual user email
                     dateOfBirth: Date(timeIntervalSince1970: 0), // Replace with actual DOB
                     gender: .male // Replace with actual gender
                 )

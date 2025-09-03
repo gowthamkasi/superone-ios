@@ -499,12 +499,12 @@ struct TestResultDetailView: View {
                 "data": [
                     "user": [
                         "_id": "68a4b68d895feeda983294b7",
-                        "email": "user@example.com",
-                        "name": "John",
-                        "first_name": "John",
-                        "last_name": "Doe",
+                        "email": "user@test.local",
+                        "name": "Sample",
+                        "first_name": "Sample",
+                        "last_name": "User",
                         "profile_image_url": "https://example.com/avatar.jpg",
-                        "phone_number": "+1234567890",
+                        "phone_number": "+1555000000",
                         "date_of_birth": "1990-01-15T00:00:00.000Z",
                         "gender": "male",
                         "height": 175.0,
@@ -587,7 +587,7 @@ struct TestResultDetailView: View {
                 "data": [
                     "user": [
                         "_id": "new_user_id_456",
-                        "email": "newuser@example.com",
+                        "email": "newuser@test.local",
                         "name": "Jane",
                         "first_name": "Jane",
                         "last_name": "Smith",
@@ -650,10 +650,10 @@ struct TestResultDetailView: View {
                 "message": "User retrieved successfully",
                 "data": [
                     "_id": "user_id_123",
-                    "email": "user@example.com",
-                    "name": "John Doe",
+                    "email": "user@test.local",
+                    "name": "Sample User",
                     "profile_image_url": "https://example.com/avatar.jpg",
-                    "phone_number": "+1234567890",
+                    "phone_number": "+1555000000",
                     "date_of_birth": "1990-01-01T00:00:00.000Z",
                     "gender": "male",
                     "created_at": "2024-01-01T00:00:00.000Z",
@@ -675,7 +675,7 @@ struct TestResultDetailView: View {
                             "name": "Jane Doe",
                             "relationship": "spouse",
                             "phone_number": "+1234567891",
-                            "email": "jane@example.com"
+                            "email": "jane@test.local"
                         ],
                         "profile_image_url": "https://example.com/avatar.jpg",
                         "labloop_patient_id": "ll_patient_123"

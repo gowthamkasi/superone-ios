@@ -1301,12 +1301,3 @@ struct ReportFilterChip: View {
 
 // MARK: - Preview
 
-#Preview("Reports View") {
-    ReportsView()
-        .environmentObject(AppState())
-}
-
-#Preview("Empty State") {
-    ReportsView()
-        .environmentObject(AppState())
-}

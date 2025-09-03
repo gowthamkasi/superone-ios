@@ -346,32 +346,3 @@ struct ActionButton: View {
     }
 }
 
-#Preview("Confirmed Appointment") {
-    AppointmentDetailSheet(
-        appointment: Appointment(
-            facilityName: "LabCorp - Downtown",
-            facilityId: "lab001",
-            date: Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date(),
-            timeSlot: TimeSlot(startTime: "09:00", endTime: "09:30"),
-            serviceType: .bloodWork,
-            status: .confirmed,
-            location: "123 Main St, Downtown, NY 10001",
-            notes: "Comprehensive metabolic panel. Please fast for 12 hours before appointment."
-        )
-    )
-}
-
-#Preview("Completed Appointment") {
-    AppointmentDetailSheet(
-        appointment: Appointment(
-            facilityName: "Quest Diagnostics - Midtown",
-            facilityId: "lab002",
-            date: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date(),
-            timeSlot: TimeSlot(startTime: "14:30", endTime: "15:00"),
-            serviceType: .lipidPanel,
-            status: .completed,
-            location: "456 Oak Ave, Midtown, NY 10017",
-            notes: "Annual lipid screening completed successfully."
-        )
-    )
-}

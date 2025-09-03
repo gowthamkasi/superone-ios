@@ -202,20 +202,12 @@ struct FacilityDetailSheet: View {
             }
             
             VStack(spacing: HealthSpacing.md) {
-                // Mock reviews
-                ReviewCard(
-                    rating: 5,
-                    review: "Great service and very professional staff. Quick and efficient blood draw.",
-                    author: "Sarah M.",
-                    date: "2 weeks ago"
-                )
-                
-                ReviewCard(
-                    rating: 4,
-                    review: "Clean facility with minimal wait time. Easy parking available.",
-                    author: "Mike R.",
-                    date: "1 month ago"
-                )
+                // Reviews will be loaded from API - no hardcoded data
+                Text("No reviews available")
+                    .font(HealthTypography.body)
+                    .foregroundColor(HealthColors.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, HealthSpacing.lg)
             }
         }
     }
@@ -414,27 +406,3 @@ private func getServiceIcon(for service: String) -> String {
     }
 }
 
-#Preview {
-    FacilityDetailSheet(
-        facility: LabFacility(
-            id: "preview-facility",
-            name: "LabCorp - Downtown",
-            type: .lab,
-            rating: 4.5,
-            distance: "2.3 km",
-            availability: "Mon-Fri: 7:00 AM - 6:00 PM",
-            price: 2800,
-            isWalkInAvailable: true,
-            nextSlot: "Today 3:00 PM",
-            address: "123 Main St, Downtown, NY 10001",
-            phoneNumber: "(555) 123-4567",
-            location: "Downtown, NY",
-            services: ["Blood Tests", "X-Ray", "ECG"],
-            reviewCount: 145,
-            operatingHours: "7:00 AM - 6:00 PM",
-            isRecommended: true,
-            offersHomeCollection: false,
-            acceptsInsurance: true
-        )
-    )
-}
