@@ -473,7 +473,7 @@ actor RealTestService: TestServiceProtocol {
             duration: apiData.duration,
             price: apiData.price,
             originalPrice: apiData.originalPrice,
-            fasting: apiData.fasting.required.toFastingRequirement,
+            fasting: apiData.fasting.toFastingRequirement,
             sampleType: apiData.sampleType.type.toSampleType,
             reportTime: apiData.reportTime,
             description: apiData.description,

@@ -190,10 +190,37 @@ final class TestsAPIService {
                         do {
                             nonisolated(unsafe) let decoder = JSONDecoder()
                             decoder.dateDecodingStrategy = .iso8601
+                            
+                            #if DEBUG
+                            // Log raw JSON response for debugging
+                            if let jsonString = String(data: data, encoding: .utf8) {
+                                print("📄 Raw JSON Response:")
+                                print(jsonString)
+                            }
+                            #endif
+                            
                             nonisolated(unsafe) let decodedResponse = try decoder.decode(T.self, from: data)
                             continuation.resume(returning: decodedResponse)
                         } catch {
-                            continuation.resume(throwing: TestsAPIError.serverError("Failed to decode response"))
+                            #if DEBUG
+                            print("🚨 JSON Decode Error: \(error)")
+                            if let decodingError = error as? DecodingError {
+                                print("🔍 Decoding Error Details:")
+                                switch decodingError {
+                                case .typeMismatch(let type, let context):
+                                    print("  - Type mismatch for \(type) at \(context.codingPath)")
+                                case .valueNotFound(let type, let context):
+                                    print("  - Value not found for \(type) at \(context.codingPath)")
+                                case .keyNotFound(let key, let context):
+                                    print("  - Key '\(key.stringValue)' not found at \(context.codingPath)")
+                                case .dataCorrupted(let context):
+                                    print("  - Data corrupted at \(context.codingPath): \(context.debugDescription)")
+                                @unknown default:
+                                    print("  - Unknown decoding error: \(decodingError)")
+                                }
+                            }
+                            #endif
+                            continuation.resume(throwing: TestsAPIError.serverError("Failed to decode response: \(error.localizedDescription)"))
                         }
                     case .failure(let error):
                         // Map Alamofire errors to custom errors

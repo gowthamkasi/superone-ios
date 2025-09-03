@@ -133,7 +133,18 @@ struct AppointmentsView: View {
     private var tabSelector: some View {
         HStack(spacing: 0) {
             ForEach(AppointmentTab.allCases, id: \.self) { tab in
-                Button(action: { selectedTab = tab }) {
+                Button(action: { 
+                    selectedTab = tab
+                    // Trigger API call when switching to Tests tab
+                    if tab == .tests {
+                        switch viewModel.selectedTestType {
+                        case .individualTests:
+                            viewModel.loadIndividualTests()
+                        case .healthPackages:
+                            viewModel.loadTestPackages()
+                        }
+                    }
+                }) {
                     VStack(spacing: HealthSpacing.xs) {
                         Image(systemName: tab.icon)
                             .font(.system(size: 18))
@@ -257,12 +268,12 @@ struct AppointmentsView: View {
             .padding(.bottom, HealthSpacing.xl)
         }
         .onAppear {
-            // Lazy load tests data only when Tests tab is accessed
+            // Load tests data when Tests tab is accessed (mirrors Labs tab behavior)
             switch viewModel.selectedTestType {
             case .individualTests:
-                viewModel.loadIndividualTestsIfNeeded()
+                viewModel.loadIndividualTests()    // Direct call like Labs
             case .healthPackages:
-                viewModel.loadTestPackagesIfNeeded()
+                viewModel.loadTestPackages()       // Direct call like Labs
             }
         }
     }

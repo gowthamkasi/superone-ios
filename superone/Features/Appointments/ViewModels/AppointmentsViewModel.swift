@@ -37,7 +37,11 @@ final class AppointmentsViewModel {
     var selectedTest: AppointmentTest?
     
     /// Tests page enhancement - radio button selection
-    var selectedTestType: TestSelectionType = .individualTests
+    var selectedTestType: TestSelectionType = .individualTests {
+        didSet {
+            applyTestsFilters()
+        }
+    }
     var testPackages: [TestPackage] = []
     var individualTests: [IndividualTest] = []
     var isLoadingPackages: Bool = false
@@ -76,7 +80,11 @@ final class AppointmentsViewModel {
     }
     
     /// Tests search and filter
-    var testsSearchText: String = ""
+    var testsSearchText: String = "" {
+        didSet {
+            applyTestsFilters()
+        }
+    }
     var showTestsFilterSheet: Bool = false
     
     /// Labs search and filter (keeping existing searchText for backward compatibility)
@@ -670,6 +678,16 @@ final class AppointmentsViewModel {
         applyFilters()
     }
     
+    /// Apply tests filters and reload data (mirrors applyFilters for Labs)
+    func applyTestsFilters() {
+        switch selectedTestType {
+        case .individualTests:
+            loadIndividualTests()  // Direct call, no caching
+        case .healthPackages:
+            loadTestPackages()     // Direct call, no caching
+        }
+    }
+    
     /// Toggle a lab feature filter
     func toggleLabFeature(_ feature: LabFeature) {
         if selectedLabFeatures.contains(feature) {
@@ -797,27 +815,11 @@ final class AppointmentsViewModel {
     
     // MARK: - Health Packages and Individual Tests Management
     
-    /// Load test packages from LabLoop API only when needed (lazy loading)
-    func loadTestPackagesIfNeeded() {
-        // Skip if already loaded or currently loading
-        guard testPackages.isEmpty && !isLoadingPackages else { return }
-        
-        loadTestPackages()
-    }
-    
     /// Load test packages from LabLoop API
     func loadTestPackages() {
         // TODO: Replace with actual LabLoop API call
         // testPackages = try await testsAPIService.fetchHealthPackages()
         testPackages = [] // No hardcoded test data - use real API data
-    }
-    
-    /// Load individual tests from LabLoop API only when needed (lazy loading)
-    func loadIndividualTestsIfNeeded() {
-        // Skip if already loaded or currently loading
-        guard individualTests.isEmpty && !isLoadingIndividualTests else { return }
-        
-        loadIndividualTests()
     }
     
     /// Load individual tests from LabLoop API
@@ -844,7 +846,7 @@ final class AppointmentsViewModel {
                         price: Int(testItem.price.replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: ",", with: "")) ?? 0,
                         sampleType: testItem.sampleType.displayName,
                         category: testItem.category.rawValue,
-                        fastingRequired: testItem.fasting.required != .none
+                        fastingRequired: testItem.fasting.required != "none"
                     )
                 }
                 
@@ -860,15 +862,7 @@ final class AppointmentsViewModel {
     
     /// Select test type (health packages or individual tests)
     func selectTestType(_ type: TestSelectionType) {
-        selectedTestType = type
-        
-        // Load data when test type changes
-        switch type {
-        case .individualTests:
-            loadIndividualTestsIfNeeded()
-        case .healthPackages:
-            loadTestPackagesIfNeeded()
-        }
+        selectedTestType = type  // This will trigger didSet -> applyTestsFilters()
     }
     
     /// Select lab service type (walk-in or home collection)

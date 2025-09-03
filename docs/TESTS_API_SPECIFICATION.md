@@ -23,8 +23,9 @@ This document provides the comprehensive API specification for the Tests feature
 
 ## API Base Configuration
 
-**Base URL**: Same as existing Super One API  
-- Development: `https://3a1f05544bba.ngrok-free.app/api`
+**Base URL**: Same as existing Super One API
+
+- Development: `https://fd48e80d0a1e.ngrok-free.app/api`
 - Production: `https://api.superonehealth.com/api`
 
 **Authentication**: JWT Bearer token required for all endpoints
@@ -59,6 +60,7 @@ GET /mobile/tests
 | `sort_order` | string | No | Sort order: "asc", "desc" (default: "asc") |
 
 **Response 200 OK**:
+
 ```json
 {
   "success": true,
@@ -154,6 +156,7 @@ GET /mobile/tests/{testId}
 | `testId` | string | Yes | Unique test identifier |
 
 **Response 200 OK**:
+
 ```json
 {
   "success": true,
@@ -252,6 +255,7 @@ GET /mobile/packages
 | `sort_order` | string | No | Sort order: "asc", "desc" |
 
 **Response 200 OK**:
+
 ```json
 {
   "success": true,
@@ -342,6 +346,7 @@ GET /mobile/packages/{packageId}
 | `packageId` | string | Yes | Unique package identifier |
 
 **Response 200 OK**:
+
 ```json
 {
   "success": true,
@@ -472,6 +477,7 @@ GET /mobile/packages/{packageId}
 ### 5. Favorites Management
 
 #### Add/Remove Test Favorite
+
 ```
 POST /mobile/tests/{testId}/favorite
 DELETE /mobile/tests/{testId}/favorite
@@ -485,6 +491,7 @@ DELETE /mobile/tests/{testId}/favorite
 | `testId` | string | Yes | Unique test identifier |
 
 **Response 200 OK**:
+
 ```json
 {
   "success": true,
@@ -498,6 +505,7 @@ DELETE /mobile/tests/{testId}/favorite
 ```
 
 #### Get User Favorites
+
 ```
 GET /mobile/favorites/tests
 ```
@@ -511,6 +519,7 @@ GET /mobile/favorites/tests
 | `limit` | integer | No | Maximum records to return (default: 20) |
 
 **Response 200 OK**:
+
 ```json
 {
   "success": true,
@@ -551,6 +560,7 @@ GET /mobile/tests/search/suggestions?q={query}
 | `limit` | integer | No | Maximum suggestions (default: 10) |
 
 **Response 200 OK**:
+
 ```json
 {
   "success": true,
@@ -574,26 +584,31 @@ GET /mobile/tests/search/suggestions?q={query}
 ## Data Models Reference
 
 ### TestCategory Enum
+
 ```
 blood_test, imaging, cardiology, women, diabetes, thyroid, liver, kidney, cancer, fitness, allergy, infection
 ```
 
 ### FastingRequirement Enum
+
 ```
 none, 8_hours, 10_hours, 12_hours, 14_hours, overnight
 ```
 
 ### SampleType Enum
+
 ```
 blood, urine, saliva, stool, tissue, swab, breath, imaging
 ```
 
 ### SectionType Enum
+
 ```
 about, why_needed, insights, preparation, results
 ```
 
 ### LabType Enum
+
 ```
 lab, hospital, home_collection, clinic
 ```
@@ -619,38 +634,42 @@ All endpoints follow the standard error response format:
 
 ### Common Error Codes
 
-| HTTP Status | Error Code | Description |
-|-------------|------------|-------------|
-| 400 | INVALID_PARAMETERS | Invalid query parameters |
-| 401 | UNAUTHORIZED | Authentication required |
-| 404 | TEST_NOT_FOUND | Test not found |
-| 404 | PACKAGE_NOT_FOUND | Package not found |
-| 429 | RATE_LIMITED | Too many requests |
-| 500 | INTERNAL_ERROR | Server error |
+| HTTP Status | Error Code         | Description              |
+| ----------- | ------------------ | ------------------------ |
+| 400         | INVALID_PARAMETERS | Invalid query parameters |
+| 401         | UNAUTHORIZED       | Authentication required  |
+| 404         | TEST_NOT_FOUND     | Test not found           |
+| 404         | PACKAGE_NOT_FOUND  | Package not found        |
+| 429         | RATE_LIMITED       | Too many requests        |
+| 500         | INTERNAL_ERROR     | Server error             |
 
 ---
 
 ## Implementation Notes
 
 ### Search Functionality
+
 - **Full-text search** across test names, descriptions, and tags
 - **Autocomplete** with real-time suggestions
 - **Search history** for logged-in users
 - **Fuzzy matching** for typos and partial matches
 
 ### Filtering System
+
 - **Multiple filters** can be applied simultaneously
 - **Filter combinations** are AND-ed together
 - **Available filters** are dynamically calculated based on current results
 - **Filter counts** show number of results for each option
 
 ### Pagination Strategy
+
 - **Offset/limit pagination** with configurable record limits
 - **Cursor-based pagination** for real-time updates (optional)
 - **Total count** provided for UI pagination controls
 - **Deep linking** support with offset parameters
 
 ### Caching Recommendations
+
 - **Test list**: Cache for 30 minutes
 - **Test details**: Cache for 2 hours
 - **Package details**: Cache for 2 hours
@@ -658,6 +677,7 @@ All endpoints follow the standard error response format:
 - **Favorites**: No caching (always fresh)
 
 ### Performance Considerations
+
 - **Database indexing** on searchable fields
 - **Search optimization** with dedicated search indexes
 - **Image optimization** for test and package icons
@@ -669,18 +689,21 @@ All endpoints follow the standard error response format:
 ## iOS Integration Points
 
 ### Existing Models Compatibility
+
 - All response models are compatible with existing Swift models
 - Codable conformance for easy JSON mapping
 - Optional fields handled properly
 - Date formatting in ISO8601 standard
 
 ### View Model Integration
+
 - Replace `MockTestService` with `TestsAPIService`
 - Replace `MockPackageService` with `PackagesAPIService`
 - Maintain existing protocol contracts
 - Add proper error handling and loading states
 
 ### UI Components Integration
+
 - `TestsListView` will use paginated API responses
 - Search and filter UI will trigger API calls
 - Loading states for better user experience

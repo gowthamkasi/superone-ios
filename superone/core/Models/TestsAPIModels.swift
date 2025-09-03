@@ -16,6 +16,7 @@ enum APITestCategory: String, CaseIterable, Sendable, Codable {
     case bloodTest = "blood_test"
     case imaging = "imaging"
     case cardiology = "cardiology"
+    case cardiovascular = "cardiovascular"
     case women = "women_health"
     case diabetes = "diabetes"
     case thyroid = "thyroid"
@@ -32,6 +33,7 @@ enum APITestCategory: String, CaseIterable, Sendable, Codable {
         case .bloodTest: return "Blood Test"
         case .imaging: return "Imaging"
         case .cardiology: return "Cardiology"
+        case .cardiovascular: return "Cardiovascular"
         case .women: return "Women's Health"
         case .diabetes: return "Diabetes"
         case .thyroid: return "Thyroid"
@@ -50,6 +52,7 @@ enum APITestCategory: String, CaseIterable, Sendable, Codable {
         case .bloodTest: return .green
         case .imaging: return .blue
         case .cardiology: return .red
+        case .cardiovascular: return .red
         case .women: return .pink
         case .diabetes: return .orange
         case .thyroid: return .purple
@@ -63,15 +66,8 @@ enum APITestCategory: String, CaseIterable, Sendable, Codable {
     }
 }
 
-/// Fasting requirements for API compatibility
-enum APIFastingRequirement: String, CaseIterable, Sendable, Codable {
-    case none = "none"
-    case hours8 = "8_hours"
-    case hours10 = "10_hours"
-    case hours12 = "12_hours"
-    case hours14 = "14_hours"
-    case overnight = "overnight"
-}
+// Note: Fasting requirements are now handled as strings to match API response format
+// Supported values: "none", "8_hours", "10_hours", "12_hours", "fourteen_hours", "overnight", "twelve_hours"
 
 /// Sample type enumeration for API compatibility
 enum APISampleType: String, CaseIterable, Sendable, Codable {
@@ -296,7 +292,7 @@ nonisolated struct PackageDetailsData: Codable, Sendable {
 // MARK: - Supporting Data Models
 
 struct FastingRequirementData: Codable, Sendable {
-    let required: APIFastingRequirement
+    let required: String
     let displayText: String
     let instructions: String?
     
@@ -708,6 +704,7 @@ extension APITestCategory {
         case .bloodTest: return .bloodTest
         case .imaging: return .imaging
         case .cardiology: return .cardiology
+        case .cardiovascular: return .cardiology  // Map cardiovascular to cardiology for UI
         case .women: return .women
         case .diabetes: return .diabetes
         case .thyroid: return .thyroid
@@ -721,16 +718,19 @@ extension APITestCategory {
     }
 }
 
-extension APIFastingRequirement {
-    /// Convert APIFastingRequirement to FastingRequirement
+// MARK: - String-based Fasting Requirement Conversion
+
+extension FastingRequirementData {
+    /// Convert string-based fasting requirement to FastingRequirement enum for UI
     nonisolated var toFastingRequirement: FastingRequirement {
-        switch self {
-        case .none: return .none
-        case .hours8: return .hours8
-        case .hours10: return .hours10
-        case .hours12: return .hours12
-        case .hours14: return .hours14
-        case .overnight: return .overnight
+        switch self.required {
+        case "none": return .none
+        case "8_hours": return .hours8
+        case "10_hours": return .hours10
+        case "12_hours", "twelve_hours": return .hours12
+        case "14_hours", "fourteen_hours": return .hours14
+        case "overnight": return .overnight
+        default: return .none
         }
     }
 }
