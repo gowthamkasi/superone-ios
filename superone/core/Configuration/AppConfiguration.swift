@@ -33,7 +33,7 @@ struct AppConfiguration {
     
     static let development = AppConfiguration(
         environment: .development,
-        apiBaseURL: URL(string: "https://fd48e80d0a1e.ngrok-free.app")!,
+        apiBaseURL: URL(string: "https://7cf3d2e510e2.ngrok-free.app")!,
         wsBaseURL: URL(string: "ws://55922b22d8d8.ngrok-free.app")!,
         enableLogging: true,
         enableAnalytics: false,

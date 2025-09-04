@@ -18,7 +18,7 @@ This guide provides a systematic approach to diagnosing and fixing JSON decoding
 First, capture the actual API response:
 
 ```bash
-curl -s "https://fd48e80d0a1e.ngrok-free.app/api/mobile/[endpoint]" | python3 -m json.tool
+curl -s "https://7cf3d2e510e2.ngrok-free.app/api/mobile/[endpoint]" | python3 -m json.tool
 ```
 
 **Look for:**

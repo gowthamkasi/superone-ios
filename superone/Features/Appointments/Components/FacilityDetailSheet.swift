@@ -239,14 +239,18 @@ struct FacilityDetailSheet: View {
                     }
                 )
                 
-                ContactButton(
-                    icon: "globe",
-                    title: "Website",
-                    subtitle: "Visit facility website",
-                    action: {
-                        // Website navigation will be implemented
-                    }
-                )
+                // Only show website button if facility has a website
+                if let website = facility.website, !website.isEmpty {
+                    ContactButton(
+                        icon: "globe",
+                        title: "Website",
+                        subtitle: website,
+                        action: {
+                            // Website navigation will be implemented
+                            // TODO: Open website in Safari
+                        }
+                    )
+                }
             }
             .padding(HealthSpacing.lg)
             .background(HealthColors.secondaryBackground)

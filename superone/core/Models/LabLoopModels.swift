@@ -131,14 +131,12 @@ struct LabLoopContactInfo: Codable, Sendable {
 /// LabLoop facility search response
 struct LabLoopFacilitySearchResponse: Codable, @unchecked Sendable {
     let facilities: [LabLoopFacility]
-    let totalCount: Int
     let searchRadius: Double
     let userLocation: LabLoopUserLocation?
     let suggestedFilters: LabLoopSuggestedFilters
     
     nonisolated enum CodingKeys: String, CodingKey {
         case facilities
-        case totalCount = "total_count"
         case searchRadius = "search_radius"
         case userLocation = "user_location"
         case suggestedFilters = "suggested_filters"
@@ -494,25 +492,31 @@ struct LabLoopAppointmentBookingResponse: Codable, @unchecked Sendable {
 extension LabLoopFacility {
     /// Convert LabLoop facility to iOS LabFacility model
     func toLabFacility() -> LabFacility {
+        // Extract coordinates from address if available
+        let coordinates: (lat: Double, lng: Double)? = self.address.coordinates.map { coord in
+            (lat: coord.lat, lng: coord.lng)
+        }
+        
         return LabFacility(
             id: self.id,
             name: self.name,
             type: .lab, // Default type for LabLoop facilities
             rating: self.rating,
-            distance: "N/A", // Distance would be calculated based on location
+            coordinates: coordinates, // Use coordinates instead of distance string
             availability: "\(self.workingHours.open) - \(self.workingHours.close)",
             price: 2800, // Default package price - should be calculated based on services
             isWalkInAvailable: true, // Default to true for LabLoop facilities
             nextSlot: nil, // Would need to be fetched separately
             address: "\(self.address.street), \(self.address.city), \(self.address.state)",
             phoneNumber: self.contactInfo.phone,
+            website: self.contactInfo.website, // Optional website field
             location: "\(self.address.city), \(self.address.state)",
             services: self.services,
             reviewCount: self.reviewCount,
             operatingHours: "\(self.workingHours.open) - \(self.workingHours.close)",
             isRecommended: self.rating >= 4.5,
-            offersHomeCollection: self.features.contains("Home Collection"),
-            acceptsInsurance: true
+            offersHomeCollection: self.homeCollectionAvailable,
+            acceptsInsurance: self.acceptsInsurance
         )
     }
 }

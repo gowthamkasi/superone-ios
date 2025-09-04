@@ -22,13 +22,13 @@ struct APIConfiguration {
         var baseURL: String {
             switch self {
             case .development:
-                return "https://fd48e80d0a1e.ngrok-free.app"
+                return "https://7cf3d2e510e2.ngrok-free.app"
             case .staging:
                 return "https://staging-api.superonehealth.com"  
             case .production:
                 return "https://api.superonehealth.com"
             case .localTest:
-                return "https://fd48e80d0a1e.ngrok-free.app"  // This will timeout and trigger mock response
+                return "https://7cf3d2e510e2.ngrok-free.app"  // This will timeout and trigger mock response
             }
         }
     }
@@ -51,7 +51,7 @@ struct APIConfiguration {
         var baseURL: String {
             switch self {
             case .development:
-                return "https://fd48e80d0a1e.ngrok-free.app"  // LabLoop development server
+                return "https://7cf3d2e510e2.ngrok-free.app"  // LabLoop development server
             case .staging:
                 return "https://staging.labloop.health"
             case .production:

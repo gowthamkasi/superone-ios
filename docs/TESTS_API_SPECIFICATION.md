@@ -25,7 +25,7 @@ This document provides the comprehensive API specification for the Tests feature
 
 **Base URL**: Same as existing Super One API
 
-- Development: `https://fd48e80d0a1e.ngrok-free.app/api`
+- Development: `https://7cf3d2e510e2.ngrok-free.app/api`
 - Production: `https://api.superonehealth.com/api`
 
 **Authentication**: JWT Bearer token required for all endpoints

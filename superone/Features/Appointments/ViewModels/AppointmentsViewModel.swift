@@ -498,17 +498,14 @@ final class AppointmentsViewModel {
             }
         }
         
-        // Apply distance filter
+        // Apply distance filter using coordinates and LocationManager
         if selectedDistanceFilter != .any,
            let maxDistance = selectedDistanceFilter.maxDistanceKm {
-            // For now, use a simplified distance parsing from the distance string
-            // In production, this should use actual coordinates
             filtered = filtered.filter { facility in
-                let distanceString = facility.distance
-                if let distanceValue = extractDistanceValue(from: distanceString) {
-                    return distanceValue <= maxDistance
-                }
-                return true // Include facilities without distance info
+                return facility.isWithinDistance(
+                    from: locationManager.currentLocation,
+                    maxDistanceKm: maxDistance
+                )
             }
         }
         
@@ -584,21 +581,6 @@ final class AppointmentsViewModel {
     }
     
     /// Extract distance value from a distance string like "2.3 km" or "1.5 miles"
-    private func extractDistanceValue(from distanceString: String) -> Double? {
-        // Extract numeric value from strings like "2.3 km", "1.5 miles", etc.
-        let scanner = Scanner(string: distanceString)
-        var distance: Double = 0
-        
-        if scanner.scanDouble(&distance) {
-            // Convert miles to km if needed
-            if distanceString.lowercased().contains("mile") {
-                return distance * 1.60934 // Convert miles to km
-            }
-            return distance
-        }
-        
-        return nil
-    }
     
     /// Search facilities with real-time LabLoop API integration
     func searchFacilitiesWithQuery(_ query: String) {

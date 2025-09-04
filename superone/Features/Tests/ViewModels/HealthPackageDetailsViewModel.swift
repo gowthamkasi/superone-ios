@@ -514,13 +514,14 @@ actor RealPackageService: PackageServiceProtocol {
                 name: apiLab.name,
                 type: LabType(rawValue: apiLab.type ?? "lab") ?? .lab,
                 rating: apiLab.rating,
-                distance: apiLab.distance ?? "Unknown",
+                coordinates: nil, // TODO: Extract coordinates from API when available
                 availability: apiLab.availability ?? "Available",
                 price: Int(apiLab.price?.replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: ",", with: "") ?? "0") ?? 0,
                 isWalkInAvailable: apiLab.isWalkInAvailable ?? false,
                 nextSlot: apiLab.nextSlot,
                 address: apiLab.address,
                 phoneNumber: apiLab.phoneNumber,
+                website: nil, // TODO: Add website field when available from API
                 location: apiLab.location,
                 services: apiLab.services ?? [],
                 reviewCount: apiLab.reviewCount ?? 0,

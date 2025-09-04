@@ -221,11 +221,37 @@ final class LabFacilityAPIService {
                     switch response.result {
                     case .success(let data):
                         do {
+                            #if DEBUG
+                            // Log raw JSON response for debugging
+                            if let jsonString = String(data: data, encoding: .utf8) {
+                                print("📄 Raw JSON Response from \(url):")
+                                print(jsonString)
+                            }
+                            #endif
+                            
                             nonisolated(unsafe) let decoder = JSONDecoder()
                             decoder.dateDecodingStrategy = .iso8601
                             nonisolated(unsafe) let decodedResponse = try decoder.decode(T.self, from: data)
                             continuation.resume(returning: decodedResponse)
                         } catch {
+                            #if DEBUG
+                            print("🚨 JSON Decode Error: \(error)")
+                            if let decodingError = error as? DecodingError {
+                                print("🔍 Decoding Error Details:")
+                                switch decodingError {
+                                case .keyNotFound(let key, let context):
+                                    print("  - Missing key '\(key.stringValue)' at \(context.codingPath)")
+                                case .typeMismatch(let type, let context):
+                                    print("  - Type mismatch for \(type) at \(context.codingPath)")
+                                case .valueNotFound(let type, let context):
+                                    print("  - Value not found for \(type) at \(context.codingPath)")
+                                case .dataCorrupted(let context):
+                                    print("  - Data corrupted at \(context.codingPath): \(context.debugDescription)")
+                                @unknown default:
+                                    print("  - Unknown decoding error")
+                                }
+                            }
+                            #endif
                             continuation.resume(throwing: LabFacilityAPIError.decodingError(error))
                         }
                     case .failure(let error):

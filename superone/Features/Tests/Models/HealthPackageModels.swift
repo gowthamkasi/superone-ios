@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import CoreLocation
 
 // Import required types from other models
 // These types are defined in TestDetailsModels.swift - ensure they're accessible
@@ -146,13 +147,14 @@ struct LabFacility: Sendable, Identifiable {
     let name: String
     let type: LabType
     let rating: Double
-    let distance: String
+    let coordinates: (lat: Double, lng: Double)? // Changed from distance string
     let availability: String
     let price: Int
     let isWalkInAvailable: Bool
     let nextSlot: String?
     let address: String?
     let phoneNumber: String?
+    let website: String? // Made optional for facilities without websites
     
     // Additional properties required by views
     let location: String
@@ -165,6 +167,55 @@ struct LabFacility: Sendable, Identifiable {
     
     var formattedPrice: String { "₹\(price.formatted())" }
     var displayRating: String { String(format: "%.1f", rating) }
+    
+    // MARK: - Distance Calculations
+    
+    /// Calculate distance from user location
+    /// - Parameter userLocation: User's current location from LocationManager
+    /// - Returns: Distance in kilometers, nil if coordinates or user location unavailable
+    func distanceFromUser(_ userLocation: CLLocation?) -> Double? {
+        guard let coordinates = coordinates else { return nil }
+        return LocationUtils.calculateDistanceFromUser(userLocation: userLocation, to: coordinates)
+    }
+    
+    /// Get formatted distance string for UI display
+    /// - Parameter userLocation: User's current location from LocationManager
+    /// - Returns: Formatted distance string like "2.3 km" or "Distance unavailable"
+    var distance: String {
+        // For backward compatibility, we need access to user location
+        // This will be computed when LocationManager is available
+        return "Location required"
+    }
+    
+    /// Get formatted distance string with user location
+    /// - Parameter userLocation: User's current location from LocationManager
+    /// - Returns: Formatted distance string like "2.3 km away"
+    func formattedDistance(from userLocation: CLLocation?) -> String {
+        let distanceKm = distanceFromUser(userLocation)
+        return LocationUtils.formatDistance(distanceKm)
+    }
+    
+    /// Get formatted distance string with "away" suffix
+    /// - Parameter userLocation: User's current location from LocationManager
+    /// - Returns: Formatted distance string like "2.3 km away"
+    func formattedDistanceWithSuffix(from userLocation: CLLocation?) -> String {
+        let distanceKm = distanceFromUser(userLocation)
+        return LocationUtils.formatDistanceWithSuffix(distanceKm)
+    }
+    
+    /// Check if facility is within specified distance from user
+    /// - Parameters:
+    ///   - userLocation: User's current location
+    ///   - maxDistanceKm: Maximum distance in kilometers
+    /// - Returns: True if within distance or if location unavailable
+    func isWithinDistance(from userLocation: CLLocation?, maxDistanceKm: Double) -> Bool {
+        guard let coordinates = coordinates else { return true }
+        return LocationUtils.isWithinDistance(
+            facilityCoordinates: coordinates,
+            from: userLocation,
+            maxDistanceKm: maxDistanceKm
+        )
+    }
 }
 
 /// Lab facility type
