@@ -87,6 +87,10 @@ final class AppointmentsViewModel {
     }
     var showTestsFilterSheet: Bool = false
     
+    /// Test booking navigation
+    var showingTestBooking: Bool = false
+    var selectedTestForBooking: IndividualTest? = nil
+    
     /// Labs search and filter (keeping existing searchText for backward compatibility)
     var showLabsFilterSheet: Bool = false
     var selectedLocation: String? = nil {
@@ -469,6 +473,34 @@ final class AppointmentsViewModel {
                 isBooking = false
             }
         }
+    }
+    
+    /// Book individual test - navigate to booking flow
+    func bookIndividualTest(_ test: IndividualTest) {
+        selectedTestForBooking = test
+        showingTestBooking = true
+    }
+    
+    /// Convert IndividualTest to TestDetails for booking compatibility
+    func convertToTestDetails(_ test: IndividualTest) -> TestDetails {
+        return TestDetails(
+            id: test.id,
+            name: test.name,
+            description: test.description,
+            category: .general, // Map to appropriate category based on test type
+            price: test.price,
+            originalPrice: nil,
+            duration: "30 mins", // Default duration - could be enhanced
+            reportTime: "Same day", // Default report time - could be enhanced
+            sampleType: TestSampleType(rawValue: test.sampleType) ?? .blood,
+            fasting: TestFastingRequirement(
+                isRequired: test.fastingRequired,
+                duration: test.fastingRequired ? "8-12 hours" : nil,
+                instructions: test.fastingRequired ? "No food or drinks except water" : nil
+            ),
+            tags: [],
+            icon: test.icon
+        )
     }
     
     // MARK: - Search and Filter

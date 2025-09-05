@@ -53,6 +53,11 @@ struct AppointmentsView: View {
                 tabContent
             }
             .background(HealthColors.background.ignoresSafeArea())
+            .navigationDestination(isPresented: $viewModel.showingTestBooking) {
+                if let test = viewModel.selectedTestForBooking {
+                    TestBookingDateTimeView(testDetails: viewModel.convertToTestDetails(test))
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     LocationSelectorButton(
@@ -345,7 +350,7 @@ struct AppointmentsView: View {
                     IndividualTestCard(
                         test: test,
                         onBook: {
-                            // Handle individual test booking
+                            viewModel.bookIndividualTest(test)
                         },
                         onViewDetails: {
                             // Navigation handled by NavigationLink in card
