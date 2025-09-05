@@ -106,9 +106,9 @@ iOSInjectionProject/
 *.log
 build.log
 
-# Documentation folders (if you want to keep docs out of main repo)
-.claude/*
-jfr/*
+# Documentation folders (optional - uncomment if you want to exclude from main repo)
+# .claude/*
+# jfr/*
 
 # Temporary files
 *.tmp
@@ -118,3 +118,6 @@ jfr/*
 # IDE files
 .vscode/
 .idea/
+
+# Xcode user state
+*.xcuserstate
