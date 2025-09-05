@@ -162,9 +162,41 @@ final class TestsAPIService {
         throw TestsAPIError.networkError(URLError(.networkConnectionLost))
     }
     
-    /// Get test details (stub for maintaining compatibility)  
+    /// Get test details from LabLoop API
     func getTestDetails(testId: String) async throws -> TestDetailsResponse {
-        throw TestsAPIError.testNotFound(testId)
+        
+        #if DEBUG
+        print("🌐 TestsAPIService.getTestDetails() called with testId: \(testId)")
+        #endif
+        
+        // Build URL for test details endpoint
+        let url = APIConfiguration.labLoopTestDetailsURL(testId: testId)
+        
+        #if DEBUG
+        print("🔗 Built test details URL: \(url)")
+        print("🔗 About to call makeLabLoopRequest for test details...")
+        #endif
+        
+        do {
+            // Make request to LabLoop API
+            let response: LabLoopAPIResponse<TestDetailsData> = try await makeLabLoopRequest(url: url)
+            
+            // Check response success
+            guard response.success else {
+                let errorMessage = response.error?.userMessage ?? "Failed to load test details"
+                throw TestsAPIError.testNotFound(errorMessage)
+            }
+            
+            // Return test details response
+            return TestDetailsResponse(testDetails: response.data)
+            
+        } catch {
+            if error is TestsAPIError {
+                throw error
+            } else {
+                throw TestsAPIError.networkError(error)
+            }
+        }
     }
     
     // MARK: - Private Helper Methods

@@ -252,6 +252,11 @@ struct APIConfiguration {
         
         return urlString
     }
+    
+    /// Build LabLoop URL for test details endpoint
+    static func labLoopTestDetailsURL(testId: String) -> String {
+        return labLoopBaseURL + apiVersion + "/mobile/tests/\(testId)"
+    }
 }
 
 // MARK: - API Headers Configuration
