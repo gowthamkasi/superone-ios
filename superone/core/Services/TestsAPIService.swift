@@ -221,7 +221,7 @@ final class TestsAPIService {
                     case .success(let data):
                         do {
                             nonisolated(unsafe) let decoder = JSONDecoder()
-                            decoder.dateDecodingStrategy = .iso8601
+                            decoder.dateDecodingStrategy = .custom(NetworkService.robustISO8601DateDecoder)
                             
                             #if DEBUG
                             // Log raw JSON response for debugging

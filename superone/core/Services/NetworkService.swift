@@ -399,7 +399,7 @@ class NetworkService: ObservableObject {
                 let jsonData: Data
                 do {
                     let encoder = JSONEncoder()
-                    encoder.dateEncodingStrategy = .iso8601 // Consistent with decoding strategy
+                    encoder.dateEncodingStrategy = .custom(NetworkService.robustISO8601DateEncoder) // Consistent with decoding strategy
                     jsonData = try encoder.encode(body)
                 } catch {
                     continuation.resume(throwing: NetworkError.encodingError)
@@ -504,11 +504,11 @@ class NetworkService: ObservableObject {
             
             do {
                 let decoder = JSONDecoder()
-                // Use simple, reliable .iso8601 strategy as recommended by Apple and SwiftWithVincent blog
-                decoder.dateDecodingStrategy = .iso8601
+                // Use robust custom ISO8601 date decoding strategy to fix device vs simulator inconsistencies
+                decoder.dateDecodingStrategy = .custom(NetworkService.robustISO8601DateDecoder)
                 
-                print("🔍 Using simplified .iso8601 date decoding strategy")
-                print("🔍 Expected backend date format: '1995-08-19T00:00:00.000Z' or similar ISO8601")
+                print("🔍 Using robust custom ISO8601 date decoding strategy")
+                print("🔍 Supporting multiple ISO8601 formats with fractional seconds and timezone variations")
                 
                 // Log raw response data for debugging
                 let rawResponseString = String(data: data, encoding: .utf8) ?? "Could not convert data to string"
@@ -527,18 +527,66 @@ class NetworkService: ObservableObject {
                 print("Error: \(error)")
                 
                 if let decodingError = error as? DecodingError {
-                    print("Detailed DecodingError: \(decodingError)")
+                    print("📋 DETAILED DECODING ERROR ANALYSIS:")
+                    print("Error Type: \(decodingError)")
+                    
                     switch decodingError {
                     case .keyNotFound(let key, let context):
-                        print("Missing key: \(key.stringValue) at path: \(context.codingPath)")
+                        print("🔑 MISSING KEY ERROR:")
+                        print("   Missing key: '\(key.stringValue)'")
+                        print("   Coding path: \(context.codingPath.map { $0.stringValue }.joined(separator: " → "))")
+                        print("   Context: \(context.debugDescription)")
+                        
                     case .typeMismatch(let type, let context):
-                        print("Type mismatch for type: \(type) at path: \(context.codingPath)")
+                        print("⚠️ TYPE MISMATCH ERROR:")
+                        print("   Expected type: \(type)")
+                        print("   Coding path: \(context.codingPath.map { $0.stringValue }.joined(separator: " → "))")
+                        print("   Context: \(context.debugDescription)")
+                        
+                        // Special handling for Date type mismatches (our main concern)
+                        if type == Date.self {
+                            print("📅 DATE PARSING FAILURE DETECTED:")
+                            print("   This is likely the iOS date parsing issue we're fixing")
+                            print("   Check if backend is sending: '1995-08-19T00:00:00.000Z' format")
+                        }
+                        
                     case .valueNotFound(let type, let context):
-                        print("Value not found for type: \(type) at path: \(context.codingPath)")
+                        print("❌ VALUE NOT FOUND ERROR:")
+                        print("   Missing value for type: \(type)")
+                        print("   Coding path: \(context.codingPath.map { $0.stringValue }.joined(separator: " → "))")
+                        print("   Context: \(context.debugDescription)")
+                        
                     case .dataCorrupted(let context):
-                        print("Data corrupted at path: \(context.codingPath)")
+                        print("💥 DATA CORRUPTED ERROR:")
+                        print("   Coding path: \(context.codingPath.map { $0.stringValue }.joined(separator: " → "))")
+                        print("   Context: \(context.debugDescription)")
+                        
+                        // Check if it's our custom date parsing error
+                        if context.debugDescription.contains("ISO8601 format") {
+                            print("📅 CUSTOM DATE PARSING ERROR:")
+                            print("   Our robust date parser failed to parse a date string")
+                            print("   Backend may be sending an unexpected date format")
+                        }
+                        
                     @unknown default:
-                        print("Unknown decoding error")
+                        print("❓ UNKNOWN DECODING ERROR:")
+                        print("   Error: \(decodingError)")
+                    }
+                    
+                    // Additional debugging for authentication-related paths
+                    let codingPathString: String
+                    switch decodingError {
+                    case .keyNotFound(_, let context), .typeMismatch(_, let context), .valueNotFound(_, let context), .dataCorrupted(let context):
+                        codingPathString = context.codingPath.map { $0.stringValue }.joined(separator: " → ")
+                    @unknown default:
+                        codingPathString = "unknown"
+                    }
+                    
+                    if codingPathString.contains("data") && codingPathString.contains("user") {
+                        print("🔐 AUTHENTICATION-RELATED DECODING ERROR DETECTED:")
+                        print("   This error occurs in the authentication response user data")
+                        print("   Likely fields: createdAt, updatedAt, dateOfBirth")
+                        print("   Path: \(codingPathString)")
                     }
                 }
                 continuation.resume(throwing: NetworkError.decodingError(error))
@@ -663,6 +711,116 @@ class NetworkService: ObservableObject {
     /// Cancel all active network requests by canceling the session
     func cancelAllRequests() {
         session.cancelAllRequests()
+    }
+    
+    // MARK: - Custom Date Decoding
+    
+    /// Robust ISO8601 date decoder that handles device vs simulator inconsistencies
+    /// Supports multiple ISO8601 formats with and without fractional seconds
+    nonisolated static func robustISO8601DateDecoder(_ decoder: Decoder) throws -> Date {
+        let container = try decoder.singleValueContainer()
+        let dateString = try container.decode(String.self)
+        
+        // Use en_US_POSIX locale for consistent parsing across devices and locales
+        let dateFormatters = createISO8601Formatters()
+        
+        // Try each formatter in order of preference
+        for formatter in dateFormatters {
+            if let date = formatter.date(from: dateString) {
+                #if DEBUG
+                print("✅ Successfully parsed date '\(dateString)' using format: \(formatter.dateFormat ?? "unknown")")
+                #endif
+                return date
+            }
+        }
+        
+        // If all formatters fail, log the issue and throw an error
+        #if DEBUG
+        print("❌ Failed to parse date string: '\(dateString)'")
+        print("🔍 Tried formats:")
+        for formatter in dateFormatters {
+            print("   - \(formatter.dateFormat ?? "unknown")")
+        }
+        #endif
+        
+        let context = DecodingError.Context(
+            codingPath: decoder.codingPath,
+            debugDescription: "Date string '\(dateString)' does not match any supported ISO8601 format. Expected formats: yyyy-MM-dd'T'HH:mm:ss.SSSZ, yyyy-MM-dd'T'HH:mm:ssZ, yyyy-MM-dd'T'HH:mm:ss.SSS'Z', yyyy-MM-dd'T'HH:mm:ss'Z'"
+        )
+        throw DecodingError.dataCorrupted(context)
+    }
+    
+    /// Creates array of ISO8601 date formatters with fallback patterns
+    /// Uses en_US_POSIX locale for device consistency and explicit UTC timezone
+    nonisolated private static func createISO8601Formatters() -> [DateFormatter] {
+        // ISO8601 formats in order of preference (most specific first)
+        let dateFormats = [
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZ",     // 2023-12-15T10:30:45.123Z
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",   // 2023-12-15T10:30:45.123Z (literal Z)
+            "yyyy-MM-dd'T'HH:mm:ssZ",         // 2023-12-15T10:30:45Z
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",       // 2023-12-15T10:30:45Z (literal Z)
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",  // 2023-12-15T10:30:45.123456Z (microseconds)
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", // 2023-12-15T10:30:45.123456Z (literal Z)
+            "yyyy-MM-dd'T'HH:mm:ss",          // 2023-12-15T10:30:45 (no timezone, assume UTC)
+        ]
+        
+        return dateFormats.map { format in
+            let formatter = DateFormatter()
+            formatter.dateFormat = format
+            formatter.locale = Locale(identifier: "en_US_POSIX") // Critical for device consistency
+            formatter.timeZone = TimeZone(identifier: "UTC") // Explicit UTC timezone
+            return formatter
+        }
+    }
+    
+    /// Robust ISO8601 date encoder that produces consistent format for backend
+    /// Always encodes dates in the same format: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
+    nonisolated static func robustISO8601DateEncoder(_ date: Date, encoder: Encoder) throws {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        
+        let dateString = formatter.string(from: date)
+        var container = encoder.singleValueContainer()
+        try container.encode(dateString)
+        
+        #if DEBUG
+        print("✅ Encoded date to string: '\(dateString)'")
+        #endif
+    }
+}
+
+// MARK: - Date Handling Extensions
+
+extension Date {
+    /// Parse date from string using the same robust ISO8601 parser as NetworkService
+    static func fromRobustISO8601String(_ dateString: String) -> Date? {
+        let formatters = NetworkService.getISO8601Formatters()
+        
+        for formatter in formatters {
+            if let date = formatter.date(from: dateString) {
+                return date
+            }
+        }
+        
+        return nil
+    }
+    
+    /// Convert date to robust ISO8601 string using the same formatter as NetworkService
+    func toRobustISO8601String() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.string(from: self)
+    }
+}
+
+extension NetworkService {
+    /// Expose the private formatters method for testing and utility use
+    static func getISO8601Formatters() -> [DateFormatter] {
+        return createISO8601Formatters()
     }
 }
 

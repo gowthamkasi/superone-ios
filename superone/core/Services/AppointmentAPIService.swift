@@ -280,7 +280,7 @@ final class AppointmentAPIService {
                     case .success(let data):
                         do {
                             nonisolated(unsafe) let decoder = JSONDecoder()
-                            decoder.dateDecodingStrategy = .iso8601
+                            decoder.dateDecodingStrategy = .custom(NetworkService.robustISO8601DateDecoder)
                             nonisolated(unsafe) let decodedResponse = try decoder.decode(T.self, from: data)
                             continuation.resume(returning: decodedResponse)
                         } catch {
@@ -326,7 +326,7 @@ final class AppointmentAPIService {
                     case .success(let data):
                         do {
                             nonisolated(unsafe) let decoder = JSONDecoder()
-                            decoder.dateDecodingStrategy = .iso8601
+                            decoder.dateDecodingStrategy = .custom(NetworkService.robustISO8601DateDecoder)
                             nonisolated(unsafe) let decodedResponse = try decoder.decode(T.self, from: data)
                             continuation.resume(returning: decodedResponse)
                         } catch {

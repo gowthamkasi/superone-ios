@@ -89,7 +89,7 @@ class NativeAuthenticationAPIService: ObservableObject {
         let jsonData: Data
         do {
             let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
+            encoder.dateEncodingStrategy = .custom(NetworkService.robustISO8601DateEncoder)
             jsonData = try encoder.encode(request)
             let testString = String(data: jsonData, encoding: .utf8) ?? "Could not convert to string"
         } catch {
@@ -123,9 +123,9 @@ class NativeAuthenticationAPIService: ObservableObject {
         if let responseString = String(data: responseData, encoding: .utf8) {
         }
         
-        // Decode response
+        // Decode response using robust date parsing strategy
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom(NetworkService.robustISO8601DateDecoder)
         
         let authResponse: AuthResponse
         do {

@@ -230,7 +230,7 @@ final class LabFacilityAPIService {
                             #endif
                             
                             nonisolated(unsafe) let decoder = JSONDecoder()
-                            decoder.dateDecodingStrategy = .iso8601
+                            decoder.dateDecodingStrategy = .custom(NetworkService.robustISO8601DateDecoder)
                             nonisolated(unsafe) let decodedResponse = try decoder.decode(T.self, from: data)
                             continuation.resume(returning: decodedResponse)
                         } catch {
