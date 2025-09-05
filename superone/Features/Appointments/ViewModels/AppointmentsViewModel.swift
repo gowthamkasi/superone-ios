@@ -483,23 +483,37 @@ final class AppointmentsViewModel {
     
     /// Convert IndividualTest to TestDetails for booking compatibility
     func convertToTestDetails(_ test: IndividualTest) -> TestDetails {
+        // Map category string to TestCategory enum
+        let category = TestCategory(rawValue: test.category) ?? .bloodTest
+        
+        // Convert boolean to FastingRequirement
+        let fasting = test.fastingRequired ? FastingRequirement.hours12 : .none
+        
+        // Convert string to SampleType with fallback
+        let sampleType = SampleType(rawValue: test.sampleType.lowercased()) ?? .blood
+        
+        // Format price as currency string
+        let priceString = "₹\(test.price)"
+        
         return TestDetails(
             id: test.id,
             name: test.name,
-            description: test.description,
-            category: .general, // Map to appropriate category based on test type
-            price: test.price,
+            shortName: test.name, // Use full name as short name
+            icon: test.icon,
+            category: category,
+            duration: "30 mins", // Default duration
+            price: priceString,
             originalPrice: nil,
-            duration: "30 mins", // Default duration - could be enhanced
-            reportTime: "Same day", // Default report time - could be enhanced
-            sampleType: TestSampleType(rawValue: test.sampleType) ?? .blood,
-            fasting: TestFastingRequirement(
-                isRequired: test.fastingRequired,
-                duration: test.fastingRequired ? "8-12 hours" : nil,
-                instructions: test.fastingRequired ? "No food or drinks except water" : nil
-            ),
-            tags: [],
-            icon: test.icon
+            fasting: fasting,
+            sampleType: sampleType,
+            reportTime: "Same day",
+            description: test.description,
+            keyMeasurements: ["Standard measurements"], // Default
+            healthBenefits: "Provides important health insights", // Default
+            sections: [], // Empty sections for booking
+            isFeatured: false,
+            isAvailable: true,
+            tags: []
         )
     }
     
