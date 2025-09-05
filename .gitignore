@@ -121,3 +121,4 @@ build.log
 
 # Xcode user state
 *.xcuserstate
+.claude/*
